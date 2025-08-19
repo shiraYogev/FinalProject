@@ -1,0 +1,42 @@
+<!-- file: app/src/main/res/layout/dialog_dual_choice.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="14dp"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/lblChoice1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="בחירה 1"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/txtChoice1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="בחרו…"
+        android:paddingVertical="8dp"
+        android:background="@android:color/transparent"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="8dp"/>
+
+    <TextView
+        android:id="@+id/lblChoice2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="בחירה 2"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/txtChoice2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="בחרו…"
+        android:paddingVertical="8dp"
+        android:background="@android:color/transparent"/>
+
+</LinearLayout>
