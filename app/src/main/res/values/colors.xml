@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- צבעים ראשיים לאפליקציה -->
+    <color name="colorPrimary">#2196F3</color>
+    <color name="colorPrimaryDark">#1976D2</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <!-- צבעים נוספים -->
+    <color name="colorBackground">#F5F5F5</color>
+    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorError">#FF4444</color>
+    <color name="colorSuccess">#4CAF50</color>
+
+    <!-- צבעי טקסט -->
+    <color name="textColorPrimary">#212121</color>
+    <color name="textColorSecondary">#757575</color>
+    <color name="textColorHint">#BDBDBD</color>
+
+    <!-- צבעי מסגרות וגבולות -->
+    <color name="borderColor">#E0E0E0</color>
+    <color name="dividerColor">#EEEEEE</color>
+
+    <color name="primary_color">#2196F3</color>
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#757575</color>
+    <color name="background_light">#FAFAFA</color>
+</resources>
