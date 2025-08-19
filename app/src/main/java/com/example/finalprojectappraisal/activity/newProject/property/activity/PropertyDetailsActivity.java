@@ -1,4 +1,4 @@
-package com.example.finalprojectappraisal.activity.newProject.property;
+package com.example.finalprojectappraisal.activity.newProject.property.activity;
 
 import android.app.AlertDialog;
 import android.os.Bundle;

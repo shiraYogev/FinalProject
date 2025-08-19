@@ -10,10 +10,10 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.finalprojectappraisal.R;
-import com.example.finalprojectappraisal.activity.newProject.property.PropertyDetailsActivity;
-import com.example.finalprojectappraisal.activity.newProject.property.PropertyDetailsActivity.FieldItem;
-import com.example.finalprojectappraisal.activity.newProject.property.PropertyDetailsActivity.ListItem;
-import com.example.finalprojectappraisal.activity.newProject.property.PropertyDetailsActivity.SectionItem;
+import com.example.finalprojectappraisal.activity.newProject.property.activity.PropertyDetailsActivity;
+import com.example.finalprojectappraisal.activity.newProject.property.activity.PropertyDetailsActivity.FieldItem;
+import com.example.finalprojectappraisal.activity.newProject.property.activity.PropertyDetailsActivity.ListItem;
+import com.example.finalprojectappraisal.activity.newProject.property.activity.PropertyDetailsActivity.SectionItem;
 
 import java.util.ArrayList;
 import java.util.List;

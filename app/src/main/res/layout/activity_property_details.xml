@@ -7,7 +7,7 @@
     android:layoutDirection="rtl"
     android:orientation="vertical"
     android:padding="12dp"
-    tools:context=".activity.newProject.property.PropertyDetailsActivity">
+    tools:context=".activity.newProject.property.activity.PropertyDetailsActivity">
 
     <ProgressBar
         android:id="@+id/progress"

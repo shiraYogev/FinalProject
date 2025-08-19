@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.finalprojectappraisal.R;
-import com.example.finalprojectappraisal.activity.newProject.property.ApartmentDetailsActivity;
+import com.example.finalprojectappraisal.activity.newProject.property.activity.ApartmentDetailsActivity;
 import com.example.finalprojectappraisal.adapter.ImageCategoriesAdapter;
 import com.example.finalprojectappraisal.classifer.ImageCategorySection;
 import com.example.finalprojectappraisal.classifer.gemini.EnhancedGeminiHelper;

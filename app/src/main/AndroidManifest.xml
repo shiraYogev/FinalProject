@@ -31,10 +31,10 @@
         tools:targetApi="tiramisu">
 
         <activity
-            android:name=".activity.newProject.property.AdditionalFacilitiesActivity"
+            android:name=".activity.newProject.property.activity.AdditionalFacilitiesActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.newProject.property.PropertyDescriptionActivity"
+            android:name=".activity.newProject.property.activity.PropertyDescriptionActivity"
             android:exported="false" />
         <activity
             android:name=".activity.newProject.bank.BankDetailsActivity"
@@ -46,10 +46,10 @@
             android:name=".activity.newProject.client.ClientDetailsActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.newProject.property.ApartmentDetailsActivity"
+            android:name=".activity.newProject.property.activity.ApartmentDetailsActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.newProject.property.PropertyDetailsActivity"
+            android:name=".activity.newProject.property.activity.PropertyDetailsActivity"
             android:exported="false" />
         <activity
             android:name=".activity.MyProjectsActivity"

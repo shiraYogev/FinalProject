@@ -26,6 +26,10 @@ public final class GeminiJsonParser {
         String INTERIOR_DOOR_CONDITION = "apartment_interior_doors_and_frames";
         String FLOORING_TYPE           = "apartment_flooring";         // סוג + (מידה)
         String KITCHEN_CONDITION       = "apartment_kitchen";
+
+        String HAS_ELEVATOR = "has_elevator";
+        String HAS_PARKING  = "has_parking";
+        String HAS_STORAGE  = "has_storage";
     }
 
     /** מפענח את תוצאת ג׳סון (כולל ניקוי ```json) ומחזיר Map לשמירה בפיירסטור. */
