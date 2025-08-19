@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFF">
+
+    <TextView
+        android:id="@+id/titleMyProjects"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="הפרויקטים שלי"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:padding="16dp"
+        android:layout_gravity="center"/>
+
+    <EditText
+        android:id="@+id/searchBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="חיפוש לפי כתובת, שם לקוח או סטטוס"
+        android:padding="12dp"
+        android:layout_margin="8dp"/>
+
+    <Button
+        android:id="@+id/btnNewProject"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="+ צור פרויקט חדש"
+        android:layout_gravity="end"
+        android:layout_margin="12dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerMyProjects"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="8dp"/>
+</LinearLayout>

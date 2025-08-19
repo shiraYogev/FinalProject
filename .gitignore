@@ -1,0 +1,38 @@
+@"
+# === Java / General ===
+*.class
+*.log
+hs_err_pid*
+replay_pid*
+*.ctxt
+.mtj.tmp/
+
+# === OS / IDE ===
+.DS_Store
+Thumbs.db
+*.iml
+.idea/
+.vscode/
+
+# === Gradle / Build ===
+.gradle/
+local.properties
+/build
+**/build/
+.externalNativeBuild/
+.cxx/
+captures/
+
+# === Android artifacts ===
+*.apk
+*.ap_
+*.aab
+*.dex
+
+# === Keystores & Secrets ===
+*.jks
+*.keystore
+*.pem
+*.p12
+app/src/main/res/raw/service_account.json
+"@ | Out-File -Encoding utf8 .gitignore
