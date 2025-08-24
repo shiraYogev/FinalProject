@@ -7,4 +7,26 @@
     android:layout_height="match_parent"
     tools:context=".activity.newProject.bank.BankDetailsActivity">
 
+    <Button
+        android:id="@+id/uploadPdfButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="העלה מסמך פרטי בנק"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.1"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/uploadPdfButton"
+        app:layout_constraintStart_toStartOf="@id/uploadPdfButton"
+        app:layout_constraintEnd_toEndOf="@id/uploadPdfButton"
+        android:layout_marginTop="16dp"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

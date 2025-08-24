@@ -23,6 +23,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+import android.net.Uri;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Date;
+import com.example.finalprojectappraisal.model.PdfDocument; // יצירת קלאס חדש עבור מסמכים
+
+
 /**
  * Main repository class that handles Firebase Firestore operations for projects.
  * Uses Singleton pattern and delegates complex operations to specialized managers.
@@ -35,6 +46,10 @@ public class ProjectRepository {
     private final ProjectUpdateManager updateManager;
     private String currentProjectId;
 
+    private final FirebaseStorage storage;
+    private final StorageReference storageRef;
+
+
     // LiveData for reactive programming
     private final MutableLiveData<Project> currentProject = new MutableLiveData<>();
     private final MutableLiveData<List<Project>> allProjects = new MutableLiveData<>();
@@ -42,9 +57,14 @@ public class ProjectRepository {
 
     private ProjectRepository() {
         db = FirebaseFirestore.getInstance();
+
+        // אתחול Firebase Storage לפני שימוש ברפרנס שלו
+        storage = FirebaseStorage.getInstance();
+        storageRef = storage.getReference();
+
+        // אתחול ProjectUpdateManager פעם אחת בלבד
         updateManager = new ProjectUpdateManager(db, errorMessage);
     }
-
     /**
      * Gets the singleton instance of ProjectRepository
      */
@@ -454,5 +474,57 @@ public class ProjectRepository {
      */
     public ProjectUpdateManager getUpdateManager() {
         return updateManager;
+    }
+
+    public void addPdfToProject(String projectId, Uri pdfUri, String fileName, OnCompleteListener<Void> listener) {
+        if (projectId == null || pdfUri == null || fileName == null) {
+            handleError("Project ID, PDF URI, and file name are required", listener);
+            return;
+        }
+
+        // יצירת רפרנס לקובץ ב-Firebase Storage
+        StorageReference pdfRef = storageRef.child("projects/" + projectId + "/documents/" + fileName);
+
+        // העלאת הקובץ
+        pdfRef.putFile(pdfUri)
+                .addOnSuccessListener(taskSnapshot -> {
+                    // קבלת URL של הקובץ שהועלה
+                    pdfRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                                // יצירת מודל והוספתו ל-Firestore
+                                Map<String, Object> docData = new HashMap<>();
+                                docData.put("fileName", fileName);
+                                docData.put("url", uri.toString());
+                                docData.put("timestamp", new Date());
+
+                                db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                                        .document(projectId)
+                                        .collection("documents") // קולקציה חדשה למסמכים
+                                        .add(docData) // שימוש ב-add() ליצירת ID אוטומטי
+                                        .addOnSuccessListener(documentReference -> {
+                                            // המשימה הצליחה, מעבירים הודעת הצלחה חזרה ל-listener המקורי
+                                            if (listener != null) {
+                                                listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(null));
+                                            }
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            errorMessage.setValue("שגיאה בשמירת פרטי המסמך: " + e.getMessage());
+                                            if (listener != null) {
+                                                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(e));
+                                            }
+                                        });
+                            })
+                            .addOnFailureListener(e -> {
+                                errorMessage.setValue("שגיאה בהשגת URL: " + e.getMessage());
+                                if (listener != null) {
+                                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(e));
+                                }
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    errorMessage.setValue("שגיאה בהעלאת מסמך: " + e.getMessage());
+                    if (listener != null) {
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(e));
+                    }
+                });
     }
 }
