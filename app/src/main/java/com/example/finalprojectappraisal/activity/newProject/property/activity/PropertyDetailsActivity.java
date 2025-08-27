@@ -1,6 +1,7 @@
 package com.example.finalprojectappraisal.activity.newProject.property.activity;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputFilter;
 import android.text.InputType;
@@ -63,6 +64,10 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                 or(p.getBuildingType()), Choices.BUILDING_TYPES, true));
         items.add(FieldItem.physicalCondition("physical_condition", "מצב הבניין",
                 or(p.getBuildingCondition()), Choices.PHYSICAL_CONDITION_OPTIONS));
+        items.add(FieldItem.single("external_cladding", "חיפוי חיצוני",
+                or(p.getExternalCladding()), Choices.EXTERNAL_CLADDING_OPTIONS, // רשימת אפשרויות ב-Choices
+                true  // לאפשר "אחר"
+        ));
         items.add(FieldItem.floorsComposite("number_of_floors", "מספר קומות",
                 or(p.getNumberOfFloors()), Choices.FLOORS_REFERENCE_LEVELS, true));
 
@@ -292,6 +297,13 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
         adapter.notifyItemChanged(pos);
     }
 
+    private void goToNextScreen() {
+        Intent intent = new Intent(this, PropertyDescriptionActivity.class);
+        intent.putExtra("projectId", projectId);
+        startActivity(intent);
+    }
+
+
     // ====== שמירה ל-DB ======
     private void saveToDb() {
         if (projectId == null || projectId.trim().isEmpty()) {
@@ -332,7 +344,8 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
         ProjectRepository.getInstance().savePropertyDetails(projectId, updates, task -> {
             if (task.isSuccessful()) {
                 Toast.makeText(this, "נשמר בהצלחה", Toast.LENGTH_SHORT).show();
-                // finish(); // אם את רוצה לסגור את המסך אחרי שמירה
+                goToNextScreen();
+                finish();
             } else {
                 Exception e = task.getException();
                 Toast.makeText(this, "שמירה נכשלה: " + (e != null ? e.getMessage() : ""), Toast.LENGTH_LONG).show();
