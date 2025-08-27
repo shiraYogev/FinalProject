@@ -1,6 +1,7 @@
 package com.example.finalprojectappraisal.adapter;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,10 +11,14 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import com.bumptech.glide.Glide;
+// import com.bumptech.glide.Glide; // השאירי אם תרצי טעינת תמונות ממוזערות
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.model.Project;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.ProjectViewHolder> {
 
@@ -25,8 +30,8 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
     }
 
     private List<Project> projects;
-    private ProjectActionListener listener;
-    private Context context;
+    private final ProjectActionListener listener;
+    private final Context context;
 
     public ProjectsAdapter(List<Project> projects, ProjectActionListener listener, Context context) {
         this.projects = projects;
@@ -46,31 +51,58 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         Project project = projects.get(position);
 
         // כתובת
-        holder.txtAddress.setText(project.getFullAddress());
+        holder.txtAddress.setText(safeOrDash(project != null ? project.getFullAddress() : null));
+
+        // *** הערה אופציונלית – מוסתרת אם ריקה ***
+        String note = project != null ? project.getNote() : null;
+        if (TextUtils.isEmpty(note)) {
+            holder.txtNote.setVisibility(View.GONE);
+        } else {
+            holder.txtNote.setVisibility(View.VISIBLE);
+            holder.txtNote.setText(note);
+        }
+
         // סטטוס
-        holder.txtStatus.setText(project.getProjectStatus() != null ? project.getProjectStatus() : "סטטוס לא ידוע");
+        String status = project != null ? project.getProjectStatus() : null;
+        holder.txtStatus.setText(!TextUtils.isEmpty(status) ? status : "סטטוס לא ידוע");
+
         // שם לקוח
-        holder.txtClient.setText(project.getClient() != null ? project.getClient().getFullName() : "");
-        // תאריך עדכון
-        holder.txtDate.setText(project.getLastUpdateDate() != 0 ? "עודכן: " + project.getLastUpdateDate() : "");
+        String clientName = (project != null && project.getClient() != null)
+                ? project.getClient().getFullName()
+                : "";
+        holder.txtClient.setText(safeOrDash(clientName));
 
-//        // תמונה ממוזערת (תמונת חזית אם קיימת, אחרת placeholder)
-//        String imageUrl = (project.getFrontImageUrl() != null) ? project.getFrontImageUrl() : null;
-//        Glide.with(context)
-//                .load(imageUrl)
-//                .placeholder(R.drawable.ic_placeholder)
-//                .into(holder.imageThumb);
+        // תאריך עדכון (Long -> "dd/MM/yyyy")
+        long lastUpdate = (project != null) ? project.getLastUpdateDate() : 0L;
+        holder.txtDate.setText(lastUpdate > 0
+                ? "עודכן: " + formatDate(lastUpdate)
+                : "");
 
-        // כפתורי פעולה
-        holder.btnEdit.setOnClickListener(v -> listener.onEdit(project));
-        holder.btnImages.setOnClickListener(v -> listener.onImages(project));
-        holder.btnReport.setOnClickListener(v -> listener.onReport(project));
-        holder.btnDelete.setOnClickListener(v -> listener.onDelete(project));
+        // תמונה ממוזערת (לא חובה)
+        // String imageUrl = project != null ? project.getFrontImageUrl() : null;
+        // Glide.with(context)
+        //        .load(imageUrl)
+        //        .placeholder(R.drawable.ic_placeholder)
+        //        .into(holder.imageThumb);
+
+        // כפתורי פעולה (שומרים על ההתנהגות המקורית שלך)
+        holder.btnEdit.setOnClickListener(v -> {
+            if (listener != null && project != null) listener.onEdit(project);
+        });
+        holder.btnImages.setOnClickListener(v -> {
+            if (listener != null && project != null) listener.onImages(project);
+        });
+        holder.btnReport.setOnClickListener(v -> {
+            if (listener != null && project != null) listener.onReport(project);
+        });
+        holder.btnDelete.setOnClickListener(v -> {
+            if (listener != null && project != null) listener.onDelete(project);
+        });
     }
 
     @Override
     public int getItemCount() {
-        return projects.size();
+        return projects == null ? 0 : projects.size();
     }
 
     public void updateData(List<Project> newProjects) {
@@ -78,22 +110,35 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         notifyDataSetChanged();
     }
 
+    // ===== Utils =====
+
+    private String safeOrDash(String s) {
+        return TextUtils.isEmpty(s) ? "—" : s;
+    }
+
+    private String formatDate(long epochMillis) {
+        // אם אצלך זה שניות – המריא לפני: epochMillis *= 1000;
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", new Locale("he", "IL"));
+        return sdf.format(new Date(epochMillis));
+    }
+
     static class ProjectViewHolder extends RecyclerView.ViewHolder {
         ImageView imageThumb;
-        TextView txtAddress, txtStatus, txtClient, txtDate;
+        TextView txtAddress, txtNote, txtStatus, txtClient, txtDate;
         Button btnEdit, btnImages, btnReport, btnDelete;
 
         public ProjectViewHolder(@NonNull View itemView) {
             super(itemView);
             imageThumb = itemView.findViewById(R.id.imageThumb);
             txtAddress = itemView.findViewById(R.id.txtAddress);
-            txtStatus = itemView.findViewById(R.id.txtStatus);
-            txtClient = itemView.findViewById(R.id.txtClient);
-            txtDate = itemView.findViewById(R.id.txtDate);
-            btnEdit = itemView.findViewById(R.id.btnEdit);
-            btnImages = itemView.findViewById(R.id.btnImages);
-            btnReport = itemView.findViewById(R.id.btnReport);
-            btnDelete = itemView.findViewById(R.id.btnDelete);
+            txtNote    = itemView.findViewById(R.id.txtNote);   // ודאי שהוספת ב-XML של האייטם
+            txtStatus  = itemView.findViewById(R.id.txtStatus);
+            txtClient  = itemView.findViewById(R.id.txtClient);
+            txtDate    = itemView.findViewById(R.id.txtDate);
+            btnEdit    = itemView.findViewById(R.id.btnEdit);
+            btnImages  = itemView.findViewById(R.id.btnImages);
+            btnReport  = itemView.findViewById(R.id.btnReport);
+            btnDelete  = itemView.findViewById(R.id.btnDelete);
         }
     }
 }
