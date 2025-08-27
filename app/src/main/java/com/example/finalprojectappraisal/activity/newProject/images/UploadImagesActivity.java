@@ -9,6 +9,7 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -25,6 +26,9 @@ import com.example.finalprojectappraisal.model.Image;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import com.example.finalprojectappraisal.database.ProjectRepository;
+import com.example.finalprojectappraisal.database.constants.FirestoreConstants;
 
 public class UploadImagesActivity extends AppCompatActivity {
 
@@ -67,9 +71,15 @@ public class UploadImagesActivity extends AppCompatActivity {
                     Intent intent = new Intent(Intent.ACTION_PICK);
                     intent.setType("image/*");
                     startActivityForResult(intent, REQUEST_IMAGE_PICK);
+                },
+                // ⬅️ קולבק למחיקת תמונה מסקשן
+                (section, image, sectionIndex, imageIndex) -> {
+                    onDeleteImageClicked(section, image, sectionIndex, imageIndex);
                 }
         );
+        recyclerCategories.setLayoutManager(new LinearLayoutManager(this));
         recyclerCategories.setAdapter(categoriesAdapter);
+
 
         Button btnSaveAndContinue = findViewById(R.id.btnSaveAndContinue);
         btnSaveAndContinue.setOnClickListener(v -> {
@@ -109,7 +119,7 @@ public class UploadImagesActivity extends AppCompatActivity {
             }
 
             // 1) יצירת Image ועדכון UI מיידי
-            Image img = new Image();
+            final Image img = new Image();
             img.setUrl(imageUri.toString());
             img.setProjectId(projectId);
             img.setCategory(pickedSection.category);
@@ -157,14 +167,112 @@ public class UploadImagesActivity extends AppCompatActivity {
 
                         @Override
                         public void onSavedToDatabase() {
-                            runOnUiThread(() ->
-                                    Toast.makeText(UploadImagesActivity.this, "התמונה נשמרה והפרויקט עודכן!", Toast.LENGTH_SHORT).show()
-                            );
+                            runOnUiThread(() -> {
+                                Toast.makeText(UploadImagesActivity.this, "התמונה נשמרה והפרויקט עודכן!", Toast.LENGTH_SHORT).show();
+
+                                // ✅ עדכון המערך propertyImages
+                                upsertPropertyImagesArray(pickedSection.category, img.getUrl());
+                            });
                         }
+
+
                     }
             );
         }
     }
+
+    private void onDeleteImageClicked(ImageCategorySection section, Image image, int sectionIndex, int imageIndex) {
+        // 1) הסרה אופטימיסטית מה-UI
+        Image removed = section.images.remove(imageIndex);
+        categoriesAdapter.notifyImageChanged(sectionIndex);
+
+        // 2) מחיקה מה-DB לפי imageId
+        String imageId = image.getId();
+        if (imageId == null || imageId.trim().isEmpty()) {
+            // אין id → נחזיר לתצוגה ונדווח. ודאי ש-EnhancedGeminiHelper מגדיר image.setId(...)
+            section.images.add(imageIndex, removed);
+            categoriesAdapter.notifyImageChanged(sectionIndex);
+            Toast.makeText(this, "אי אפשר למחוק: חסר imageId", Toast.LENGTH_SHORT).show();
+            Log.e("UploadImagesActivity", "Missing imageId on delete for url=" + image.getUrl());
+            return;
+        }
+
+        ProjectRepository.getInstance().deleteImageFromProject(
+                projectId,
+                imageId,
+                task -> {
+                    if (!task.isSuccessful()) {
+                        // 3) כשל ב-DB → Rollback ל-UI
+                        section.images.add(imageIndex, removed);
+                        categoriesAdapter.notifyImageChanged(sectionIndex);
+                        Toast.makeText(this, "מחיקת תמונה מה-DB נכשלה", Toast.LENGTH_SHORT).show();
+                        Log.e("UploadImagesActivity", "DB delete failed", task.getException());
+                        return;
+                    }
+
+                    // 4) ניקוי מהמֶערך propertyImages אם הוא עדיין מצביע ל-path הזה
+                    removeFromPropertyImagesArrayIfNeeded(image);
+                }
+        );
+    }
+
+    private void removeFromPropertyImagesArrayIfNeeded(@NonNull Image image) {
+        final String name = arrayNameForCategory(image.getCategory());
+        final String path = image.getUrl();
+        if (name == null || path == null || path.trim().isEmpty()) return;
+
+        ProjectRepository.getInstance().removePropertyImageIfMatches(
+                projectId, name, path,
+                t -> {
+                    if (!t.isSuccessful()) {
+                        Log.e("UploadImagesActivity",
+                                "removePropertyImageIfMatches failed for " + name, t.getException());
+                    } else {
+                        Log.d("UploadImagesActivity",
+                                "removePropertyImageIfMatches OK for " + name);
+                    }
+                }
+        );
+    }
+
+
+    private void upsertPropertyImagesArray(Image.Category category, String uriString) {
+        if (uriString == null || uriString.trim().isEmpty()) return;
+
+        final String name = arrayNameForCategory(category);
+        if (name == null) return;
+
+        ProjectRepository.getInstance().upsertPropertyImage(
+                projectId,
+                name,
+                uriString,
+                task -> {
+                    if (!task.isSuccessful()) {
+                        Log.e("UploadImagesActivity", "upsertPropertyImage failed: " + name, task.getException());
+                    } else {
+                        Log.d("UploadImagesActivity", "upsertPropertyImage OK: " + name + " -> " + uriString);
+                    }
+                }
+        );
+    }
+
+
+    private @Nullable String arrayNameForCategory(Image.Category category) {
+        switch (category) {
+            case EXTERIOR:
+                return FirestoreConstants.FIELD_FRONT_IMAGE;    // "front_image"
+            case LIVING_ROOM:
+            case BEDROOM:
+            case KITCHEN:
+            case BATHROOM:
+                return FirestoreConstants.FIELD_INTERIOR_IMAGE; // "interior_image"
+            // כשתוסיפי קטגוריית טאבו:
+            // case TABU_CROP: return FirestoreConstants.FIELD_TABU_CROP_IMAGE;
+            default:
+                return null;
+        }
+    }
+
 
     /**
      * מציג טוסט מסכם (מפה ידידותית בעברית מגיעה מה-Parser).
