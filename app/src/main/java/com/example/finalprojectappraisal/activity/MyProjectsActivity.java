@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,6 +16,9 @@ import com.example.finalprojectappraisal.activity.newProject.images.UploadImages
 import com.example.finalprojectappraisal.adapter.ProjectsAdapter;
 import com.example.finalprojectappraisal.database.ProjectRepository;
 import com.example.finalprojectappraisal.model.Project;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +26,9 @@ import java.util.List;
 public class MyProjectsActivity extends AppCompatActivity {
 
     private ProjectsAdapter adapter;
-    private List<Project> allProjects = new ArrayList<>();
+    private final List<Project> allProjects = new ArrayList<>();
     private EditText searchBar;
+    private TextView txtEmpty;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,11 +37,11 @@ public class MyProjectsActivity extends AppCompatActivity {
 
         RecyclerView recyclerView = findViewById(R.id.recyclerMyProjects);
         searchBar = findViewById(R.id.searchBar);
+        txtEmpty  = findViewById(R.id.txtEmpty);
 
         adapter = new ProjectsAdapter(allProjects, new ProjectsAdapter.ProjectActionListener() {
             @Override
             public void onEdit(Project project) {
-                // מעבר למסך עריכה
                 Intent intent = new Intent(MyProjectsActivity.this, UploadImagesActivity.class);
                 intent.putExtra("projectId", project.getProjectId());
                 startActivity(intent);
@@ -44,13 +49,12 @@ public class MyProjectsActivity extends AppCompatActivity {
 
             @Override
             public void onImages(Project project) {
-                // מעבר למסך התמונות
-                // intent to ImagesActivity, וכו'
+                // TODO: intent to ImagesActivity
             }
 
             @Override
             public void onReport(Project project) {
-                // דו"ח PDF, intent או פעולה אחרת
+                // TODO: דו"ח PDF
             }
 
             @Override
@@ -69,51 +73,77 @@ public class MyProjectsActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
-        // טען מה-DB
         loadProjects();
 
-        // חיפוש בזמן אמת (לא חובה, רק דוגמה בסיסית)
         searchBar.addTextChangedListener(new android.text.TextWatcher() {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterProjects(s.toString());
+                filterProjects(s == null ? "" : s.toString());
             }
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-            public void afterTextChanged(android.text.Editable s) { }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void afterTextChanged(android.text.Editable s) {}
         });
 
-        // כפתור פרויקט חדש
         findViewById(R.id.btnNewProject).setOnClickListener(v -> {
-            // Intent למסך יצירת פרויקט
+            // TODO: Intent למסך יצירת פרויקט
         });
     }
 
     private void loadProjects() {
-        // שליפת כל הפרויקטים (ללא סינון לפי שמאי)
-        ProjectRepository.getInstance().loadAllProjects();
+        String appraiserIdStr = getCurrentAppraiserIdString(); // ראי פונקציה למטה
+        if (appraiserIdStr == null || appraiserIdStr.trim().isEmpty()) {
+            Toast.makeText(this, "לא נמצא appraiserId למשתמש הנוכחי", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        // תצפית על LiveData, מתעדכן ברגע שהנתונים נשלפים
+        // שליפה מסוננת לפי appraiserId (String)
+        ProjectRepository.getInstance().loadProjectsForAppraiserIdString(appraiserIdStr);
+
+        // מאזינים לרשימה
         ProjectRepository.getInstance().getAllProjects().observe(this, projects -> {
-            if (projects != null) {
-                allProjects.clear();
-                allProjects.addAll(projects);
-                adapter.updateData(allProjects);
-                Log.d("UIUpdate", "Loaded " + projects.size() + " projects to UI");
-            } else {
-                Log.d("UIUpdate", "Projects LiveData is null");
-            }
+            allProjects.clear();
+            if (projects != null) allProjects.addAll(projects);
+            adapter.updateData(allProjects);
+            Log.d("UIUpdate", "Loaded " + allProjects.size() + " projects for appraiser " + appraiserIdStr);
+            // updateEmptyState(); // אם יש
         });
     }
 
 
+    private String getCurrentAppraiserIdString() {
+        //  אם מזהה השמאי הוא פשוט ה-UID של FirebaseAuth (String) ---
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null && user.getUid() != null) {
+            return user.getUid(); // <-- אם זה ה-appraiserId אצלך
+        }
+        return null; // אם לא נמצא
+    }
+
+
+    private void updateEmptyState() {
+        boolean isEmpty = adapter.getItemCount() == 0;
+        if (txtEmpty != null) {
+            txtEmpty.setVisibility(isEmpty ? android.view.View.VISIBLE : android.view.View.GONE);
+        }
+    }
+
     private void filterProjects(String query) {
+        String q = query.trim().toLowerCase();
         List<Project> filtered = new ArrayList<>();
         for (Project p : allProjects) {
-            if ((p.getFullAddress() != null && p.getFullAddress().contains(query)) ||
-                    (p.getClient() != null && p.getClient().getFullName() != null && p.getClient().getFullName().contains(query)) ||
-                    (p.getProjectStatus() != null && p.getProjectStatus().contains(query))) {
+            String address = safe(p.getFullAddress());
+            String client  = p.getClient() != null ? safe(p.getClient().getFullName()) : "";
+            String status  = safe(p.getProjectStatus());
+            String note    = safe(p.getNote()); // *** חיפוש גם בהערה ***
+
+            if (address.contains(q) || client.contains(q) || status.contains(q) || note.contains(q)) {
                 filtered.add(p);
             }
         }
         adapter.updateData(filtered);
+        updateEmptyState();
+    }
+
+    private String safe(String s) {
+        return s == null ? "" : s.toLowerCase();
     }
 }
