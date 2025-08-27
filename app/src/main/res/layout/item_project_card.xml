@@ -12,6 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:layoutDirection="rtl"
         android:padding="10dp">
 
         <ImageView
@@ -21,7 +22,7 @@
             android:scaleType="centerCrop"
             android:background="#CCC"
             android:contentDescription="תמונת הנכס"
-            android:layout_gravity="center_vertical"/>
+            android:layout_gravity="center_vertical" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -31,6 +32,7 @@
             android:paddingStart="12dp"
             android:gravity="right">
 
+            <!-- כתובת (כותרת) -->
             <TextView
                 android:id="@+id/txtAddress"
                 android:layout_width="wrap_content"
@@ -38,26 +40,38 @@
                 android:text="כתובת"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:textColor="#333"/>
+                android:textColor="#333" />
 
+            <!-- הערה אופציונלית (מוסתרת אם ריק) -->
+            <TextView
+                android:id="@+id/txtNote"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="הערה אופציונלית"
+                android:textColor="#666"
+                android:textSize="13sp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"/>
+
+            <!-- סטטוס -->
             <TextView
                 android:id="@+id/txtStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="סטטוס"
                 android:textColor="#388E3C"
-                android:textSize="14sp"
-                android:paddingTop="2dp"
-                android:paddingBottom="2dp"/>
+                android:textSize="14sp" />
 
+            <!-- שם לקוח (אם רלוונטי) -->
             <TextView
                 android:id="@+id/txtClient"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="שם לקוח"
                 android:textColor="#666"
-                android:textSize="13sp"/>
+                android:textSize="13sp" />
 
+            <!-- תאריך עדכון -->
             <TextView
                 android:id="@+id/txtDate"
                 android:layout_width="wrap_content"
@@ -65,8 +79,9 @@
                 android:text="תאריך עדכון"
                 android:textColor="#999"
                 android:textSize="12sp"
-                android:paddingBottom="4dp"/>
+                android:paddingBottom="4dp" />
 
+            <!-- פעולות -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -76,43 +91,41 @@
                     android:id="@+id/btnEdit"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
-                    android:minWidth="48dp"
+                    android:minWidth="64dp"
                     android:minHeight="48dp"
                     android:text="ערוך"
                     android:textSize="13sp"
-                    android:layout_marginEnd="4dp"/>
+                    android:layout_marginEnd="4dp" />
 
                 <Button
                     android:id="@+id/btnImages"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
-                    android:minWidth="48dp"
+                    android:minWidth="64dp"
                     android:minHeight="48dp"
                     android:text="תמונות"
                     android:textSize="13sp"
-                    android:layout_marginEnd="4dp"/>
+                    android:layout_marginEnd="4dp" />
 
                 <Button
                     android:id="@+id/btnReport"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
-                    android:minWidth="48dp"
+                    android:minWidth="64dp"
                     android:minHeight="48dp"
                     android:text="דו&quot;ח"
                     android:textSize="13sp"
-                    android:layout_marginEnd="4dp"/>
-
-
+                    android:layout_marginEnd="4dp" />
 
                 <Button
                     android:id="@+id/btnDelete"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
-                    android:minWidth="48dp"
+                    android:minWidth="64dp"
                     android:minHeight="48dp"
                     android:text="מחיקה"
                     android:textSize="13sp"
-                    android:textColor="#B71C1C"/>
+                    android:textColor="#B71C1C" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
