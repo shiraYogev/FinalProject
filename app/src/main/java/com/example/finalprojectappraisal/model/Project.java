@@ -146,6 +146,9 @@ public class Project {
     @SerializedName("property_summary")
     private String projectDescription;
 
+    // הערה אופציונלית של השמאי (יכולה להיות null/ריקה)
+    private String note;
+
 
 
     //////////     Constructors:     ////////////
@@ -615,6 +618,15 @@ public class Project {
     public void setExternalCladding(String externalCladding) {
         this.externalCladding = externalCladding;
     }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
     @Override
     public String toString() {
         return "Project{" +

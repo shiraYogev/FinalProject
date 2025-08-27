@@ -17,9 +17,14 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.example.finalprojectappraisal.model.Image;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.android.gms.tasks.OnFailureListener;
+
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,6 +60,13 @@ public class ProjectRepository {
     private final MutableLiveData<Project> currentProject = new MutableLiveData<>();
     private final MutableLiveData<List<Project>> allProjects = new MutableLiveData<>();
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
+
+    // Listener for live queries (all projects / by appraiser)
+    private ListenerRegistration allProjectsListener;
+
+    // נשמור את ה-appraiserId האחרון ששימש לטעינה, כדי לרענן אחרי פעולות (מחיקה למשל)
+    private String lastUsedAppraiserIdString = null;
+
 
 
     private ProjectRepository() {
@@ -206,6 +218,117 @@ public class ProjectRepository {
                 });
     }
 
+    /**
+     * Loads all projects for a specific appraiser (by appraiserId) and keeps a live listener.
+     * appraiserIdValue type MUST match Firestore field type (String or Number).
+     */
+    public void loadProjectsForAppraiser(Object appraiserIdValue) {
+        // detach previous listener (avoid double updates)
+        if (allProjectsListener != null) {
+            allProjectsListener.remove();
+            allProjectsListener = null;
+        }
+        if (appraiserIdValue == null) {
+            allProjects.setValue(new ArrayList<>());
+            errorMessage.setValue("appraiserIdValue is null");
+            return;
+        }
+
+        Query q = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .whereEqualTo("appraiserId", appraiserIdValue)
+                .orderBy("lastUpdateDate", Query.Direction.DESCENDING);
+
+        allProjectsListener = q.addSnapshotListener((snap, err) -> {
+            if (err != null) {
+                Log.e("FirestoreDebug", "listen error: " + err.getMessage());
+                allProjects.setValue(new ArrayList<>());
+                errorMessage.setValue("שגיאה בטעינת פרויקטים: " + err.getMessage());
+                return;
+            }
+            List<Project> out = new ArrayList<>();
+            if (snap != null) {
+                for (DocumentSnapshot d : snap.getDocuments()) {
+                    Project p = safeProjectFrom(d);
+                    if (p != null) out.add(p);
+                }
+            }
+            Log.d("FirestoreDebug", "Loaded (by appraiser) " + out.size() + " projects");
+            allProjects.setValue(out);
+        });
+    }
+
+
+    /** Convenience wrappers when you know the type */
+    /** טען פרויקטים לפי appraiserId (String) עם מאזין חי. */
+    // גרסה עם fallback: נסה עם orderBy, ואם יש FAILED_PRECONDITION -> נופל חזרה ללא מיון
+    public void loadProjectsForAppraiserIdString(@NonNull String appraiserId) {
+        lastUsedAppraiserIdString = appraiserId;
+
+        if (allProjectsListener != null) { allProjectsListener.remove(); allProjectsListener = null; }
+
+        Query q = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .whereEqualTo("appraiserId", appraiserId)
+                .orderBy("lastUpdateDate", Query.Direction.DESCENDING);
+
+        allProjectsListener = q.addSnapshotListener((snap, err) -> {
+            if (err != null) {
+                // אין אינדקס? ננסה מיד ללא מיון כדי שלא תהיי תקועה
+                if (err instanceof FirebaseFirestoreException &&
+                        ((FirebaseFirestoreException) err).getCode() == FirebaseFirestoreException.Code.FAILED_PRECONDITION) {
+                    loadProjectsForAppraiserNoOrder(appraiserId); // <-- ראי מטה
+                    return;
+                }
+                Log.e("FirestoreDebug", "listen error: " + err.getMessage());
+                allProjects.setValue(new ArrayList<>());
+                errorMessage.setValue("שגיאה בטעינת פרויקטים: " + err.getMessage());
+                return;
+            }
+            List<Project> out = new ArrayList<>();
+            if (snap != null) {
+                for (DocumentSnapshot d : snap.getDocuments()) {
+                    Project p = safeProjectFrom(d);
+                    if (p != null) out.add(p);
+                }
+            }
+            allProjects.setValue(out);
+        });
+    }
+
+
+    // בלי מיון (עד שיש אינדקס)
+    public void loadProjectsForAppraiserNoOrder(@NonNull String appraiserId) {
+        if (allProjectsListener != null) { allProjectsListener.remove(); allProjectsListener = null; }
+
+        Query q = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .whereEqualTo("appraiserId", appraiserId);
+
+        allProjectsListener = q.addSnapshotListener((snap, err) -> {
+            if (err != null) {
+                Log.e("FirestoreDebug", "listen error(no order): " + err.getMessage());
+                allProjects.setValue(new ArrayList<>());
+                errorMessage.setValue("שגיאה בטעינת פרויקטים: " + err.getMessage());
+                return;
+            }
+            List<Project> out = new ArrayList<>();
+            if (snap != null) {
+                for (DocumentSnapshot d : snap.getDocuments()) {
+                    Project p = safeProjectFrom(d);
+                    if (p != null) out.add(p);
+                }
+            }
+            // מיון בצד הלקוח (רק לתצוגה)
+            out.sort((a,b) -> Long.compare(
+                    b.getLastUpdateDate() == 0 ? Long.MIN_VALUE : b.getLastUpdateDate(),
+                    a.getLastUpdateDate() == 0 ? Long.MIN_VALUE : a.getLastUpdateDate()
+            ));
+            allProjects.setValue(out);
+        });
+    }
+
+    public void loadProjectsForAppraiserIdLong(long appraiserId) {
+        loadProjectsForAppraiser(appraiserId);
+    }
+
 
     /**
      * Loads projects with a specific status
@@ -343,8 +466,11 @@ public class ProjectRepository {
                             currentProjectId = null;
                             currentProject.setValue(null);
                         }
-                        // Refresh projects list
-                        loadAllProjects();
+                        if (lastUsedAppraiserIdString != null) {
+                            loadProjectsForAppraiserIdString(lastUsedAppraiserIdString);
+                        } else {
+                            loadAllProjects(); // fallback אם לא השתמשנו במסנן
+                        }
                     }
                     if (listener != null) {
                         listener.onComplete(task);
@@ -516,17 +642,15 @@ public class ProjectRepository {
                     }
                     List<Image> out = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : task.getResult()) {
-                        Map<String, Object> data = doc.getData(); // <-- לא toObject(Image.class)
+                        Map<String, Object> data = doc.getData();   // <-- לא toObject(Image.class)
                         if (data == null) continue;
                         try {
-                            out.add(new Image(data));            // <-- הבנאי שלך ממיר Enumים נכון
+                            out.add(new Image(data));               // <-- ממפה מתוך Map<String,Object>
                         } catch (Exception ignore) {}
                     }
                     listener.onComplete(Tasks.forResult(out));
                 })
-                .addOnFailureListener(e -> {
-                    listener.onComplete(Tasks.forException(e));
-                });
+                .addOnFailureListener(e -> listener.onComplete(Tasks.forException(e)));
     }
 
 
@@ -612,6 +736,51 @@ public class ProjectRepository {
                     }
                 });
     }
+
+    /** Safe mapping from DocumentSnapshot to Project:
+     * - fills projectId from docId if missing
+     * - supports lastUpdateDate stored as Timestamp/Long/Double
+     * - avoids dropping documents on minor type mismatches
+     */
+    private Project safeProjectFrom(DocumentSnapshot d) {
+        Project p;
+        try {
+            p = d.toObject(Project.class);
+        } catch (Exception e) {
+            Log.w("FirestoreDebug", "toObject failed for " + d.getId() + ": " + e.getMessage());
+            p = new Project(); // ודאי שיש קונסטר' ריק
+        }
+        if (p == null) p = new Project();
+
+        // השלמת projectId מה-doc id אם חסר
+        try {
+            if (p.getProjectId() == null || p.getProjectId().trim().isEmpty()) {
+                p.setProjectId(d.getId());
+            }
+        } catch (Exception ignore) {}
+
+        // lastUpdateDate יכול להיות Timestamp/Long/Double
+        try {
+            Object ts = d.get("lastUpdateDate");
+            long millis = 0L;
+            if (ts instanceof Timestamp) {
+                millis = ((Timestamp) ts).toDate().getTime();
+            } else if (ts instanceof Long) {
+                millis = (Long) ts;
+            } else if (ts instanceof Double) {
+                millis = ((Double) ts).longValue();
+            }
+            if (p.getLastUpdateDate() == 0L && millis > 0L) {
+                p.setLastUpdateDate(millis);
+            }
+        } catch (Exception e) {
+            Log.w("FirestoreDebug", "lastUpdateDate parse failed for " + d.getId() + ": " + e.getMessage());
+        }
+
+        return p;
+    }
+
+
 
     /**
      * Refreshes the current project data
