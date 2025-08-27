@@ -19,18 +19,31 @@ import java.util.List;
 
 public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategoriesAdapter.CategoryViewHolder> {
 
+    public interface OnAddImageListener {
+        void onAddImage(@NonNull ImageCategorySection section);
+    }
+
+    /** Callback למחיקת תמונה – מועבר ל-Activity/Fragment כדי לבצע מחיקה מה-DB */
+    public interface OnImageDeleteListener {
+        void onDelete(@NonNull ImageCategorySection section,
+                      @NonNull Image image,
+                      int sectionIndex,
+                      int imageIndex);
+    }
+
     private final List<ImageCategorySection> categories;
     private final Context context;
     private final OnAddImageListener addImageListener;
+    private final OnImageDeleteListener deleteListener;
 
-    public interface OnAddImageListener {
-        void onAddImage(ImageCategorySection section);
-    }
-
-    public ImageCategoriesAdapter(List<ImageCategorySection> categories, Context context, OnAddImageListener listener) {
+    public ImageCategoriesAdapter(@NonNull List<ImageCategorySection> categories,
+                                  @NonNull Context context,
+                                  @NonNull OnAddImageListener addImageListener,
+                                  @NonNull OnImageDeleteListener deleteListener) {
         this.categories = categories;
         this.context = context;
-        this.addImageListener = listener;
+        this.addImageListener = addImageListener;
+        this.deleteListener = deleteListener;
     }
 
     @NonNull
@@ -45,36 +58,45 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
         ImageCategorySection section = categories.get(position);
         holder.txtTitle.setText(section.title);
 
-        // יצירת ה-adapter עם reference לעמדה הנוכחית
-        final int currentPosition = position;  // שמירת העמדה הנוכחית
+        // Adapter לתמונות בתוך הסקשן
         ImagePagerAdapter pagerAdapter = new ImagePagerAdapter(
                 section.images,
                 new ImagePagerAdapter.OnImageActionListener() {
                     @Override
                     public void onDelete(int imagePosition) {
-                        section.images.remove(imagePosition);
-                        // עדכון ה-ViewPager
-                        holder.viewPagerImages.getAdapter().notifyItemRemoved(imagePosition);
-                        // עדכון הכותרת אם צריך (למשל מספר תמונות)
-                        notifyItemChanged(currentPosition);
+                        // אל תמחוק כאן מה-UI: מעבירים ל-Activity שיטפל (כולל DB + Rollback)
+                        int sectionIndex = holder.getAdapterPosition();
+                        if (sectionIndex == RecyclerView.NO_POSITION) return;
+                        if (imagePosition < 0 || imagePosition >= section.images.size()) return;
+
+                        Image image = section.images.get(imagePosition);
+                        if (deleteListener != null) {
+                            deleteListener.onDelete(section, image, sectionIndex, imagePosition);
+                        }
                     }
 
                     @Override
                     public void onDescriptionChanged(int imagePosition, String newText) {
-                        if (imagePosition < section.images.size()) {
+                        if (imagePosition >= 0 && imagePosition < section.images.size()) {
                             section.images.get(imagePosition).setDescription(newText);
+                            // אם תרצי לשמור ל-DB, תעשי זאת ב-Activity דרך callback נפרד
                         }
                     }
 
                     @Override
                     public void onImageClick(int imagePosition) {
-                        // הגדלת תמונה או פעולות אחרות
+                        // פתיחת תצוגה מורחבת/דיאלוג – אם תרצי, תעשי זאת ב-Activity דרך callback נוסף
                     }
                 }
         );
 
         holder.viewPagerImages.setAdapter(pagerAdapter);
-        holder.btnAddImage.setOnClickListener(v -> addImageListener.onAddImage(section));
+
+        holder.btnAddImage.setOnClickListener(v -> {
+            if (addImageListener != null) {
+                addImageListener.onAddImage(section);
+            }
+        });
     }
 
     @Override
@@ -82,9 +104,7 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
         return categories.size();
     }
 
-    /**
-     * רענון של קטגוריה מסוימת (למשל אחרי הוספת תמונה)
-     */
+    /** רענון של קטגוריה מסוימת (למשל אחרי הוספה/מחיקה ב-Activity) */
     public void notifyImageChanged(int categoryPosition) {
         notifyItemChanged(categoryPosition);
     }
