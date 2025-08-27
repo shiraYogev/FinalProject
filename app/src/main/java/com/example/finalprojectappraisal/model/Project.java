@@ -71,6 +71,9 @@ public class Project {
     @SerializedName("construction_material")
     private String constructionMaterial;
 
+    @SerializedName("external_cladding")
+    private String externalCladding;
+
 
     // Apartment details
     @SerializedName("apartment_number(municipal_form)")
@@ -605,6 +608,13 @@ public class Project {
     public String getConstructionMaterial() { return constructionMaterial; }
     public void setConstructionMaterial(String constructionMaterial) { this.constructionMaterial = constructionMaterial; }
 
+    public String getExternalCladding() {
+        return externalCladding;
+    }
+
+    public void setExternalCladding(String externalCladding) {
+        this.externalCladding = externalCladding;
+    }
     @Override
     public String toString() {
         return "Project{" +
