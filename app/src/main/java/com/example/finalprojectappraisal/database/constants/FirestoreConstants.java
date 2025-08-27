@@ -11,11 +11,27 @@ public final class FirestoreConstants {
         throw new AssertionError("Cannot instantiate constants class");
     }
 
+    // =========================
     // Collection Names
+    // =========================
     public static final String COLLECTION_PROJECTS = "projects";
     public static final String COLLECTION_CLIENTS = "clients";
 
+    // =========================
+    // Subcollection Names
+    // =========================
+    // ADD: images subcollection under each project
+    public static final String SUBCOLLECTION_IMAGES = "images";
+
+    // =========================
+    // Fixed document IDs inside subcollections
+    // =========================
+    // ADD: single document aggregating image paths
+    public static final String IMAGES_DOC_MAIN = "main";
+
+    // =========================
     // Field Names - Project
+    // =========================
     public static final String FIELD_PROJECT_ID = "projectId";
     public static final String FIELD_PROJECT_STATUS = "projectStatus";
     public static final String FIELD_FULL_ADDRESS = "fullAddress";
@@ -24,14 +40,18 @@ public final class FirestoreConstants {
     public static final String FIELD_BUILDING_CONDITION = "buildingCondition";
     public static final String FIELD_NUMBER_OF_FLOORS = "numberOfFloors";
 
+    // =========================
     // Field Names - Apartment
+    // =========================
     public static final String FIELD_APARTMENT_NUMBER = "apartmentNumber";
     public static final String FIELD_FLOOR_NUMBER = "floorNumber";
     public static final String FIELD_NUMBER_OF_ROOMS = "numberOfRooms";
     public static final String FIELD_REGISTERED_AREA = "registeredArea";
     public static final String FIELD_GROSS_AREA = "grossArea";
 
+    // =========================
     // Field Names - Features
+    // =========================
     public static final String FIELD_FLOORING_TYPE = "flooringType";
     public static final String FIELD_KITCHEN_CONDITION = "kitchenCondition";
     public static final String FIELD_ENTRANCE_DOOR_CONDITION = "entranceDoorCondition";
@@ -45,7 +65,21 @@ public final class FirestoreConstants {
     public static final String FIELD_HAS_PARKING = "hasParking";
     public static final String FIELD_HAS_CENTRAL_HEATING = "hasCentralHeating";
 
+    // =========================
+    // Field Names - Image Paths (projects/{projectId}/images/main)
+    // =========================
+    // ADD: required image path fields
+    // ADD: field key for the array on the Project document
+    public static final String FIELD_PROPERTY_IMAGES = "propertyImages";
+    public static final String KEY_PROPIMG_NAME = "name";
+    public static final String KEY_PROPIMG_PATH = "path";
+    public static final String FIELD_FRONT_IMAGE = "front_image";
+    public static final String FIELD_INTERIOR_IMAGE = "interior_image";
+    public static final String FIELD_TABU_CROP_IMAGE = "tabu_crop_image";
+
+    // =========================
     // Error Messages (Hebrew)
+    // =========================
     public static final String ERROR_PROJECT_NOT_FOUND = "פרויקט לא קיים";
     public static final String ERROR_LOADING_PROJECT = "שגיאה בטעינת פרויקט";
     public static final String ERROR_LOADING_PROJECTS = "שגיאה בטעינת פרויקטים";
@@ -56,7 +90,9 @@ public final class FirestoreConstants {
     public static final String ERROR_UPDATING_STATUS = "שגיאה בעדכון סטטוס";
     public static final String ERROR_PROJECT_NOT_FOUND_WITH_ID = "לא נמצא פרויקט עם המזהה ";
 
+    // =========================
     // Project Status Values
+    // =========================
     public static final String STATUS_DRAFT = "draft";
     public static final String STATUS_IN_PROGRESS = "in_progress";
     public static final String STATUS_COMPLETED = "completed";

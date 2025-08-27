@@ -12,27 +12,27 @@ import com.example.finalprojectappraisal.database.validator.ProjectDataValidator
 import com.example.finalprojectappraisal.model.Client;
 import com.example.finalprojectappraisal.model.Project;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.example.finalprojectappraisal.model.Image;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.android.gms.tasks.OnFailureListener;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
 import android.net.Uri;
-import java.io.File;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Date;
-import com.example.finalprojectappraisal.model.PdfDocument; // יצירת קלאס חדש עבור מסמכים
-
 
 /**
  * Main repository class that handles Firebase Firestore operations for projects.
@@ -44,27 +44,28 @@ public class ProjectRepository {
     private static ProjectRepository instance;
     private final FirebaseFirestore db;
     private final ProjectUpdateManager updateManager;
-    private String currentProjectId;
 
+    // ADDED: Firebase Storage for documents (Bank details PDFs, etc.)
     private final FirebaseStorage storage;
     private final StorageReference storageRef;
 
+    private String currentProjectId;
 
     // LiveData for reactive programming
     private final MutableLiveData<Project> currentProject = new MutableLiveData<>();
     private final MutableLiveData<List<Project>> allProjects = new MutableLiveData<>();
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
 
+
     private ProjectRepository() {
         db = FirebaseFirestore.getInstance();
-
-        // אתחול Firebase Storage לפני שימוש ברפרנס שלו
+        updateManager = new ProjectUpdateManager(db, errorMessage);
+        // Initialize Firebase Storage
         storage = FirebaseStorage.getInstance();
         storageRef = storage.getReference();
 
-        // אתחול ProjectUpdateManager פעם אחת בלבד
-        updateManager = new ProjectUpdateManager(db, errorMessage);
     }
+
     /**
      * Gets the singleton instance of ProjectRepository
      */
@@ -256,28 +257,44 @@ public class ProjectRepository {
     /**
      * Saves property details to the project (delegated to UpdateManager)
      */
-    public void savePropertyDetails(String projectId, Map<String, Object> propertyDetails, OnCompleteListener<Void> listener) {
-        ProjectDataValidator.ValidationResult validation = ProjectDataValidator.validatePropertyDetails(propertyDetails);
-        if (!validation.isValid()) {
-            handleError("Property details validation failed: " + validation.getErrorsAsString(), listener);
-            return;
-        }
-
+    public void savePropertyDetails(String projectId,
+                                    Map<String, Object> propertyDetails,
+                                    OnCompleteListener<Void> listener) {
         updateManager.savePropertyDetails(projectId, propertyDetails, listener);
     }
 
     /**
      * Saves apartment details to the project (delegated to UpdateManager)
      */
-    public void saveApartmentDetails(String projectId, Map<String, Object> apartmentDetails, OnCompleteListener<Void> listener) {
-        ProjectDataValidator.ValidationResult validation = ProjectDataValidator.validateApartmentDetails(apartmentDetails);
+    public void saveApartmentDetails(String projectId,
+                                     Map<String, Object> apartmentDetails,
+                                     OnCompleteListener<Void> listener) {
+        ProjectDataValidator.ValidationResult validation =
+                ProjectDataValidator.validateApartmentDetails(apartmentDetails);
         if (!validation.isValid()) {
             handleError("Apartment details validation failed: " + validation.getErrorsAsString(), listener);
             return;
         }
 
-        updateManager.saveApartmentDetails(projectId, apartmentDetails, listener);
+        // 1) שמירה ל-property_details
+        updateManager.saveApartmentDetails(projectId, apartmentDetails, task -> {
+            if (!task.isSuccessful()) {
+                if (listener != null) listener.onComplete(task);
+                return;
+            }
+
+            // 2) ניקוי כפילויות מהשורש דרך ה-wrapper של ה-Repository
+            cleanupRootDuplicates(projectId, cleanupTask -> {
+                if (listener != null) listener.onComplete(cleanupTask);
+            });
+        });
     }
+
+    public void cleanupRootDuplicates(String projectId,
+                                      com.google.android.gms.tasks.OnCompleteListener<Void> listener) {
+        updateManager.cleanupRootDuplicateFields(projectId, listener);
+    }
+
 
     /**
      * Saves property features to the project (delegated to UpdateManager)
@@ -336,7 +353,110 @@ public class ProjectRepository {
                 .addOnFailureListener(e -> errorMessage.setValue(FirestoreConstants.ERROR_DELETING_PROJECT + ": " + e.getMessage()));
     }
 
+    // ========================= BANK DETAILS / פרטי הבנק =========================
+    // Upload a bank-details PDF to Firebase Storage and save its metadata under
+    // projects/{projectId}/documents in Firestore.
+    public void addPdfToProject(String projectId, Uri pdfUri, String fileName, OnCompleteListener<Void> listener) {
+        if (projectId == null || projectId.trim().isEmpty() || pdfUri == null || fileName == null || fileName.trim().isEmpty()) {
+            handleError("Project ID, PDF URI, and file name are required", listener);
+            return;
+        }
+
+        // Create a reference for the PDF in Storage:
+        // e.g. projects/{projectId}/documents/{fileName}
+        StorageReference pdfRef = storageRef.child("projects/" + projectId + "/documents/" + fileName);
+
+        // Upload the file to Storage
+        pdfRef.putFile(pdfUri)
+                .addOnSuccessListener(taskSnapshot -> {
+                    // Retrieve the public download URL
+                    pdfRef.getDownloadUrl()
+                            .addOnSuccessListener(uri -> {
+                                // Prepare metadata to store in Firestore
+                                Map<String, Object> docData = new HashMap<>();
+                                docData.put("fileName", fileName);
+                                docData.put("url", uri.toString());
+                                docData.put("timestamp", new Date());
+                                docData.put("type", "BANK_DETAILS_PDF"); // optional: classify as bank-details
+
+                                // Save a document record under projects/{projectId}/documents
+                                db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                                        .document(projectId)
+                                        .collection("documents")
+                                        .add(docData) // auto-ID
+                                        .addOnSuccessListener(documentReference -> {
+                                            if (listener != null) {
+                                                listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(null));
+                                            }
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            errorMessage.setValue("שגיאה בשמירת פרטי המסמך: " + e.getMessage());
+                                            if (listener != null) {
+                                                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(e));
+                                            }
+                                        });
+                            })
+                            .addOnFailureListener(e -> {
+                                errorMessage.setValue("שגיאה בהשגת URL: " + e.getMessage());
+                                if (listener != null) {
+                                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(e));
+                                }
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    errorMessage.setValue("שגיאה בהעלאת מסמך: " + e.getMessage());
+                    if (listener != null) {
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(e));
+                    }
+                });
+    }
+
+
     // ========================= IMAGE MANAGEMENT =========================
+
+
+    /**
+     * Saves image path fields into projects/{projectId}/images/main (merge)
+     * Allowed keys: front_image, interior_image, tabu_crop_image
+     */
+    public void saveImagePaths(@NonNull String projectId,
+                               @NonNull Map<String, Object> imagePaths,
+                               OnCompleteListener<Void> listener) {
+        if (projectId == null || projectId.trim().isEmpty()) {
+            handleError("Project ID is required", listener);
+            return;
+        }
+        if (imagePaths == null || imagePaths.isEmpty()) {
+            handleError("imagePaths cannot be null or empty", listener);
+            return;
+        }
+
+        updateManager.saveImagePaths(projectId, imagePaths, task -> {
+            if (!task.isSuccessful()) {
+                if (listener != null) listener.onComplete(task);
+                return;
+            }
+            // ריענון פרויקט נוכחי אם הוא זה שעודכן
+            if (projectId.equals(currentProjectId)) {
+                refreshCurrentProject();
+            }
+            if (listener != null) listener.onComplete(task);
+        });
+    }
+
+    /**
+     * Convenience: update a single image path field key->value
+     * fieldName must be one of:
+     * FirestoreConstants.FIELD_FRONT_IMAGE / FIELD_INTERIOR_IMAGE / FIELD_TABU_CROP_IMAGE
+     */
+    public void updateSingleImagePath(@NonNull String projectId,
+                                      @NonNull String fieldName,
+                                      @NonNull String path,
+                                      OnCompleteListener<Void> listener) {
+        Map<String, Object> data = new java.util.HashMap<>();
+        data.put(fieldName, path);
+        saveImagePaths(projectId, data, listener);
+    }
 
 
     public void addImageToProject(String projectId, Image image, OnCompleteListener<Void> listener) {
@@ -382,19 +502,94 @@ public class ProjectRepository {
     }
 
     // שליפת כל התמונות של פרויקט:
-    public void getImagesForProject(String projectId, OnCompleteListener<QuerySnapshot> listener) {
-        if (projectId == null) {
-            handleError("Project ID is required", null);
-            return;
-        }
+    // שליפת כל התמונות כ-List<Image> (ללא toObject)
+    public void getImagesForProject(String projectId, OnCompleteListener<List<Image>> listener) {
         db.collection(FirestoreConstants.COLLECTION_PROJECTS)
                 .document(projectId)
                 .collection("images")
                 .get()
-                .addOnCompleteListener(listener)
-                .addOnFailureListener(e -> errorMessage.setValue("שגיאה בטעינת תמונות: " + e.getMessage()));
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful() || task.getResult() == null) {
+                        Exception e = (task.getException() != null) ? task.getException() : new Exception("images fetch failed");
+                        listener.onComplete(Tasks.forException(e));
+                        return;
+                    }
+                    List<Image> out = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : task.getResult()) {
+                        Map<String, Object> data = doc.getData(); // <-- לא toObject(Image.class)
+                        if (data == null) continue;
+                        try {
+                            out.add(new Image(data));            // <-- הבנאי שלך ממיר Enumים נכון
+                        } catch (Exception ignore) {}
+                    }
+                    listener.onComplete(Tasks.forResult(out));
+                })
+                .addOnFailureListener(e -> {
+                    listener.onComplete(Tasks.forException(e));
+                });
     }
 
+
+    public void upsertPropertyImage(@NonNull String projectId,
+                                    @NonNull String name,
+                                    @NonNull String path,
+                                    OnCompleteListener<Void> listener) {
+        if (projectId.trim().isEmpty() || name.trim().isEmpty() || path.trim().isEmpty()) {
+            handleError("projectId/name/path are required", listener);
+            return;
+        }
+        updateManager.upsertPropertyImage(projectId, name, path, task -> {
+            if (projectId.equals(currentProjectId)) refreshCurrentProject();
+            if (listener != null) listener.onComplete(task);
+        });
+    }
+
+    public void removePropertyImageIfMatches(@NonNull String projectId,
+                                             @NonNull String name,
+                                             @NonNull String expectedPath,
+                                             OnCompleteListener<Void> listener) {
+        if (projectId.trim().isEmpty() || name.trim().isEmpty() || expectedPath.trim().isEmpty()) {
+            handleError("projectId/name/expectedPath are required", listener);
+            return;
+        }
+        updateManager.removePropertyImageIfMatches(projectId, name, expectedPath, task -> {
+            if (projectId.equals(currentProjectId)) refreshCurrentProject();
+            if (listener != null) listener.onComplete(task);
+        });
+    }
+
+    /** Minimal set of structured fields recommended for the summary prompt. */
+    public void getProjectFieldsForSummary(String projectId, OnCompleteListener<Map<String, Object>> listener) {
+        db.collection("projects").document(projectId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful() || task.getResult() == null || !task.getResult().exists()) {
+                        listener.onComplete(Tasks.forResult(Collections.emptyMap()));
+                        return;
+                    }
+                    DocumentSnapshot doc = task.getResult();
+                    Map<String, Object> map = new HashMap<>();
+                    // Adapt keys to your @PropertyName mapping:
+                    putIfExists(doc, map, "rooms_count");
+                    putIfExists(doc, map, "building_condition");
+                    putIfExists(doc, map, "has_elevator");
+                    putIfExists(doc, map, "has_parking");
+                    putIfExists(doc, map, "has_storage");
+                    putIfExists(doc, map, "apartment_flooring");
+                    putIfExists(doc, map, "apartment_windows");
+                    putIfExists(doc, map, "apartment_kitchen");
+                    putIfExists(doc, map, "apartment_bathroom_fixtures");
+                    // Add more if helpful
+                    listener.onComplete(Tasks.forResult(map));
+                });
+    }
+
+    private static void putIfExists(DocumentSnapshot doc, Map<String, Object> out, String key) {
+        if (doc.contains(key)) {
+            Object v = doc.get(key);
+            if (v != null) out.put(key, v);
+        }
+    }
 
     // ========================= UTILITY METHODS =========================
 
@@ -474,57 +669,5 @@ public class ProjectRepository {
      */
     public ProjectUpdateManager getUpdateManager() {
         return updateManager;
-    }
-
-    public void addPdfToProject(String projectId, Uri pdfUri, String fileName, OnCompleteListener<Void> listener) {
-        if (projectId == null || pdfUri == null || fileName == null) {
-            handleError("Project ID, PDF URI, and file name are required", listener);
-            return;
-        }
-
-        // יצירת רפרנס לקובץ ב-Firebase Storage
-        StorageReference pdfRef = storageRef.child("projects/" + projectId + "/documents/" + fileName);
-
-        // העלאת הקובץ
-        pdfRef.putFile(pdfUri)
-                .addOnSuccessListener(taskSnapshot -> {
-                    // קבלת URL של הקובץ שהועלה
-                    pdfRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                                // יצירת מודל והוספתו ל-Firestore
-                                Map<String, Object> docData = new HashMap<>();
-                                docData.put("fileName", fileName);
-                                docData.put("url", uri.toString());
-                                docData.put("timestamp", new Date());
-
-                                db.collection(FirestoreConstants.COLLECTION_PROJECTS)
-                                        .document(projectId)
-                                        .collection("documents") // קולקציה חדשה למסמכים
-                                        .add(docData) // שימוש ב-add() ליצירת ID אוטומטי
-                                        .addOnSuccessListener(documentReference -> {
-                                            // המשימה הצליחה, מעבירים הודעת הצלחה חזרה ל-listener המקורי
-                                            if (listener != null) {
-                                                listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(null));
-                                            }
-                                        })
-                                        .addOnFailureListener(e -> {
-                                            errorMessage.setValue("שגיאה בשמירת פרטי המסמך: " + e.getMessage());
-                                            if (listener != null) {
-                                                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(e));
-                                            }
-                                        });
-                            })
-                            .addOnFailureListener(e -> {
-                                errorMessage.setValue("שגיאה בהשגת URL: " + e.getMessage());
-                                if (listener != null) {
-                                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(e));
-                                }
-                            });
-                })
-                .addOnFailureListener(e -> {
-                    errorMessage.setValue("שגיאה בהעלאת מסמך: " + e.getMessage());
-                    if (listener != null) {
-                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(e));
-                    }
-                });
     }
 }
