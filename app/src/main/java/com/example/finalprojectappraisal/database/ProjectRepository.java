@@ -9,6 +9,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.finalprojectappraisal.database.constants.FirestoreConstants;
 import com.example.finalprojectappraisal.database.updater.ProjectUpdateManager;
 import com.example.finalprojectappraisal.database.validator.ProjectDataValidator;
+import com.example.finalprojectappraisal.model.BankDetails;
 import com.example.finalprojectappraisal.model.Client;
 import com.example.finalprojectappraisal.model.Project;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -526,5 +527,11 @@ public class ProjectRepository {
                         listener.onComplete(com.google.android.gms.tasks.Tasks.forException(e));
                     }
                 });
+    }
+    public void saveBankDetailsToProject(String projectId, BankDetails bankDetails, OnCompleteListener<Void> listener) {
+        db.collection("projects")
+                .document(projectId)
+                .update("bankDetails", bankDetails)
+                .addOnCompleteListener(listener);
     }
 }
