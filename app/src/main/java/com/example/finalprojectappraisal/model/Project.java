@@ -71,6 +71,9 @@ public class Project {
     @SerializedName("construction_material")
     private String constructionMaterial;
 
+    @SerializedName("external_cladding")
+    private String externalCladding;
+
 
     // Apartment details
     @SerializedName("apartment_number(municipal_form)")
@@ -142,6 +145,9 @@ public class Project {
     private String projectStatus; // Status of the project (e.g., in progress, completed)
     @SerializedName("property_summary")
     private String projectDescription;
+
+    // הערה אופציונלית של השמאי (יכולה להיות null/ריקה)
+    private String note;
 
 
 
@@ -604,6 +610,22 @@ public class Project {
 
     public String getConstructionMaterial() { return constructionMaterial; }
     public void setConstructionMaterial(String constructionMaterial) { this.constructionMaterial = constructionMaterial; }
+
+    public String getExternalCladding() {
+        return externalCladding;
+    }
+
+    public void setExternalCladding(String externalCladding) {
+        this.externalCladding = externalCladding;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
 
     @Override
     public String toString() {

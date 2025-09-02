@@ -67,5 +67,17 @@ public final class Choices {
 
     public static final List<String> AIR_DIRECTIONS = Arrays.asList("צפון","דרום","מזרח","מערב");
 
+    public static final List<String> EXTERNAL_CLADDING_OPTIONS = Arrays.asList(
+            "טיח רגיל",
+            "טיח צבעוני",
+            "אבן טבעית",
+            "שיש",
+            "שיש חברון",
+            "שיש גרניט",
+            "חיפוי אלומיניום",
+            "קירות מסך זכוכית",
+            "אחר"
+    );
+
 
 }

@@ -1,10 +1,186 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
+    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activity.newProject.property.activity.PropertyDescriptionActivity">
+    android:padding="16dp"
+    android:layoutDirection="rtl"
+    android:textDirection="rtl"
+    android:focusableInTouchMode="true">
+
+    <!-- Progress overlay -->
+    <FrameLayout
+        android:id="@+id/progress"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#80FFFFFF"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ProgressBar
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center" />
+    </FrameLayout>
+
+    <ScrollView
+        android:id="@+id/scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/actionsRow"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layoutDirection="rtl"
+            android:textDirection="rtl">
+
+            <!-- Maintenance -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="תחזוקה / שיפוצים (ידני)"
+                android:layout_marginBottom="12dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edtMaintenance"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine"
+                    android:minLines="2"
+                    android:maxLines="5" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- What the apartment includes -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="מה כלול בדירה (ידני)"
+                android:layout_marginBottom="12dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edtApartmentIncludes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine"
+                    android:minLines="2"
+                    android:maxLines="5" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Property Summary + AI buttons -->
+            <TextView
+                android:id="@+id/labelSummary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="תקציר כללי (3 משפטים)"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:id="@+id/aiRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end"
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/btnAiSummary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:minWidth="88dp"
+                    android:text="צור תקציר אוטומטי" />
+
+                <!-- Optional: Regenerate / Refine -->
+                <Space
+                    android:layout_width="8dp"
+                    android:layout_height="0dp" />
+
+                <Button
+                    android:id="@+id/btnAiRegenerate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:minWidth="72dp"
+                    android:text="גרסה נוספת" />
+
+                <Space
+                    android:layout_width="8dp"
+                    android:layout_height="0dp" />
+
+                <Button
+                    android:id="@+id/btnAiRefine"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:minWidth="72dp"
+                    android:text="מיקוד" />
+            </LinearLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="תיאור כללי (ניתן לעריכה)">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edtPropertySummary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine"
+                    android:minLines="3"
+                    android:maxLines="6" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Optional helper text -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="* התקציר ייווצר מ־תמונה אחת מייצגת לכל קטגוריה + שדות קיימים, ותמיד ניתן לערוך ידנית."
+                android:textSize="12sp"
+                android:textColor="#666666"
+                android:layout_marginTop="6dp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Bottom actions -->
+    <LinearLayout
+        android:id="@+id/actionsRow"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <Button
+            android:id="@+id/btnSkip"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="דלג" />
+
+        <Space
+            android:layout_width="12dp"
+            android:layout_height="0dp" />
+
+        <Button
+            android:id="@+id/btnSaveSummary"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="2"
+            android:text="שמור" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
