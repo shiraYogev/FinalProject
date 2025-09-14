@@ -14,12 +14,8 @@ import com.example.finalprojectappraisal.database.ProjectRepository;
 import com.example.finalprojectappraisal.model.Client;
 import com.example.finalprojectappraisal.model.Project;
 import com.google.firebase.auth.FirebaseAuth;
-
-/**
- * ClientDetailsActivity manages the user interface for entering and updating client information in the appraisal system.
- * It allows users to input a client's ID, name, email, phone number, and property address.
- * After saving the data, it creates a new Project and stores it in Firebase under the address.
- */
+import com.google.firebase.firestore.FieldValue;              // ✨
+import com.google.firebase.firestore.FirebaseFirestore;      // ✨
 
 public class ClientDetailsActivity extends AppCompatActivity {
 
@@ -46,11 +42,11 @@ public class ClientDetailsActivity extends AppCompatActivity {
     }
 
     private void saveClientAndProject() {
-        String clientId = clientIdEditText.getText().toString().trim();
-        String fullName = fullNameEditText.getText().toString().trim();
-        String email = emailEditText.getText().toString().trim();
-        String phoneNumber = phoneNumberEditText.getText().toString().trim();
-        String fullAddress = fullAddressEditText.getText().toString().trim();
+        String clientId   = clientIdEditText.getText().toString().trim();
+        String fullName   = fullNameEditText.getText().toString().trim();
+        String email      = emailEditText.getText().toString().trim();
+        String phoneNumber= phoneNumberEditText.getText().toString().trim();
+        String fullAddress= fullAddressEditText.getText().toString().trim();
 
         if (clientId.isEmpty() || fullName.isEmpty() || fullAddress.isEmpty()) {
             Toast.makeText(this, "יש למלא לפחות תעודת זהות, שם מלא וכתובת", Toast.LENGTH_SHORT).show();
@@ -58,35 +54,41 @@ public class ClientDetailsActivity extends AppCompatActivity {
         }
 
         // יצירת אובייקט Client
-        Client client = new Client(clientId, fullName, email, phoneNumber,null);
+        Client client = new Client(clientId, fullName, email, phoneNumber, null);
 
-        // יצירת אובייקט Project עם פרטי הלקוח והכתובת
-        Project project = new Project(); // משתמש בבנאי ברירת המחדל שמכניס גם זמנים וסטטוס
+        // יצירת אובייקט Project
+        Project project = new Project();
         project.setClient(client);
         project.setFullAddress(fullAddress);
 
-        // הוספת מזהה השמאי (המשתמש הנוכחי)
-        //Appraiser appraiser = getAppraiserFromDatabase(); // מחזיר את כל האובייקט עם כל השדות מלאים
-        //project.setAppraiser(appraiser);
-
+        // מזהה השמאי (UID)
         String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         project.setAppraiserId(uid);
-
-
-
-        // ניתן להוסיף כאן עוד שדות אם תרצי למסך (location, buildingType וכו')
 
         // שמירה ל-Firebase עם מזהה אוטומטי
         ProjectRepository.getInstance().createNewProject(project, task -> {
             if (task.isSuccessful()) {
                 Toast.makeText(ClientDetailsActivity.this, "הפרויקט נשמר בהצלחה!", Toast.LENGTH_SHORT).show();
 
-                // קבלת ה-id שג'ונרטנו (אם תרצי להעביר אותו הלאה)
+                // ה-ID שנוצר לפרויקט
                 String projectId = project.getProjectId();
 
-                // מעבר לפעילות הבאה
+                // ✨ הוספה למערך activeProjects של השמאי
+                FirebaseFirestore.getInstance()
+                        .collection("appraisers")
+                        .document(uid)
+                        .update("activeProjects", FieldValue.arrayUnion(projectId))
+                        .addOnSuccessListener(v -> {
+                            // אופציונלי: לוג/טוסט
+                            // Toast.makeText(this, "נוסף לרשימת הפרויקטים הפעילים", Toast.LENGTH_SHORT).show();
+                        })
+                        .addOnFailureListener(e -> {
+                            Toast.makeText(this, "שגיאה בעדכון activeProjects: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        });
+
+                // מעבר למסך הבא
                 Intent intent = new Intent(ClientDetailsActivity.this, UploadImagesActivity.class);
-                intent.putExtra("projectId", projectId); // להעביר projectId הלאה
+                intent.putExtra("projectId", projectId);
                 startActivity(intent);
                 finish();
             } else {
