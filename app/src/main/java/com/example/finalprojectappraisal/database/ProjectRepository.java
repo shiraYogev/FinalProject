@@ -318,6 +318,12 @@ public class ProjectRepository {
         loadProjectsForAppraiser(appraiserId);
     }
 
+    public void stopListening() {
+        if (allProjectsListener != null) {
+            allProjectsListener.remove();
+            allProjectsListener = null;
+        }
+    }
 
     /**
      * Loads projects with a specific status
