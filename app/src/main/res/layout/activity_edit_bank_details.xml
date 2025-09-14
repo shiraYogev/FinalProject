@@ -203,7 +203,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
-                        android:hint="תאריך מסמך (אנגלי)"
+                        android:hint="תאריך (לועזי)"
                         app:endIconMode="clear_text">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -219,7 +219,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
-                        android:hint="תאריך מסמך (עברי)"
+                        android:hint="תאריך (עברי)"
                         app:endIconMode="clear_text">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -235,7 +235,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
-                        android:hint="מספר שמאות"
+                        android:hint="מספר שומה"
                         app:endIconMode="clear_text">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -251,7 +251,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
-                        android:hint="מספר הלוואה"
+                        android:hint="מספר תיק/ הלוואה"
                         app:endIconMode="clear_text">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -320,8 +320,8 @@
                         android:text="פרטי הנכס"
                         android:textColor="?attr/colorPrimary"
                         android:textSize="18sp"
-                        android:textStyle="bold"
-                        app:drawableStartCompat="@drawable/ic_home" />
+                        android:textStyle="bold"/>
+
 
                     <!-- שורה עם 3 שדות במקביל -->
                     <LinearLayout
@@ -353,7 +353,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginHorizontal="4dp"
                             android:layout_weight="1"
-                            android:hint="חלקה"
+                            android:hint="מס' חלקה"
                             app:endIconMode="clear_text">
 
                             <com.google.android.material.textfield.TextInputEditText
@@ -370,7 +370,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:layout_weight="1"
-                            android:hint="תת-חלקה"
+                            android:hint="מס' תת-חלקה"
                             app:endIconMode="clear_text">
 
                             <com.google.android.material.textfield.TextInputEditText
@@ -387,7 +387,7 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="כתובת קצרה"
+                        android:hint="כתובת מלאה (רחוב, מס דירה, שכונה, קומה, עיר)"
                         app:endIconMode="clear_text">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -481,7 +481,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
-                        android:hint="זהות הלקוח"
+                        android:hint="זהות מזמין השומה"
                         app:endIconMode="clear_text">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -496,7 +496,7 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="תאריך סיום שמאות"
+                        android:hint="המועד הקובע לשומה"
                         app:endIconMode="clear_text">
 
                         <com.google.android.material.textfield.TextInputEditText
