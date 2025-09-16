@@ -119,10 +119,9 @@ public class HomePageActivity extends AppCompatActivity {
         // כפתור להגדרות
         View.OnClickListener settingsListener = v -> {
             addRippleEffect(v);
-            // TODO: יצירת אקטיביטי הגדרות
-            // intent = new Intent(HomePageActivity.this, SettingsActivity.class);
-            // startActivity(intent);
-            // overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
+             intent = new Intent(HomePageActivity.this, SettingsActivity.class);
+            startActivity(intent);
+            overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
         };
         settingsButton.setOnClickListener(settingsListener);
         cardSettings.setOnClickListener(settingsListener);
