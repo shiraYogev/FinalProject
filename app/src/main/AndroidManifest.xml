@@ -19,6 +19,27 @@
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_MEDIA_DOCUMENTS" />
+
+    <!-- ✅ NEW: declare visibility for maps packages/intents (Android 11+) -->
+    <queries>
+        <!-- Prefer Google Maps app if installed -->
+        <package android:name="com.google.android.apps.maps" />
+        <!-- Allow resolving geo: scheme -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+        <!-- Allow resolving web fallback (https / http) -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+    </queries>
+
     <application
         android:enableOnBackInvokedCallback="true"
         android:allowBackup="true"
