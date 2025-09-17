@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="project_statuses">
+        <item>טיוטה</item>
+        <item>בטיפול</item>
+        <item>הושלם</item>
+        <item>הוקפא</item>
+        <item>בוטל</item>
+    </string-array>
+</resources>
