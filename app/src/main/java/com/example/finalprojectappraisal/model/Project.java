@@ -1,10 +1,12 @@
 package com.example.finalprojectappraisal.model;
 
 import com.google.firebase.firestore.PropertyName;
+import com.google.firebase.firestore.ServerTimestamp;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,8 +34,8 @@ public class Project {
 
     // Creation and update timestamps
     private long creationDate;
-    private long lastUpdateDate;
-
+    @ServerTimestamp
+    private Date lastUpdateDate;
     // Property details
     @SerializedName("full_address")
     private String fullAddress;
@@ -157,10 +159,10 @@ public class Project {
      * Default constructor for Firestore
      */
     public Project() {
-        this.creationDate = System.currentTimeMillis();
-        this.lastUpdateDate = System.currentTimeMillis();
+        this.creationDate = System.currentTimeMillis(); // client time
+        this.lastUpdateDate = null;                     // server will fill on write
         this.projectStatus = "In Progress";
-        this.propertyImages = new ArrayList<Image>();
+        this.propertyImages = new ArrayList<>();
     }
 
     /**
@@ -231,7 +233,7 @@ public class Project {
     }
 
     public void updateLastUpdateDate() {
-        this.lastUpdateDate = System.currentTimeMillis();
+        this.lastUpdateDate = new Date(System.currentTimeMillis());
     }
 
     // Getters and Setters
@@ -270,12 +272,11 @@ public class Project {
         this.creationDate = creationDate;
     }
 
-    public long getLastUpdateDate() {
-        return lastUpdateDate;
-    }
+    public Date getLastUpdateDate() { return lastUpdateDate; }
+    public void setLastUpdateDate(Date lastUpdateDate) { this.lastUpdateDate = lastUpdateDate; }
 
-    public void setLastUpdateDate(long lastUpdateDate) {
-        this.lastUpdateDate = lastUpdateDate;
+    public long getLastUpdateDateMillis() {
+        return lastUpdateDate != null ? lastUpdateDate.getTime() : 0L;
     }
 
     @PropertyName("full_address")

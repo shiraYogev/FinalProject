@@ -80,11 +80,9 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
                 : "";
         holder.txtClient.setText(safeOrDash(clientName));
 
-        // תאריך עדכון (Long -> "dd/MM/yyyy")
-        long lastUpdate = (project != null) ? project.getLastUpdateDate() : 0L;
-        holder.txtDate.setText(lastUpdate > 0
-                ? "עודכן: " + formatDate(lastUpdate)
-                : "");
+        // תאריך עדכון ("dd/MM/yyyy")
+        long lastUpdate = (project != null) ? project.getLastUpdateDateMillis() : 0L;
+        holder.txtDate.setText(lastUpdate > 0 ? "עודכן: " + formatDate(lastUpdate) : "");
 
         // תמונה ממוזערת (לא חובה)
         // String imageUrl = project != null ? project.getFrontImageUrl() : null;

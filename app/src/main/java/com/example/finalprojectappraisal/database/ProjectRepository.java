@@ -30,6 +30,7 @@ import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -383,10 +384,8 @@ public class ProjectRepository {
                 }
             }
             // מיון בצד הלקוח (רק לתצוגה)
-            out.sort((a,b) -> Long.compare(
-                    b.getLastUpdateDate() == 0 ? Long.MIN_VALUE : b.getLastUpdateDate(),
-                    a.getLastUpdateDate() == 0 ? Long.MIN_VALUE : a.getLastUpdateDate()
-            ));
+            out.sort(Comparator.comparingLong(Project::getLastUpdateDateMillis).reversed());
+
             allProjects.setValue(out);
         });
     }
@@ -819,8 +818,8 @@ public class ProjectRepository {
             } else if (ts instanceof Double) {
                 millis = ((Double) ts).longValue();
             }
-            if (p.getLastUpdateDate() == 0L && millis > 0L) {
-                p.setLastUpdateDate(millis);
+            if (p.getLastUpdateDate() == null && millis > 0L) {
+                p.setLastUpdateDate(new Date(millis));
             }
         } catch (Exception e) {
             Log.w("FirestoreDebug", "lastUpdateDate parse failed for " + d.getId() + ": " + e.getMessage());
