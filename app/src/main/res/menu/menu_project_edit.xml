@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/action_edit_client"     android:title="עריכת פרטי לקוח" />
+    <item android:id="@+id/action_edit_apartment"  android:title="עריכת פרטי דירה" />
+    <item android:id="@+id/action_edit_property"   android:title="עריכת פרטי נכס" />
+    <item android:id="@+id/action_edit_bank"       android:title="עריכת פרטי בנק" />
+    <item android:id="@+id/action_edit_images"     android:title="עריכת תמונות" />
+</menu>
