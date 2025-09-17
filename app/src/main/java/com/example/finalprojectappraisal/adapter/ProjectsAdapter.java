@@ -8,12 +8,20 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.content.Intent;
+import android.widget.PopupMenu;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.app.AlertDialog;
+
 // import com.bumptech.glide.Glide; // השאירי אם תרצי טעינת תמונות ממוזערות
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.model.Project;
+import com.example.finalprojectappraisal.database.ProjectRepository;
+import com.example.finalprojectappraisal.database.constants.FirestoreConstants;
+import com.google.firebase.firestore.FieldValue;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -62,7 +70,7 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             holder.txtNote.setText(note);
         }
 
-        // סטטוס
+        // סטטוס (מציגים את מה ששמור בפרויקט)
         String status = project != null ? project.getProjectStatus() : null;
         holder.txtStatus.setText(!TextUtils.isEmpty(status) ? status : "סטטוס לא ידוע");
 
@@ -85,16 +93,22 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         //        .placeholder(R.drawable.ic_placeholder)
         //        .into(holder.imageThumb);
 
-        // כפתורי פעולה (שומרים על ההתנהגות המקורית שלך)
-        holder.btnEdit.setOnClickListener(v -> {
-            if (listener != null && project != null) listener.onEdit(project);
-        });
+        // כפתורי פעולה
+        holder.btnEdit.setOnClickListener(v -> showEditMenu(v, project));
+        holder.btnMore.setOnClickListener(v -> showEditMenu(v, project));
+
         holder.btnImages.setOnClickListener(v -> {
             if (listener != null && project != null) listener.onImages(project);
         });
         holder.btnReport.setOnClickListener(v -> {
             if (listener != null && project != null) listener.onReport(project);
         });
+
+        holder.btnChangeStatus.setOnClickListener(v -> {
+            if (project == null) return;
+            showStatusDialog(project, holder);
+        });
+
         holder.btnDelete.setOnClickListener(v -> {
             if (listener != null && project != null) listener.onDelete(project);
         });
@@ -103,6 +117,99 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
     @Override
     public int getItemCount() {
         return projects == null ? 0 : projects.size();
+    }
+
+    // ===== שינוי סטטוס עם שמירה ל-DB בשדה projectStatus =====
+    private void showStatusDialog(Project project, ProjectViewHolder holder) {
+        if (project == null || project.getProjectId() == null || project.getProjectId().trim().isEmpty()) return;
+
+        final String[] statuses = context.getResources().getStringArray(R.array.project_statuses);
+        if (statuses == null || statuses.length == 0) {
+            Toast.makeText(context, "לא הוגדרו סטטוסים", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // סימון ברירת מחדל לפי ה-value הנוכחי בשדה (משווה טקסט כפי ששמור ב-DB)
+        String current = project.getProjectStatus() == null ? "" : project.getProjectStatus();
+        int checked = -1;
+        for (int i = 0; i < statuses.length; i++) {
+            if (statuses[i].equalsIgnoreCase(current)) { checked = i; break; }
+        }
+        final int[] selected = { Math.max(checked, 0) };
+
+        new AlertDialog.Builder(context)
+                .setTitle("בחרי סטטוס לפרויקט")
+                .setSingleChoiceItems(statuses, checked, (dialog, which) -> selected[0] = which)
+                .setNegativeButton("ביטול", null)
+                .setPositiveButton("שמירה", (dialog, which) -> {
+                    String newStatus = statuses[selected[0]]; // הערך מה-arrays.xml
+
+                    // נשמור ל-DB: projectStatus + lastUpdateDate מהשרת
+                    java.util.Map<String, Object> fields = new java.util.HashMap<>();
+                    fields.put(com.example.finalprojectappraisal.database.constants.FirestoreConstants.FIELD_PROJECT_STATUS, newStatus);
+                    fields.put("lastUpdateDate", com.google.firebase.firestore.FieldValue.serverTimestamp());
+
+                    com.example.finalprojectappraisal.database.ProjectRepository.getInstance()
+                            .updateMultipleFields(project.getProjectId(), fields, task -> {
+                                if (task.isSuccessful()) {
+                                    // עדכון UI מידי; המאזין החי יעדכן גם
+                                    project.setProjectStatus(newStatus);
+                                    holder.txtStatus.setText(newStatus);
+                                    android.widget.Toast.makeText(context, "סטטוס עודכן ל־" + newStatus, android.widget.Toast.LENGTH_SHORT).show();
+                                } else {
+                                    android.widget.Toast.makeText(context, "עדכון סטטוס נכשל", android.widget.Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                })
+
+                .show();
+    }
+
+    // ===== תפריט עריכה לכל פרויקט =====
+    private void showEditMenu(View anchor, Project project) {
+        if (project == null) return;
+
+        PopupMenu menu = new PopupMenu(context, anchor);
+        menu.inflate(R.menu.menu_project_edit);
+
+        menu.setOnMenuItemClickListener(item -> {
+            Intent intent = null;
+            String projectId = project.getProjectId();
+
+            int id = item.getItemId();
+            if (id == R.id.action_edit_client) {
+                intent = new Intent(context,
+                        com.example.finalprojectappraisal.activity.newProject.client.ClientDetailsActivity.class);
+                intent.putExtra("projectId", project.getProjectId());
+                context.startActivity(intent);
+                return true;
+
+            } else if (id == R.id.action_edit_apartment) {
+                intent = new Intent(context,
+                        com.example.finalprojectappraisal.activity.newProject.property.activity.ApartmentDetailsActivity.class);
+
+            } else if (id == R.id.action_edit_property) {
+                intent = new Intent(context,
+                        com.example.finalprojectappraisal.activity.newProject.property.activity.PropertyDescriptionActivity.class);
+
+            } else if (id == R.id.action_edit_bank) {
+                intent = new Intent(context,
+                        com.example.finalprojectappraisal.activity.newProject.bank.BankDetailsActivity.class);
+
+            } else if (id == R.id.action_edit_images) {
+                intent = new Intent(context,
+                        com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity.class);
+            }
+
+            if (intent != null) {
+                intent.putExtra("projectId", projectId);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+            }
+            return true;
+        });
+
+        menu.show();
     }
 
     public void updateData(List<Project> newProjects) {
@@ -125,13 +232,14 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
     static class ProjectViewHolder extends RecyclerView.ViewHolder {
         ImageView imageThumb;
         TextView txtAddress, txtNote, txtStatus, txtClient, txtDate;
-        Button btnEdit, btnImages, btnReport, btnDelete;
+        Button btnEdit, btnImages, btnReport, btnDelete, btnChangeStatus;
+        View btnMore; // כפתור ⋮
 
         public ProjectViewHolder(@NonNull View itemView) {
             super(itemView);
             imageThumb = itemView.findViewById(R.id.imageThumb);
             txtAddress = itemView.findViewById(R.id.txtAddress);
-            txtNote    = itemView.findViewById(R.id.txtNote);   // ודאי שהוספת ב-XML של האייטם
+            txtNote    = itemView.findViewById(R.id.txtNote);
             txtStatus  = itemView.findViewById(R.id.txtStatus);
             txtClient  = itemView.findViewById(R.id.txtClient);
             txtDate    = itemView.findViewById(R.id.txtDate);
@@ -139,6 +247,8 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             btnImages  = itemView.findViewById(R.id.btnImages);
             btnReport  = itemView.findViewById(R.id.btnReport);
             btnDelete  = itemView.findViewById(R.id.btnDelete);
+            btnMore    = itemView.findViewById(R.id.btnMore);
+            btnChangeStatus = itemView.findViewById(R.id.btnChangeStatus);
         }
     }
 }
