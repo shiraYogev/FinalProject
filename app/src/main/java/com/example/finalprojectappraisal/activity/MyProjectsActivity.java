@@ -1,4 +1,3 @@
-// file: app/src/main/java/com/example/finalprojectappraisal/activity/MyProjectsActivity.java
 package com.example.finalprojectappraisal.activity;
 
 import android.content.Intent;
@@ -19,6 +18,7 @@ import com.example.finalprojectappraisal.database.ProjectRepository;
 import com.example.finalprojectappraisal.model.Project;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +62,7 @@ public class MyProjectsActivity extends AppCompatActivity {
                 ProjectRepository.getInstance().deleteProject(project.getProjectId(), task -> {
                     if (task.isSuccessful()) {
                         Toast.makeText(MyProjectsActivity.this, "הפרויקט נמחק", Toast.LENGTH_SHORT).show();
-                        // לא צריך לקרוא loadProjects – המאזין החי יעדכן לבד
+                        loadProjects();
                     } else {
                         Toast.makeText(MyProjectsActivity.this, "מחיקה נכשלה", Toast.LENGTH_SHORT).show();
                     }
@@ -95,25 +95,28 @@ public class MyProjectsActivity extends AppCompatActivity {
             return;
         }
 
-        // מאזין חי לפרויקטים של השמאי
-        ProjectRepository.getInstance().loadProjectsForAppraiserIdString(appraiserIdStr);
+        // ✅ שליפה לפי activeProjects
+        ProjectRepository.getInstance().loadActiveProjectsForAppraiser(appraiserIdStr);
 
         ProjectRepository.getInstance().getAllProjects().observe(this, projects -> {
             allProjects.clear();
             if (projects != null) allProjects.addAll(projects);
             adapter.updateData(allProjects);
-            Log.d("UIUpdate", "Loaded " + allProjects.size() + " projects for appraiser " + appraiserIdStr);
+            Log.d("UIUpdate", "Loaded " + allProjects.size() + " active projects for appraiser " + appraiserIdStr);
             updateEmptyState();
         });
     }
 
+
     private String getCurrentAppraiserIdString() {
+        //  אם מזהה השמאי הוא פשוט ה-UID של FirebaseAuth (String) ---
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null && user.getUid() != null) {
-            return user.getUid();
+            return user.getUid(); // <-- אם זה ה-appraiserId אצלך
         }
-        return null;
+        return null; // אם לא נמצא
     }
+
 
     private void updateEmptyState() {
         boolean isEmpty = adapter.getItemCount() == 0;
@@ -129,7 +132,7 @@ public class MyProjectsActivity extends AppCompatActivity {
             String address = safe(p.getFullAddress());
             String client  = p.getClient() != null ? safe(p.getClient().getFullName()) : "";
             String status  = safe(p.getProjectStatus());
-            String note    = safe(p.getNote());
+            String note    = safe(p.getNote()); // *** חיפוש גם בהערה ***
 
             if (address.contains(q) || client.contains(q) || status.contains(q) || note.contains(q)) {
                 filtered.add(p);
@@ -141,12 +144,5 @@ public class MyProjectsActivity extends AppCompatActivity {
 
     private String safe(String s) {
         return s == null ? "" : s.toLowerCase();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        // נתק מאזין חי כדי למנוע דליפות
-        ProjectRepository.getInstance().stopListening();
     }
 }

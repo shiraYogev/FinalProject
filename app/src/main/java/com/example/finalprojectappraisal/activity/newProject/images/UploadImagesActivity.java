@@ -80,6 +80,7 @@ public class UploadImagesActivity extends AppCompatActivity {
         recyclerCategories.setLayoutManager(new LinearLayoutManager(this));
         recyclerCategories.setAdapter(categoriesAdapter);
 
+        loadExistingImages(projectId);
 
         Button btnSaveAndContinue = findViewById(R.id.btnSaveAndContinue);
         btnSaveAndContinue.setOnClickListener(v -> {
@@ -271,6 +272,53 @@ public class UploadImagesActivity extends AppCompatActivity {
             default:
                 return null;
         }
+    }
+
+    private void loadExistingImages(@NonNull String projectId) {
+        ProjectRepository.getInstance().getImagesForProject(projectId, task -> {
+            if (!task.isSuccessful()) {
+                Toast.makeText(this, "שגיאה בטעינת תמונות קיימות", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            List<Image> existing = task.getResult();
+            if (existing == null || existing.isEmpty()) {
+                return; // אין מה להוסיף
+            }
+
+            // נבנה מיפוי קטגוריה -> סקשן
+            java.util.Map<Image.Category, ImageCategorySection> byCat = new java.util.HashMap<>();
+            for (ImageCategorySection s : categories) {
+                byCat.put(s.category, s);
+            }
+
+            // נפזר את התמונות לסקשנים הנכונים
+            for (Image img : existing) {
+                if (img == null) continue;
+
+                // לוודא שיש projectId
+                if (img.getProjectId() == null) img.setProjectId(projectId);
+
+                // אם ה־Image מגיע מ־DB עם מחרוזת קטגוריה – ודאי שה־Image(Map) שלך ממפה ל־enum.
+                Image.Category cat = img.getCategory();
+                if (cat == null) continue; // אם אין קטגוריה – אין לנו איפה להציג
+
+                ImageCategorySection sec = byCat.get(cat);
+                if (sec != null) {
+                    // ודאי שיש URL בר־תצוגה (downloadUrl/https), לא רק content://
+                    sec.images.add(img);
+                }
+            }
+
+            // עדכון UI – אם יש לך פונקציה מדויקת (notifyImageChanged) השתמשי בה; אחרת notifyDataSetChanged
+            try {
+                categoriesAdapter.notifyDataSetChanged();
+            } catch (Throwable t) {
+                // fallback – במקרה ואין מתודה מותאמת
+                for (int i = 0; i < categories.size(); i++) {
+                    categoriesAdapter.notifyItemChanged(i);
+                }
+            }
+        });
     }
 
 
