@@ -99,6 +99,17 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
+                <!-- 🗺️ כפתור מפה -->
+                <Button
+                    android:id="@+id/btnMap"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:minWidth="64dp"
+                    android:minHeight="48dp"
+                    android:text="מפה"
+                    android:textSize="13sp"
+                    android:layout_marginEnd="4dp" />
+
                 <Button
                     android:id="@+id/btnEdit"
                     android:layout_width="wrap_content"
