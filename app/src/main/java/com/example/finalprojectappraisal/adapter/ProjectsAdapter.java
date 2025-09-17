@@ -21,7 +21,7 @@ import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.model.Project;
 import com.example.finalprojectappraisal.database.ProjectRepository;
 import com.example.finalprojectappraisal.database.constants.FirestoreConstants;
-import com.google.firebase.firestore.FieldValue;
+import com.example.finalprojectappraisal.utils.MapIntentUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -69,6 +69,16 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             holder.txtNote.setVisibility(View.VISIBLE);
             holder.txtNote.setText(note);
         }
+
+        // 🗺️ Map button: open address in maps
+        String address = (project != null) ? project.getFullAddress() : null;
+
+        // Optional UX: disable when empty
+        holder.btnMap.setEnabled(!TextUtils.isEmpty(address));
+
+        holder.btnMap.setOnClickListener(v ->
+                MapIntentUtils.openAddressInMaps(context, address)
+        );
 
         // סטטוס (מציגים את מה ששמור בפרויקט)
         String status = project != null ? project.getProjectStatus() : null;
@@ -230,7 +240,7 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
     static class ProjectViewHolder extends RecyclerView.ViewHolder {
         ImageView imageThumb;
         TextView txtAddress, txtNote, txtStatus, txtClient, txtDate;
-        Button btnEdit, btnImages, btnReport, btnDelete, btnChangeStatus;
+        Button btnEdit, btnImages, btnReport, btnDelete, btnChangeStatus, btnMap;
         View btnMore; // כפתור ⋮
 
         public ProjectViewHolder(@NonNull View itemView) {
@@ -247,6 +257,7 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             btnDelete  = itemView.findViewById(R.id.btnDelete);
             btnMore    = itemView.findViewById(R.id.btnMore);
             btnChangeStatus = itemView.findViewById(R.id.btnChangeStatus);
+            btnMap     = itemView.findViewById(R.id.btnMap);
         }
     }
 }
