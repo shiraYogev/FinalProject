@@ -13,6 +13,7 @@ import com.example.finalprojectappraisal.model.BankDetails;
 import com.example.finalprojectappraisal.model.Client;
 import com.example.finalprojectappraisal.model.Project;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -255,6 +256,79 @@ public class ProjectRepository {
             allProjects.setValue(out);
         });
     }
+
+    public void loadActiveProjectsForAppraiser(String appraiserId) {
+        String TAG = "ProjectRepository";
+        Log.d(TAG, "Start loading active projects for appraiserId=" + appraiserId);
+
+        db.collection("appraisers")
+                .document(appraiserId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    Log.d(TAG, "Appraiser document fetch success. exists=" + snapshot.exists());
+
+                    if (!snapshot.exists()) {
+                        Log.w(TAG, "Appraiser document not found for id=" + appraiserId);
+                        allProjects.setValue(new ArrayList<>());
+                        return;
+                    }
+
+                    Object idsObj = snapshot.get("activeProjects");
+                    List<String> projectIds = new ArrayList<>();
+                    if (idsObj instanceof List) {
+                        for (Object o : (List<?>) idsObj) {
+                            if (o != null) projectIds.add(String.valueOf(o));
+                        }
+                    }
+
+                    Log.d(TAG, "Parsed activeProjects: " + projectIds);
+
+                    if (projectIds.isEmpty()) {
+                        Log.d(TAG, "No active projects for appraiserId=" + appraiserId);
+                        allProjects.setValue(new ArrayList<>());
+                        return;
+                    }
+
+                    List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
+                    for (String projectId : projectIds) {
+                        Log.d(TAG, "Fetching projectId=" + projectId);
+                        tasks.add(db.collection("projects").document(projectId).get());
+                    }
+
+                    Tasks.whenAllSuccess(tasks)
+                            .addOnSuccessListener(results -> {
+                                Log.d(TAG, "Successfully fetched all projects. count=" + results.size());
+                                List<Project> loaded = new ArrayList<>();
+                                for (Object obj : results) {
+                                    DocumentSnapshot doc = (DocumentSnapshot) obj;
+                                    if (doc.exists()) {
+                                        Project p = doc.toObject(Project.class);
+                                        if (p != null) {
+                                            p.setProjectId(doc.getId());
+                                            loaded.add(p);
+                                            Log.d(TAG, "Loaded project: " + doc.getId());
+                                        } else {
+                                            Log.w(TAG, "toObject returned null for projectId=" + doc.getId());
+                                        }
+                                    } else {
+                                        Log.w(TAG, "Project document does not exist: " + doc.getId());
+                                    }
+                                }
+                                allProjects.setValue(loaded);
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Error loading project documents", e);
+                                allProjects.setValue(new ArrayList<>());
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching appraiser document", e);
+                    allProjects.setValue(new ArrayList<>());
+                });
+    }
+
+
+
     /** Convenience wrappers when you know the type */
     /** טען פרויקטים לפי appraiserId (String) עם מאזין חי. */
     // גרסה עם fallback: נסה עם orderBy, ואם יש FAILED_PRECONDITION -> נופל חזרה ללא מיון
@@ -287,6 +361,8 @@ public class ProjectRepository {
             allProjects.setValue(out);
         });
     }
+
+
     // בלי מיון (עד שיש אינדקס)
     public void loadProjectsForAppraiserNoOrder(@NonNull String appraiserId) {
         if (allProjectsListener != null) { allProjectsListener.remove(); allProjectsListener = null; }
@@ -376,13 +452,6 @@ public class ProjectRepository {
      * Saves property details to the project (delegated to UpdateManager)
      */
     public void savePropertyDetails(String projectId, Map<String, Object> propertyDetails, OnCompleteListener<Void> listener) {
-
-        ProjectDataValidator.ValidationResult validation = ProjectDataValidator.validatePropertyDetails(propertyDetails);
-        if (!validation.isValid()) {
-            handleError("Property details validation failed: " + validation.getErrorsAsString(), listener);
-            return;
-        }
-
         updateManager.savePropertyDetails(projectId, propertyDetails, listener);
     }
 
@@ -677,9 +746,9 @@ public class ProjectRepository {
 
 
     /** Safe mapping from DocumentSnapshot to Project:
-     * - fills projectId from docId if missing
-     * - supports lastUpdateDate stored as Timestamp/Long/Double
-     * - avoids dropping documents on minor type mismatches
+     * - אם toObject נכשל, לא חוזרים ריקים: שולפים ידנית שדות עיקריים (status, address, note, client)
+     * - משלים projectId מה-docId אם חסר
+     * - lastUpdateDate נתמך כ-Timestamp/Long/Double
      */
     private Project safeProjectFrom(DocumentSnapshot d) {
         Project p;
@@ -687,21 +756,64 @@ public class ProjectRepository {
             p = d.toObject(Project.class);
         } catch (Exception e) {
             Log.w("FirestoreDebug", "toObject failed for " + d.getId() + ": " + e.getMessage());
-            p = new Project(); // ודאי שיש קונסטר' ריק
+            p = new Project();
+            // 👇 שליפה ידנית של שדות בסיסיים כדי שהכרטיס לא יהיה ריק
+            try {
+                Object st = d.get(FirestoreConstants.FIELD_PROJECT_STATUS);
+                if (st instanceof String) {
+                    p.setProjectStatus((String) st);
+                }
+            } catch (Exception ignore) {}
+
+            try {
+                Object addr = d.get(FirestoreConstants.FIELD_FULL_ADDRESS);
+                if (addr instanceof String) {
+                    p.setFullAddress((String) addr);
+                }
+            } catch (Exception ignore) {}
+
+            try {
+                Object note = d.get("note");
+                if (note instanceof String) {
+                    p.setNote((String) note);
+                }
+            } catch (Exception ignore) {}
+
+            // client כמפה -> אובייקט Client (רק אם קיים)
+            try {
+                Object clientObj = d.get("client");
+                if (clientObj instanceof java.util.Map) {
+                    @SuppressWarnings("unchecked")
+                    java.util.Map<String,Object> cm = (java.util.Map<String,Object>) clientObj;
+                    com.example.finalprojectappraisal.model.Client c = new com.example.finalprojectappraisal.model.Client();
+                    Object id   = cm.get("id");
+                    Object name = cm.get("fullName");
+                    Object mail = cm.get("email");
+                    Object phone= cm.get("phoneNumber");
+                    if (id   instanceof String) c.setClientId((String) id);
+                    if (name instanceof String) c.setFullName((String) name);
+                    if (mail instanceof String) c.setEmail((String) mail);
+                    if (phone instanceof String) c.setPhoneNumber((String) phone);
+                    p.setClient(c);
+                }
+            } catch (Exception ignore) {}
         }
+
         if (p == null) p = new Project();
+
         // השלמת projectId מה-doc id אם חסר
         try {
             if (p.getProjectId() == null || p.getProjectId().trim().isEmpty()) {
                 p.setProjectId(d.getId());
             }
         } catch (Exception ignore) {}
-        // lastUpdateDate יכול להיות Timestamp/Long/Double
+
+        // lastUpdateDate כ-Timestamp/Long/Double -> millis
         try {
             Object ts = d.get("lastUpdateDate");
             long millis = 0L;
-            if (ts instanceof Timestamp) {
-                millis = ((Timestamp) ts).toDate().getTime();
+            if (ts instanceof com.google.firebase.Timestamp) {
+                millis = ((com.google.firebase.Timestamp) ts).toDate().getTime();
             } else if (ts instanceof Long) {
                 millis = (Long) ts;
             } else if (ts instanceof Double) {
@@ -713,8 +825,10 @@ public class ProjectRepository {
         } catch (Exception e) {
             Log.w("FirestoreDebug", "lastUpdateDate parse failed for " + d.getId() + ": " + e.getMessage());
         }
+
         return p;
     }
+
 
     /**
      * Refreshes the current project data
