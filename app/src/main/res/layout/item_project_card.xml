@@ -24,6 +24,18 @@
             android:contentDescription="תמונת הנכס"
             android:layout_gravity="center_vertical" />
 
+        <!-- כפתור ⋮ -->
+        <ImageButton
+            android:id="@+id/btnMore"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_more"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="עוד אפשרויות"
+            android:layout_gravity="top|start"
+            android:layout_marginStart="4dp"
+            card_view:tint="#666" />
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -114,6 +126,16 @@
                     android:minWidth="64dp"
                     android:minHeight="48dp"
                     android:text="דו&quot;ח"
+                    android:textSize="13sp"
+                    android:layout_marginEnd="4dp" />
+
+                <Button
+                    android:id="@+id/btnChangeStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:minWidth="64dp"
+                    android:minHeight="48dp"
+                    android:text="שינוי סטטוס"
                     android:textSize="13sp"
                     android:layout_marginEnd="4dp" />
 
