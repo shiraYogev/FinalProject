@@ -1,5 +1,7 @@
 package com.example.finalprojectappraisal.model;
 
+import com.google.firebase.firestore.Exclude;
+import com.google.firebase.firestore.IgnoreExtraProperties;
 import com.google.firebase.firestore.PropertyName;
 import com.google.firebase.firestore.ServerTimestamp;
 import com.google.gson.annotations.SerializedName;
@@ -19,7 +21,7 @@ import java.util.stream.Collectors;
  * associated with the project. A project can have multiple properties and may be assigned to specific appraisers
  * for evaluation.
  */
-
+@IgnoreExtraProperties
 public class Project {
 
     // Project identification
@@ -141,6 +143,7 @@ public class Project {
 
 
     // Property images
+    @Exclude
     private List<Image> propertyImages; // List of property images
 
     // Additional fields
@@ -532,15 +535,18 @@ public class Project {
         updateLastUpdateDate();
     }
 
+    @Exclude
     public List<Image> getPropertyImages() {
         return propertyImages;
     }
 
+    @Exclude
     public void setPropertyImages(List<Image> propertyImages) {
         this.propertyImages = propertyImages;
         updateLastUpdateDate();
     }
 
+    @Exclude
     public void addPropertyImage(Image image) {
         if (this.propertyImages == null) {
             this.propertyImages = new ArrayList<>();
