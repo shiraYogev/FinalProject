@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layoutDirection="rtl">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="מסננים"
+        android:textStyle="bold"
+        android:textSize="18sp" />
+
+    <!-- Status -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="סטטוס"
+        android:layout_marginTop="12dp" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chips_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:singleLine="true"
+        app:singleSelection="false"
+        app:selectionRequired="false" />
+
+    <!-- Date field -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="סנן לפי"
+        android:layout_marginTop="12dp" />
+
+    <RadioGroup
+        android:id="@+id/radio_date_field"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/date_last_update"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="עדכון אחרון" />
+
+        <RadioButton
+            android:id="@+id/date_created"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="תאריך יצירה" />
+    </RadioGroup>
+
+    <!-- Date range -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="טווח תאריכים"
+        android:layout_marginTop="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="4dp">
+
+        <TextView
+            android:id="@+id/tv_date_from"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:paddingHorizontal="12dp"
+            android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground"
+            android:text="מתאריך" />
+
+        <TextView
+            android:id="@+id/tv_date_to"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:paddingHorizontal="12dp"
+            android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground"
+            android:text="עד תאריך" />
+    </LinearLayout>
+
+    <!-- Sort -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="מיון לפי"
+        android:layout_marginTop="12dp" />
+
+    <RadioGroup
+        android:id="@+id/radio_sort"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/sort_last_update"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="עדכון אחרון" />
+
+        <RadioButton
+            android:id="@+id/sort_created"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="תאריך יצירה" />
+
+        <RadioButton
+            android:id="@+id/sort_city"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="כתובת (A→Z)" />
+    </RadioGroup>
+
+    <!-- Sort direction row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="4dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="סדר יורד" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_sort_desc"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:padding="8dp"
+            app:useMaterialThemeColors="true" />
+    </LinearLayout>
+
+    <!-- Action buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="12dp">
+
+        <Button
+            android:id="@+id/btn_reset"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="איפוס" />
+
+        <Button
+            android:id="@+id/btn_apply"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="הצג תוצאות"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+</LinearLayout>
