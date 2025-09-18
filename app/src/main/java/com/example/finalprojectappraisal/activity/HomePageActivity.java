@@ -60,6 +60,14 @@ public class HomePageActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+
+        // מעבר לדף פרטים אישיים
+        ImageView userAvatar = findViewById(R.id.user_avatar);
+        userAvatar.setOnClickListener(v -> {
+           Intent intent = new Intent(HomePageActivity.this, ProfileActivity.class);
+           startActivity(intent);
+        });
+
     }
 
     private void initializeViews() {
