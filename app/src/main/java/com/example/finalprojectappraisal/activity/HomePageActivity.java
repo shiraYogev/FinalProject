@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.activity.myProjects.MyProjectsActivity;
 import com.example.finalprojectappraisal.activity.newProject.client.ClientDetailsActivity;
 import com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity;
 import com.google.firebase.auth.FirebaseAuth;

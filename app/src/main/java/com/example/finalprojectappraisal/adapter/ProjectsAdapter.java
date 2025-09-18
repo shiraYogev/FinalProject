@@ -1,32 +1,35 @@
 package com.example.finalprojectappraisal.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.TextView;
-import android.content.Intent;
 import android.widget.PopupMenu;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.app.AlertDialog;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.RecyclerView;
 
-// import com.bumptech.glide.Glide; // השאירי אם תרצי טעינת תמונות ממוזערות
 import com.example.finalprojectappraisal.R;
-import com.example.finalprojectappraisal.model.Project;
 import com.example.finalprojectappraisal.database.ProjectRepository;
 import com.example.finalprojectappraisal.database.constants.FirestoreConstants;
+import com.example.finalprojectappraisal.model.Project;
 import com.example.finalprojectappraisal.utils.MapIntentUtils;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+
+// import com.bumptech.glide.Glide; // אם תרצי טעינת תמונות ממוזערות
 
 public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.ProjectViewHolder> {
 
@@ -37,14 +40,19 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         void onDelete(Project project);
     }
 
-    private List<Project> projects;
-    private final ProjectActionListener listener;
     private final Context context;
+    private final ProjectActionListener listener;
 
-    public ProjectsAdapter(List<Project> projects, ProjectActionListener listener, Context context) {
-        this.projects = projects;
+    // מחזיקים עותק פרטי כדי למנוע שינויים חיצוניים ברשימה
+    private final List<Project> projects = new ArrayList<>();
+
+    public ProjectsAdapter(List<Project> initial, ProjectActionListener listener, Context context) {
         this.listener = listener;
         this.context = context;
+        setHasStableIds(true); // מאפשר אנימציות טובות וסקרול חלק
+        if (initial != null) {
+            this.projects.addAll(initial);
+        }
     }
 
     @NonNull
@@ -61,7 +69,7 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         // כתובת
         holder.txtAddress.setText(safeOrDash(project != null ? project.getFullAddress() : null));
 
-        // *** הערה אופציונלית – מוסתרת אם ריקה ***
+        // הערה (הסתרה אם ריק)
         String note = project != null ? project.getNote() : null;
         if (TextUtils.isEmpty(note)) {
             holder.txtNote.setVisibility(View.GONE);
@@ -70,17 +78,12 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             holder.txtNote.setText(note);
         }
 
-        // 🗺️ Map button: open address in maps
+        // 🗺️ כפתור מפה
         String address = (project != null) ? project.getFullAddress() : null;
-
-        // Optional UX: disable when empty
         holder.btnMap.setEnabled(!TextUtils.isEmpty(address));
+        holder.btnMap.setOnClickListener(v -> MapIntentUtils.openAddressInMaps(context, address));
 
-        holder.btnMap.setOnClickListener(v ->
-                MapIntentUtils.openAddressInMaps(context, address)
-        );
-
-        // סטטוס (מציגים את מה ששמור בפרויקט)
+        // סטטוס
         String status = project != null ? project.getProjectStatus() : null;
         holder.txtStatus.setText(!TextUtils.isEmpty(status) ? status : "סטטוס לא ידוע");
 
@@ -90,14 +93,13 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
                 : "";
         holder.txtClient.setText(safeOrDash(clientName));
 
-        // תאריך עדכון ("dd/MM/yyyy")
+        // תאריך עדכון
         long lastUpdate = (project != null) ? project.getLastUpdateDateMillis() : 0L;
         holder.txtDate.setText(lastUpdate > 0 ? "עודכן: " + formatDate(lastUpdate) : "");
 
         // תמונה ממוזערת (לא חובה)
         // String imageUrl = project != null ? project.getFrontImageUrl() : null;
-        // Glide.with(context)
-        //        .load(imageUrl)
+        // Glide.with(context).load(imageUrl)
         //        .placeholder(R.drawable.ic_placeholder)
         //        .into(holder.imageThumb);
 
@@ -124,12 +126,29 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
 
     @Override
     public int getItemCount() {
-        return projects == null ? 0 : projects.size();
+        return projects.size();
+    }
+
+    // === Stable IDs כדי לעזור ל-RecyclerView לזהות פריטים ===
+    @Override
+    public long getItemId(int position) {
+        Project p = projects.get(position);
+        String id = p != null ? p.getProjectId() : null;
+        return (id != null) ? id.hashCode() : RecyclerView.NO_ID;
+    }
+
+    // === עדכון רשימה עם DiffUtil (במקום notifyDataSetChanged) ===
+    public void updateData(List<Project> newProjects) {
+        List<Project> next = (newProjects != null) ? new ArrayList<>(newProjects) : new ArrayList<>();
+        DiffUtil.DiffResult diff = DiffUtil.calculateDiff(new ProjectDiff(this.projects, next), true);
+        this.projects.clear();
+        this.projects.addAll(next);
+        diff.dispatchUpdatesTo(this);
     }
 
     // ===== שינוי סטטוס עם שמירה ל-DB בשדה projectStatus =====
     private void showStatusDialog(Project project, ProjectViewHolder holder) {
-        if (project == null || project.getProjectId() == null || project.getProjectId().trim().isEmpty()) return;
+        if (project == null || TextUtils.isEmpty(project.getProjectId())) return;
 
         final String[] statuses = context.getResources().getStringArray(R.array.project_statuses);
         if (statuses == null || statuses.length == 0) {
@@ -137,7 +156,7 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             return;
         }
 
-        // סימון ברירת מחדל לפי ה-value הנוכחי בשדה (משווה טקסט כפי ששמור ב-DB)
+        // סימון ברירת מחדל לפי הערך הנוכחי
         String current = project.getProjectStatus() == null ? "" : project.getProjectStatus();
         int checked = -1;
         for (int i = 0; i < statuses.length; i++) {
@@ -150,26 +169,24 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
                 .setSingleChoiceItems(statuses, checked, (dialog, which) -> selected[0] = which)
                 .setNegativeButton("ביטול", null)
                 .setPositiveButton("שמירה", (dialog, which) -> {
-                    String newStatus = statuses[selected[0]]; // הערך מה-arrays.xml
+                    String newStatus = statuses[selected[0]];
 
                     // נשמור ל-DB: projectStatus + lastUpdateDate מהשרת
                     java.util.Map<String, Object> fields = new java.util.HashMap<>();
-                    fields.put(com.example.finalprojectappraisal.database.constants.FirestoreConstants.FIELD_PROJECT_STATUS, newStatus);
+                    fields.put(FirestoreConstants.FIELD_PROJECT_STATUS, newStatus);
                     fields.put("lastUpdateDate", com.google.firebase.firestore.FieldValue.serverTimestamp());
 
-                    com.example.finalprojectappraisal.database.ProjectRepository.getInstance()
+                    ProjectRepository.getInstance()
                             .updateMultipleFields(project.getProjectId(), fields, task -> {
                                 if (task.isSuccessful()) {
-                                    // עדכון UI מידי; המאזין החי יעדכן גם
                                     project.setProjectStatus(newStatus);
                                     holder.txtStatus.setText(newStatus);
-                                    android.widget.Toast.makeText(context, "סטטוס עודכן ל־" + newStatus, android.widget.Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(context, "סטטוס עודכן ל־" + newStatus, Toast.LENGTH_SHORT).show();
                                 } else {
-                                    android.widget.Toast.makeText(context, "עדכון סטטוס נכשל", android.widget.Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(context, "עדכון סטטוס נכשל", Toast.LENGTH_SHORT).show();
                                 }
                             });
                 })
-
                 .show();
     }
 
@@ -188,7 +205,7 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             if (id == R.id.action_edit_client) {
                 intent = new Intent(context,
                         com.example.finalprojectappraisal.activity.newProject.client.ClientDetailsActivity.class);
-                intent.putExtra("projectId", project.getProjectId());
+                intent.putExtra("projectId", projectId);
                 context.startActivity(intent);
                 return true;
 
@@ -220,11 +237,6 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         menu.show();
     }
 
-    public void updateData(List<Project> newProjects) {
-        this.projects = newProjects;
-        notifyDataSetChanged();
-    }
-
     // ===== Utils =====
 
     private String safeOrDash(String s) {
@@ -232,16 +244,16 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
     }
 
     private String formatDate(long epochMillis) {
-        // אם אצלך זה שניות – המריא לפני: epochMillis *= 1000;
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", new Locale("he", "IL"));
         return sdf.format(new Date(epochMillis));
     }
 
+    // ===== ViewHolder =====
     static class ProjectViewHolder extends RecyclerView.ViewHolder {
         ImageView imageThumb;
         TextView txtAddress, txtNote, txtStatus, txtClient, txtDate;
         Button btnEdit, btnImages, btnReport, btnDelete, btnChangeStatus, btnMap;
-        View btnMore; // כפתור ⋮
+        View btnMore;
 
         public ProjectViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -258,6 +270,56 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             btnMore    = itemView.findViewById(R.id.btnMore);
             btnChangeStatus = itemView.findViewById(R.id.btnChangeStatus);
             btnMap     = itemView.findViewById(R.id.btnMap);
+        }
+    }
+
+    // ===== DiffUtil Callback =====
+    /** מומלץ להשאיר כ-inner class כאן בתוך האדפטר. אם תרצי – אפשר להוציא לקובץ נפרד. */
+    private static class ProjectDiff extends DiffUtil.Callback {
+        private final List<Project> oldList;
+        private final List<Project> newList;
+
+        ProjectDiff(List<Project> oldList, List<Project> newList) {
+            this.oldList = (oldList != null) ? oldList : new ArrayList<>();
+            this.newList = (newList != null) ? newList : new ArrayList<>();
+        }
+
+        @Override public int getOldListSize() { return oldList.size(); }
+        @Override public int getNewListSize() { return newList.size(); }
+
+        @Override
+        public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+            String a = oldList.get(oldItemPosition).getProjectId();
+            String b = newList.get(newItemPosition).getProjectId();
+            return a != null && a.equals(b);
+        }
+
+        @Override
+        public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+            Project o = oldList.get(oldItemPosition);
+            Project n = newList.get(newItemPosition);
+
+            // השוואה לפי שדות שמוצגים בכרטיס
+            if (!eq(o.getFullAddress(), n.getFullAddress())) return false;
+
+            String oc = (o.getClient() != null) ? o.getClient().getFullName() : null;
+            String nc = (n.getClient() != null) ? n.getClient().getFullName() : null;
+            if (!eq(oc, nc)) return false;
+
+            if (!eq(o.getProjectStatus(), n.getProjectStatus())) return false;
+
+            if (o.getLastUpdateDateMillis() != n.getLastUpdateDateMillis()) return false;
+
+            if (!eq(o.getNote(), n.getNote())) return false;
+
+            // אם יש עוד שדות שמופיעים ב-ViewHolder – אפשר להוסיף כאן
+            return true;
+        }
+
+        private static boolean eq(String a, String b) {
+            if (a == null && b == null) return true;
+            if (a == null || b == null) return false;
+            return a.equals(b); // אם תרצי ללא רישיות: a.equalsIgnoreCase(b)
         }
     }
 }
