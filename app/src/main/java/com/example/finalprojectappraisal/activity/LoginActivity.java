@@ -1,4 +1,3 @@
-// LoginActivity.java
 package com.example.finalprojectappraisal.activity;
 
 import android.content.Intent;
@@ -50,8 +49,13 @@ public class LoginActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
                         Toast.makeText(this, "התחברת בהצלחה!", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(LoginActivity.this, HomePageActivity.class));
+
+                        // **תיקון: ניווט תמיד למסך ההגדרה**
+                        Intent intent = new Intent(LoginActivity.this, AppraiserSetupActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
                         finish();
+
                     } else {
                         Log.w(TAG, "signInWithEmail:failure", task.getException());
                         Toast.makeText(this, "ההתחברות נכשלה: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();

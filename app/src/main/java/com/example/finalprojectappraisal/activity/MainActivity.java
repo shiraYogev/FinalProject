@@ -37,10 +37,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // אתחול Firebase Auth
         firebaseAuth = FirebaseAuth.getInstance();
 
-        // הגדרת Google Sign-In
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.client_id_firebase))
                 .requestEmail()
@@ -48,14 +46,17 @@ public class MainActivity extends AppCompatActivity {
 
         googleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        // אתחול כפתורים
         initializeViews();
         setupClickListeners();
 
-        // בדיקה אם המשתמש כבר מחובר
         FirebaseUser currentUser = firebaseAuth.getCurrentUser();
         if (currentUser != null) {
-            updateUI(currentUser);
+            // אם המשתמש מחובר, נווט ישר למסך ההגדרה
+            Intent intent = new Intent(this, AppraiserSetupActivity.class);
+            // **במצב זה, אתה כן רוצה למנוע חזרה למסך הלוגין, אז שמור על הדגלים**
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
         }
     }
 
@@ -66,39 +67,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        googleButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                signInWithGoogle();
-            }
+        googleButton.setOnClickListener(v -> signInWithGoogle());
+
+        loginButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+            startActivity(intent);
         });
 
-        loginButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // מעבר לדף התחברות
-                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                startActivity(intent);
-            }
-        });
-
-        signUpButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // מעבר לדף הרשמה
-                Intent intent = new Intent(MainActivity.this, SignUpActivity.class);
-                startActivity(intent);
-            }
+        signUpButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, SignUpActivity.class);
+            startActivity(intent);
         });
     }
 
-    // התחלת תהליך Google Sign-In
     private void signInWithGoogle() {
         Intent signInIntent = googleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
 
-    // טיפול בתוצאת Google Sign-In
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -106,57 +92,31 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == RC_SIGN_IN) {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
-                // קבלת החשבון של Google
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                 if (account != null) {
-                    // אימות עם Firebase
                     firebaseAuthWithGoogle(account);
                 }
             } catch (ApiException e) {
-                // טיפול בכשל התחברות
                 Log.w(TAG, "Google sign in failed", e);
                 Toast.makeText(MainActivity.this, "התחברות Google נכשלה", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-    // אימות החשבון של Google עם Firebase
     private void firebaseAuthWithGoogle(GoogleSignInAccount account) {
         AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
 
         firebaseAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        FirebaseUser user = firebaseAuth.getCurrentUser();
-
-                        // בדיקה אם זה משתמש חדש
-                        boolean isNewUser = task.getResult().getAdditionalUserInfo().isNewUser();
-
-                        if (isNewUser) {
-                            // שליחה לדף השלמת פרטים
-                            Intent intent = new Intent(MainActivity.this, AppraiserSetupActivity.class);
-                            startActivity(intent);
-                        } else {
-                            // שליחה לדף הבית
-                            Intent intent = new Intent(MainActivity.this, HomePageActivity.class);
-                            startActivity(intent);
-                        }
-
-                        finish(); // סגור את המסך הנוכחי
+                        // **תיקון: הסר את הדגלים!**
+                        Intent intent = new Intent(MainActivity.this, AppraiserSetupActivity.class);
+                        startActivity(intent);
+                        // אין צורך ב-finish() כאן, זה ישאיר את MainActivity במחסנית.
                     } else {
                         Log.w(TAG, "signInWithCredential:failure", task.getException());
                         Toast.makeText(MainActivity.this, "האימות נכשל", Toast.LENGTH_SHORT).show();
                     }
                 });
-    }
-
-
-    private void updateUI(FirebaseUser user) {
-        if (user != null) {
-            // המשתמש מחובר - מעבר לדף הבא
-            Intent intent = new Intent(MainActivity.this, HomePageActivity.class);
-            startActivity(intent);
-            finish(); // סגירת Activity זה כדי למנוע חזרה למסך ההתחברות
-        }
     }
 }

@@ -12,7 +12,6 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <!-- Header -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -32,7 +31,6 @@
             android:gravity="center"
             android:layout_marginBottom="32dp" />
 
-        <!-- First Name -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -49,7 +47,6 @@
                 android:textAlignment="viewStart" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Last Name -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -63,10 +60,9 @@
                 android:layout_height="wrap_content"
                 android:hint="שם משפחה"
                 android:inputType="textPersonName"
-                android:textAlignment="viewStart" />
+                android.textAlignment="viewStart" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Phone Number -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -83,7 +79,6 @@
                 android:textAlignment="viewStart" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Progress Bar -->
         <ProgressBar
             android:id="@+id/progressBar"
             android:layout_width="wrap_content"
@@ -92,7 +87,6 @@
             android:visibility="gone"
             android:layout_marginBottom="16dp" />
 
-        <!-- Save Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSaveAppraiserInfo"
             android:layout_width="match_parent"
@@ -104,16 +98,6 @@
             android:backgroundTint="@color/primary_color"
             android:textColor="@android:color/white"
             android:layout_marginBottom="16dp" />
-
-        <!-- Skip Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSkipForNow"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="דלג לעכשיו"
-            android:textSize="14sp"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:textColor="@color/secondary_text" />
 
     </LinearLayout>
 </ScrollView>

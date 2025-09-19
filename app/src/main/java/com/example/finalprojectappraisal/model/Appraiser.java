@@ -9,6 +9,7 @@ import java.util.List;
 public class Appraiser {
 
     public enum AccessPermission {
+        SUPER_ADMIN,
         ADMIN,
         USER,
         VIEWER
@@ -24,16 +25,12 @@ public class Appraiser {
     private String email;
     private String phoneNumber;
 
-    // 🔁 תואם לשדה Firestore: appraisers/{uid}.activeProjects = array of projectIds (strings)
     private List<String> activeProjects;
-
-    // אופציונלי: גם היסטוריה כמזהים; אם תרצי אובייקט עשיר—נגדיר מחלקה נפרדת בעתיד
     private List<String> appraisalHistory;
 
     private AccessPermission accessPermissions;
 
     public Appraiser() {
-        // חשוב לאתחל כדי להימנע מ-NullPointer כשעובדים עם arrayUnion/contains וכד'
         this.activeProjects = new ArrayList<>();
         this.appraisalHistory = new ArrayList<>();
     }
@@ -57,110 +54,76 @@ public class Appraiser {
         this.accessPermissions = accessPermissions;
     }
 
-    public String getAppraiserId() {
-        return appraiserId;
-    }
+    // === מתודות רגילות ... (ללא שינוי) ===
 
-    public void setAppraiserId(String appraiserId) {
-        this.appraiserId = appraiserId;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-        updateFullName();
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-        updateFullName();
-    }
-
-    @PropertyName("appraiser_name")
-    public String getFullName() {
-        return fullName;
-    }
-
-    @PropertyName("appraiser_name")
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
+    public String getAppraiserId() { return appraiserId; }
+    public void setAppraiserId(String appraiserId) { this.appraiserId = appraiserId; }
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; updateFullName(); }
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; updateFullName(); }
+    @PropertyName("appraiser_name") public String getFullName() { return fullName; }
+    @PropertyName("appraiser_name") public void setFullName(String fullName) { this.fullName = fullName; }
     private void updateFullName() {
         String fn = (firstName == null) ? "" : firstName;
         String ln = (lastName == null) ? "" : lastName;
         this.fullName = (fn + " " + ln).trim();
     }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-
-    // === התאמה לשדה בפיירסטור: מערך מזהי פרויקטים ===
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
     public List<String> getActiveProjects() {
         if (activeProjects == null) activeProjects = new ArrayList<>();
         return activeProjects;
     }
-
     public void setActiveProjects(List<String> activeProjects) {
         this.activeProjects = (activeProjects != null) ? activeProjects : new ArrayList<>();
     }
-
     public void addActiveProjectId(String projectId) {
         if (projectId == null || projectId.trim().isEmpty()) return;
         if (activeProjects == null) activeProjects = new ArrayList<>();
         if (!activeProjects.contains(projectId)) activeProjects.add(projectId);
     }
-
     public void removeActiveProjectId(String projectId) {
         if (activeProjects != null) activeProjects.remove(projectId);
     }
-
-    // היסטוריה—כעת גם כמזהים (אפשר להחליף בעתיד לאובייקט עשיר)
     public List<String> getAppraisalHistory() {
         if (appraisalHistory == null) appraisalHistory = new ArrayList<>();
         return appraisalHistory;
     }
-
     public void setAppraisalHistory(List<String> appraisalHistory) {
         this.appraisalHistory = (appraisalHistory != null) ? appraisalHistory : new ArrayList<>();
     }
+    public AccessPermission getAccessPermissions() { return accessPermissions; }
+    public void setAccessPermissions(AccessPermission accessPermissions) { this.accessPermissions = accessPermissions; }
 
-    public AccessPermission getAccessPermissions() {
-        return accessPermissions;
-    }
+    // === עדכונים עבור רמות ההרשאה ===
 
-    public void setAccessPermissions(AccessPermission accessPermissions) {
-        this.accessPermissions = accessPermissions;
-    }
-
+    /**
+     * מחזירה true אם למשתמש יש הרשאת מנהל או סופר-מנהל.
+     */
     public boolean isAdmin() {
-        return accessPermissions == AccessPermission.ADMIN;
+        return accessPermissions == AccessPermission.ADMIN || accessPermissions == AccessPermission.SUPER_ADMIN;
     }
 
+    /**
+     * מחזירה true אם למשתמש יש הרשאת סופר-מנהל בלבד.
+     */
+    public boolean isSuperAdmin() {
+        return accessPermissions == AccessPermission.SUPER_ADMIN;
+    }
+
+    /**
+     * מחזירה true אם למשתמש יש הרשאת משתמש, מנהל או סופר-מנהל.
+     */
     public boolean isUser() {
-        return accessPermissions == AccessPermission.USER || accessPermissions == AccessPermission.ADMIN;
+        return accessPermissions == AccessPermission.USER || isAdmin();
     }
 
+    /**
+     * מחזירה true אם למשתמש יש הרשאת צפייה בלבד.
+     */
     public boolean isViewer() {
         return accessPermissions == AccessPermission.VIEWER;
     }

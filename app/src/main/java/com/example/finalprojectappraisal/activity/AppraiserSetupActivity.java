@@ -6,9 +6,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,60 +18,65 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class  AppraiserSetupActivity extends AppCompatActivity {
+public class AppraiserSetupActivity extends AppCompatActivity {
 
     private static final String TAG = "AppraiserSetup";
-    private static final String PREFS_NAME = "AppraiserPrefs";
-    private static final String KEY_SETUP_COMPLETED = "setup_completed_";
 
-    // Firebase
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private FirebaseUser currentUser;
 
-    // Views
     private TextInputEditText etFirstName, etLastName, etPhoneNumber;
-    private MaterialButton btnSaveAppraiserInfo, btnSkipForNow;
+    private MaterialButton btnSaveAppraiserInfo;
     private ProgressBar progressBar;
-
-    // Admin emails list - configure these emails as admins
-    private static final String[] ADMIN_EMAILS = {
-            "admin@yourcompany.com",
-            "manager@yourcompany.com"
-            // Add more admin emails here
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_appraiser_setup);
 
-        // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
         currentUser = mAuth.getCurrentUser();
 
         if (currentUser == null) {
-            // User not authenticated, redirect to login
-            //startActivity(new Intent(this, LoginActivity.class));
             finish();
             return;
         }
 
-        // Check if setup was already completed
-        if (isSetupAlreadyCompleted()) {
-            navigateToMainActivity();
-            return;
-        }
-
+        // **תיקון: קוד אתחול ה-UI חייב לבוא לפני השימוש בו**
         initViews();
-        setupClickListeners();
 
+        checkIfSetupIsComplete();
+    }
+
+    private void checkIfSetupIsComplete() {
+        showProgress(true); // זה בטוח כי initViews כבר נקרא
+        db.collection("appraisers").document(currentUser.getUid()).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists() && documentSnapshot.getBoolean("setupCompleted") != null && documentSnapshot.getBoolean("setupCompleted")) {
+                        // הנתונים קיימים וההגדרה הושלמה - נווט למסך הראשי
+                        navigateToHomePageActivity();
+                    } else {
+                        // הנתונים חסרים - הצג את המסך למילוי פרטים
+                        showProgress(false);
+                        setupClickListeners();
+                        populateFieldsFromUserProfile();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // שגיאה בקריאה מה-Firestore, הצג את מסך ההגדרה כדי למנוע קריסה
+                    Log.e(TAG, "Error checking setup status", e);
+                    showProgress(false);
+                    setupClickListeners();
+                    populateFieldsFromUserProfile();
+                });
     }
 
     private void initViews() {
@@ -81,10 +84,10 @@ public class  AppraiserSetupActivity extends AppCompatActivity {
         etLastName = findViewById(R.id.etLastName);
         etPhoneNumber = findViewById(R.id.etPhoneNumber);
         btnSaveAppraiserInfo = findViewById(R.id.btnSaveAppraiserInfo);
-        btnSkipForNow = findViewById(R.id.btnSkipForNow);
         progressBar = findViewById(R.id.progressBar);
+    }
 
-        // Pre-fill names if available from Firebase Auth
+    private void populateFieldsFromUserProfile() {
         if (currentUser.getDisplayName() != null) {
             String displayName = currentUser.getDisplayName();
             String[] nameParts = displayName.split(" ", 2);
@@ -97,9 +100,9 @@ public class  AppraiserSetupActivity extends AppCompatActivity {
         }
     }
 
+
     private void setupClickListeners() {
         btnSaveAppraiserInfo.setOnClickListener(v -> saveAppraiserInfo());
-        btnSkipForNow.setOnClickListener(v -> skipSetup());
     }
 
     private void saveAppraiserInfo() {
@@ -109,18 +112,37 @@ public class  AppraiserSetupActivity extends AppCompatActivity {
 
         showProgress(true);
 
+        String email = currentUser.getEmail();
+        String userId = currentUser.getUid();
+
+        db.collection("appraisers").document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    Appraiser.AccessPermission permission;
+                    if (documentSnapshot.exists() && documentSnapshot.contains("accessPermissions")) {
+                        String roleStr = documentSnapshot.getString("accessPermissions");
+                        try {
+                            permission = Appraiser.AccessPermission.valueOf(roleStr);
+                        } catch (IllegalArgumentException e) {
+                            permission = Appraiser.AccessPermission.USER;
+                        }
+                    } else {
+                        permission = Appraiser.AccessPermission.USER;
+                    }
+                    saveUserInfoToFirestore(userId, email, permission);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to check existing user permissions. Saving as USER.", e);
+                    saveUserInfoToFirestore(userId, email, Appraiser.AccessPermission.USER);
+                });
+    }
+
+    private void saveUserInfoToFirestore(String userId, String email, Appraiser.AccessPermission permission) {
         String firstName = etFirstName.getText().toString().trim();
         String lastName = etLastName.getText().toString().trim();
         String fullName = firstName + " " + lastName;
         String phoneNumber = etPhoneNumber.getText().toString().trim();
-        String email = currentUser.getEmail();
-        String userId = currentUser.getUid();
 
-        // Determine access permission based on email
-        Appraiser.AccessPermission permission = isAdminEmail(email) ?
-                Appraiser.AccessPermission.ADMIN : Appraiser.AccessPermission.USER;
-
-        // Create appraiser data map for Firestore
         Map<String, Object> appraiserData = new HashMap<>();
         appraiserData.put("appraiserId", userId);
         appraiserData.put("firstName", firstName);
@@ -134,27 +156,24 @@ public class  AppraiserSetupActivity extends AppCompatActivity {
         appraiserData.put("createdAt", System.currentTimeMillis());
         appraiserData.put("setupCompleted", true);
 
-        // Save to Firestore
         db.collection("appraisers")
                 .document(userId)
                 .set(appraiserData)
                 .addOnSuccessListener(aVoid -> {
                     Log.d(TAG, "Appraiser info saved successfully");
                     showProgress(false);
-                    markSetupAsCompleted();
 
-                    String message = permission == Appraiser.AccessPermission.ADMIN ?
+                    String message = (permission == Appraiser.AccessPermission.ADMIN || permission == Appraiser.AccessPermission.SUPER_ADMIN) ?
                             "הפרטים נשמרו בהצלחה! הינך מוגדר כמנהל מערכת" :
                             "הפרטים נשמרו בהצלחה";
                     Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
 
-                    navigateToMainActivity();
+                    navigateToHomePageActivity();
                 })
                 .addOnFailureListener(e -> {
                     Log.w(TAG, "Error saving appraiser info", e);
                     showProgress(false);
-                    Toast.makeText(this, "שגיאה בשמירת הפרטים: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "שגיאה בשמירת הפרטים: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
     }
 
@@ -190,70 +209,27 @@ public class  AppraiserSetupActivity extends AppCompatActivity {
         return true;
     }
 
-    /**
-     * Check if the given email is in the admin emails list
-     */
-    private boolean isAdminEmail(String email) {
-        if (email == null) return false;
-
-        for (String adminEmail : ADMIN_EMAILS) {
-            if (adminEmail.equalsIgnoreCase(email.trim())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void skipSetup() {
-        // User chose to skip setup for now
-        Toast.makeText(this, "ניתן להשלים את הפרטים מההגדרות", Toast.LENGTH_LONG).show();
-        navigateToMainActivity();
-    }
-
     private void showProgress(boolean show) {
-        progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
-        btnSaveAppraiserInfo.setEnabled(!show);
-        btnSkipForNow.setEnabled(!show);
+        // **תיקון: בדיקה לוודא שהאובייקט לא null לפני השימוש**
+        if (progressBar != null) {
+            progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+        }
+        if (btnSaveAppraiserInfo != null) {
+            btnSaveAppraiserInfo.setEnabled(!show);
+        }
     }
 
-    private boolean isSetupAlreadyCompleted() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        return prefs.getBoolean(KEY_SETUP_COMPLETED + currentUser.getUid(), false);
-    }
-
-    private void markSetupAsCompleted() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        prefs.edit().putBoolean(KEY_SETUP_COMPLETED + currentUser.getUid(), true).apply();
-    }
-
-    private void navigateToMainActivity() {
-        Intent intent = new Intent(this, MainActivity.class);
+    private void navigateToHomePageActivity() {
+        Intent intent = new Intent(this, HomePageActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
         finish();
     }
 
-    // Method to check if appraiser info exists in Firestore (alternative approach)
-    public static void checkAppraiserSetupStatus(FirebaseUser user,
-                                                 OnSetupStatusChecked callback) {
-        if (user == null) {
-            callback.onStatusChecked(false);
-            return;
-        }
-
-        FirebaseFirestore.getInstance()
-                .collection("appraisers")
-                .document(user.getUid())
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    boolean exists = documentSnapshot.exists() &&
-                            documentSnapshot.getBoolean("setupCompleted") == Boolean.TRUE;
-                    callback.onStatusChecked(exists);
-                })
-                .addOnFailureListener(e -> callback.onStatusChecked(false));
-    }
-
-    public interface OnSetupStatusChecked {
-        void onStatusChecked(boolean isCompleted);
+    @Override
+    public void onBackPressed() {
+        // מפעיל את הפעולה הרגילה של כפתור החזרה
+        // זה יסגור את האקטיביטי הנוכחי ויחזור למסך הקודם
+        super.onBackPressed();
     }
 }
