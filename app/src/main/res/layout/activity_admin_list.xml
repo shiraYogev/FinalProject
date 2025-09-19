@@ -10,11 +10,22 @@
         android:layout_height="wrap_content"
         android:text="רשימת מנהלים"
         android:textSize="20sp"
-        android:layout_gravity="center" />
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"/>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/adminRecyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingTop="16dp" />
-</LinearLayout>
+    <Button
+        android:id="@+id/btnAddAdmin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="הפוך שמאי למנהל"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="@color/blue_color"
+        android:textColor="@android:color/white"
+        android:visibility="gone" /> <androidx.recyclerview.widget.RecyclerView
+    android:id="@+id/adminRecyclerView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingTop="0dp" /> </LinearLayout>

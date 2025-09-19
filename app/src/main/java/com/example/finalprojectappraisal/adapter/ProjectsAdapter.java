@@ -46,13 +46,33 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
     // מחזיקים עותק פרטי כדי למנוע שינויים חיצוניים ברשימה
     private final List<Project> projects = new ArrayList<>();
 
+    // הוספה חדשה: הרשאות משתמש
+    private boolean isAdmin = false;
+    private String currentUserId = null;
+
+    // Constructor המקורי (נשאר לתאימות לאחור)
     public ProjectsAdapter(List<Project> initial, ProjectActionListener listener, Context context) {
+        this(initial, listener, context, false, null);
+    }
+
+    // Constructor חדש עם הרשאות
+    public ProjectsAdapter(List<Project> initial, ProjectActionListener listener, Context context,
+                           boolean isAdmin, String currentUserId) {
         this.listener = listener;
         this.context = context;
+        this.isAdmin = isAdmin;
+        this.currentUserId = currentUserId;
         setHasStableIds(true); // מאפשר אנימציות טובות וסקרול חלק
         if (initial != null) {
             this.projects.addAll(initial);
         }
+    }
+
+    // מתודה לעדכון הרשאות (כדי לא ליצור adapter חדש בכל עדכון)
+    public void updatePermissions(boolean isAdmin, String currentUserId) {
+        this.isAdmin = isAdmin;
+        this.currentUserId = currentUserId;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -97,31 +117,69 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         long lastUpdate = (project != null) ? project.getLastUpdateDateMillis() : 0L;
         holder.txtDate.setText(lastUpdate > 0 ? "עודכן: " + formatDate(lastUpdate) : "");
 
-        // תמונה ממוזערת (לא חובה)
-        // String imageUrl = project != null ? project.getFrontImageUrl() : null;
-        // Glide.with(context).load(imageUrl)
-        //        .placeholder(R.drawable.ic_placeholder)
-        //        .into(holder.imageThumb);
+        // **הוספה חדשה: הצגת מי הוא בעל הפרויקט (למנהלים)**
+        if (isAdmin && project != null && project.getAppraiserId() != null) {
+            // אפשר להוסיף אינדיקטור או TextView נוסף
+            // לדוגמה, שינוי צבע רקע או הוספת טקסט
+            if (!project.getAppraiserId().equals(currentUserId)) {
+                // זה פרויקט של מישהו אחר - אפשר להוסיף סימון
+                holder.txtClient.append(" (פרויקט של שמאי אחר)");
+            }
+        }
 
-        // כפתורי פעולה
-        holder.btnEdit.setOnClickListener(v -> showEditMenu(v, project));
-        holder.btnMore.setOnClickListener(v -> showEditMenu(v, project));
+        // **הוספה חדשה: קביעת הרשאות לכפתורים**
+        boolean canEdit = determineEditPermission(project);
 
+        // כפתורי עריכה ומחיקה - רק למי שמורשה
+        holder.btnEdit.setVisibility(canEdit ? View.VISIBLE : View.GONE);
+        holder.btnDelete.setVisibility(canEdit ? View.VISIBLE : View.GONE);
+        holder.btnChangeStatus.setVisibility(canEdit ? View.VISIBLE : View.GONE);
+        holder.btnMore.setVisibility(canEdit ? View.VISIBLE : View.GONE);
+
+        // כפתורי צפייה - גלויים לכולם
+        holder.btnImages.setVisibility(View.VISIBLE);
+        holder.btnReport.setVisibility(View.VISIBLE);
+        holder.btnMap.setVisibility(View.VISIBLE);
+
+        // כפתורי פעולה (רק אם יש הרשאה)
+        if (canEdit) {
+            holder.btnEdit.setOnClickListener(v -> showEditMenu(v, project));
+            holder.btnMore.setOnClickListener(v -> showEditMenu(v, project));
+
+            holder.btnChangeStatus.setOnClickListener(v -> {
+                if (project == null) return;
+                showStatusDialog(project, holder);
+            });
+
+            holder.btnDelete.setOnClickListener(v -> {
+                if (listener != null && project != null) listener.onDelete(project);
+            });
+        }
+
+        // כפתורי צפייה (תמיד פעילים)
         holder.btnImages.setOnClickListener(v -> {
             if (listener != null && project != null) listener.onImages(project);
         });
         holder.btnReport.setOnClickListener(v -> {
             if (listener != null && project != null) listener.onReport(project);
         });
+    }
 
-        holder.btnChangeStatus.setOnClickListener(v -> {
-            if (project == null) return;
-            showStatusDialog(project, holder);
-        });
+    /**
+     * קובע האם למשתמש הנוכחי יש הרשאה לערוך את הפרויקט
+     */
+    private boolean determineEditPermission(Project project) {
+        if (project == null || currentUserId == null) {
+            return false;
+        }
 
-        holder.btnDelete.setOnClickListener(v -> {
-            if (listener != null && project != null) listener.onDelete(project);
-        });
+        if (isAdmin) {
+            // מנהלים יכולים לערוך את כל הפרויקטים
+            return true;
+        } else {
+            // משתמשים רגילים יכולים לערוך רק את הפרויקטים שלהם
+            return currentUserId.equals(project.getAppraiserId());
+        }
     }
 
     @Override

@@ -2,20 +2,25 @@ package com.example.finalprojectappraisal.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.activity.activitiesAdmin.AdminListActivity;
+import com.example.finalprojectappraisal.database.ProjectRepository;
+import com.example.finalprojectappraisal.model.Appraiser;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Tasks; // יש לוודא שה-import הזה קיים
 
 public class SettingsActivity extends AppCompatActivity {
 
     private Button adminActionsButton;
-    private FirebaseFirestore db;
     private FirebaseAuth mAuth;
 
     @Override
@@ -23,50 +28,41 @@ public class SettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-        // Initialize Firebase
-        db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
-
-        // Initialize UI component
         adminActionsButton = findViewById(R.id.btnAdminActions);
 
-        // Check if the current user is an admin
         checkIfAdmin();
     }
 
     private void checkIfAdmin() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) {
-            // User is not logged in, hide the button
-            adminActionsButton.setVisibility(Button.GONE);
+            adminActionsButton.setVisibility(View.GONE);
             return;
         }
 
-        String userEmail = currentUser.getEmail();
-        if (userEmail == null) {
-            adminActionsButton.setVisibility(Button.GONE);
-            return;
-        }
+        String userId = currentUser.getUid();
 
-        DocumentReference adminRef = db.collection("admins").document(userEmail);
-
-        adminRef.get().addOnSuccessListener(documentSnapshot -> {
-            if (documentSnapshot.exists()) {
-                // User is an admin, show the button and set up the click listener
-                adminActionsButton.setVisibility(Button.VISIBLE);
-                adminActionsButton.setOnClickListener(v -> {
-                    // Navigate to the AdminListActivity
-                    Intent intent = new Intent(SettingsActivity.this, AdminListActivity.class);
-                    startActivity(intent);
-                });
-            } else {
-                // User is not an admin, hide the button
-                adminActionsButton.setVisibility(Button.GONE);
+        // קריאה למתודה getUserPermissions שלך
+        ProjectRepository.getInstance().getUserPermissions(userId, new OnCompleteListener<Appraiser.AccessPermission>() {
+            @Override
+            public void onComplete(Task<Appraiser.AccessPermission> task) {
+                if (task.isSuccessful()) {
+                    Appraiser.AccessPermission permissions = task.getResult();
+                    if (permissions == Appraiser.AccessPermission.ADMIN || permissions == Appraiser.AccessPermission.SUPER_ADMIN) {
+                        adminActionsButton.setVisibility(View.VISIBLE);
+                        adminActionsButton.setOnClickListener(v -> {
+                            Intent intent = new Intent(SettingsActivity.this, AdminListActivity.class);
+                            startActivity(intent);
+                        });
+                    } else {
+                        adminActionsButton.setVisibility(View.GONE);
+                    }
+                } else {
+                    Toast.makeText(SettingsActivity.this, "שגיאה בבדיקת הרשאות", Toast.LENGTH_SHORT).show();
+                    adminActionsButton.setVisibility(View.GONE);
+                }
             }
-        }).addOnFailureListener(e -> {
-            // Handle any errors in fetching the data
-            Toast.makeText(this, "שגיאה בבדיקת הרשאות", Toast.LENGTH_SHORT).show();
-            adminActionsButton.setVisibility(Button.GONE);
         });
     }
 }

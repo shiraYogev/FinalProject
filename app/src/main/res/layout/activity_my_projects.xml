@@ -11,7 +11,6 @@
     android:paddingTop="8dp"
     tools:context=".activity.myProjects.MyProjectsActivity">
 
-    <!-- כותרת -->
     <TextView
         android:id="@+id/titleMyProjects"
         android:layout_width="wrap_content"
@@ -22,7 +21,33 @@
         android:padding="16dp"
         android:layout_gravity="center" />
 
-    <!-- שורת חיפוש + מסננים -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipGroupViewMode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"
+        app:chipSpacingHorizontal="8dp"
+        app:selectionRequired="true"
+        app:singleSelection="true">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipMyProjects"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="הפרויקטים שלי"
+            android:checked="true" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipAllProjects"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="כל הפרויקטים" />
+    </com.google.android.material.chip.ChipGroup>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -54,7 +79,6 @@
             android:clickable="true" />
     </LinearLayout>
 
-    <!-- צ'יפים של מסננים פעילים -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -70,7 +94,6 @@
             app:singleSelection="false" />
     </HorizontalScrollView>
 
-    <!-- שורת פעולות: פרויקט חדש -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -91,7 +114,6 @@
             android:text="+ צור פרויקט חדש" />
     </LinearLayout>
 
-    <!-- רשימה עם רענון משיכה למטה ומצב ריק מעל -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
@@ -109,7 +131,6 @@
                 android:padding="8dp"
                 tools:listitem="@layout/item_project_card" />
 
-            <!-- מצב ריק (מוצג על גבי הרשימה) -->
             <TextView
                 android:id="@+id/txtEmpty"
                 android:layout_width="match_parent"

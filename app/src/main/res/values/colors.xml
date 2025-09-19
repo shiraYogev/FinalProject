@@ -41,5 +41,6 @@
     <color name="text_secondary">#424242</color>
     <color name="green_color">#4CAF50</color>
     <color name="red_color">#F44336</color>
+    <color name="blue_color">#2196F3</color>
 
 </resources>

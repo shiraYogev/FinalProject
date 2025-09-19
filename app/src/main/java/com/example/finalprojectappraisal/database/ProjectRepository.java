@@ -9,6 +9,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.finalprojectappraisal.database.constants.FirestoreConstants;
 import com.example.finalprojectappraisal.database.updater.ProjectUpdateManager;
 import com.example.finalprojectappraisal.database.validator.ProjectDataValidator;
+import com.example.finalprojectappraisal.model.Appraiser;
 import com.example.finalprojectappraisal.model.BankDetails;
 import com.example.finalprojectappraisal.model.Client;
 import com.example.finalprojectappraisal.model.Project;
@@ -940,6 +941,120 @@ public class ProjectRepository {
                 .document(projectId)
                 .update("bankDetails", bankDetails)
                 .addOnCompleteListener(listener);
+    }
+
+    // הוסף את המתודה הזאת ל-ProjectRepository.java
+
+    /**
+     * שליפת הרשאות משתמש לפי UID
+     */
+    public void getUserPermissions(String userId, OnCompleteListener<Appraiser.AccessPermission> listener) {
+        if (userId == null || userId.trim().isEmpty()) {
+            listener.onComplete(Tasks.forResult(Appraiser.AccessPermission.VIEWER));
+            return;
+        }
+
+        db.collection("appraisers")
+                .document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (!documentSnapshot.exists()) {
+                        // אם המשתמש לא קיים בטבלת appraisers, הוא viewer בלבד
+                        listener.onComplete(Tasks.forResult(Appraiser.AccessPermission.VIEWER));
+                        return;
+                    }
+
+                    try {
+                        Appraiser appraiser = documentSnapshot.toObject(Appraiser.class);
+                        Appraiser.AccessPermission permission = (appraiser != null && appraiser.getAccessPermissions() != null)
+                                ? appraiser.getAccessPermissions()
+                                : Appraiser.AccessPermission.USER;
+
+                        listener.onComplete(Tasks.forResult(permission));
+                    } catch (Exception e) {
+                        Log.e("FirestoreDebug", "Error parsing appraiser permissions: " + e.getMessage());
+                        listener.onComplete(Tasks.forResult(Appraiser.AccessPermission.USER));
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FirestoreDebug", "Error fetching user permissions: " + e.getMessage());
+                    listener.onComplete(Tasks.forResult(Appraiser.AccessPermission.USER));
+                });
+    }
+
+    // הוסף את המתודות האלה ל-ProjectRepository.java
+
+    /**
+     * טעינת כל הפרויקטים עם מאזין חי (למנהלים בלבד)
+     */
+    public void loadAllProjectsWithListener() {
+        if (allProjectsListener != null) {
+            allProjectsListener.remove();
+            allProjectsListener = null;
+        }
+
+        Query q = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .orderBy("lastUpdateDate", Query.Direction.DESCENDING);
+
+        allProjectsListener = q.addSnapshotListener((snap, err) -> {
+            if (err != null) {
+                // אם אין אינדקס, נסה ללא מיון
+                if (err instanceof FirebaseFirestoreException &&
+                        ((FirebaseFirestoreException) err).getCode() == FirebaseFirestoreException.Code.FAILED_PRECONDITION) {
+                    loadAllProjectsWithoutOrder();
+                    return;
+                }
+                Log.e("FirestoreDebug", "listen error (all projects): " + err.getMessage());
+                allProjects.setValue(new ArrayList<>());
+                errorMessage.setValue("שגיאה בטעינת כל הפרויקטים: " + err.getMessage());
+                return;
+            }
+
+            List<Project> out = new ArrayList<>();
+            if (snap != null) {
+                for (DocumentSnapshot d : snap.getDocuments()) {
+                    Project p = safeProjectFrom(d);
+                    if (p != null) out.add(p);
+                }
+            }
+            Log.d("FirestoreDebug", "Loaded (all projects) " + out.size() + " projects");
+            allProjects.setValue(out);
+        });
+    }
+
+    /**
+     * טעינת כל הפרויקטים ללא מיון (במקרה של חוסר אינדקס)
+     */
+    private void loadAllProjectsWithoutOrder() {
+        if (allProjectsListener != null) {
+            allProjectsListener.remove();
+            allProjectsListener = null;
+        }
+
+        Query q = db.collection(FirestoreConstants.COLLECTION_PROJECTS);
+
+        allProjectsListener = q.addSnapshotListener((snap, err) -> {
+            if (err != null) {
+                Log.e("FirestoreDebug", "listen error (all projects no order): " + err.getMessage());
+                allProjects.setValue(new ArrayList<>());
+                errorMessage.setValue("שגיאה בטעינת כל הפרויקטים: " + err.getMessage());
+                return;
+            }
+
+            List<Project> out = new ArrayList<>();
+            if (snap != null) {
+                for (DocumentSnapshot d : snap.getDocuments()) {
+                    Project p = safeProjectFrom(d);
+                    if (p != null) out.add(p);
+                }
+            }
+
+            // מיון בצד הלקוח
+            out.sort(Comparator.comparingLong(Project::getLastUpdateDateMillis).reversed());
+
+            Log.d("FirestoreDebug", "Loaded (all projects no order) " + out.size() + " projects");
+            allProjects.setValue(out);
+        });
     }
 
 }
