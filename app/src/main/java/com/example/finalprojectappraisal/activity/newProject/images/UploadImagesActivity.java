@@ -119,66 +119,94 @@ public class UploadImagesActivity extends AppCompatActivity {
                 return;
             }
 
-            // 1) יצירת Image ועדכון UI מיידי
+            // 1) יצירת Image ועדכון UI מיידי (טוענים מה- content:// כפליס-הולדר עד שיגיע downloadUrl)
             final Image img = new Image();
-            img.setUrl(imageUri.toString());
+            img.setUrl(imageUri.toString());       // תצוגה מיידית עם Glide (content://)
+            img.setLocalUri(imageUri.toString());  // נשמור גם בשדה יעודי
             img.setProjectId(projectId);
             img.setCategory(pickedSection.category);
-            img.setDescription("מעבד תמונה...");
+            img.setDescription("מעלה לענן ומסווג...");
 
             pickedSection.images.add(img);
             int sectionIndex = categories.indexOf(pickedSection);
             if (sectionIndex != -1) {
-                categoriesAdapter.notifyImageChanged(sectionIndex); // התאימי לשם המתודה באדפטר שלך
+                categoriesAdapter.notifyImageChanged(sectionIndex);
             }
 
-            // 2) סיווג → פריסה → שמירה: ה-Helper כבר עושה הכל כולל שמירה ועדכון פרויקט
-            EnhancedGeminiHelper.classifyImageAndSave(
-                    this,
-                    imageUri,
-                    projectId,
-                    img,
-                    pickedSection.prompt, // אפשר גם בלי להעביר, שה-Helper יבחר לפי קטגוריה
-                    new EnhancedGeminiHelper.EnhancedClassificationCallback() {
+            // 2) העלאה ל-Storage → קבלת downloadUrl → שמירה ב-DB → ואז סיווג
+            ProjectRepository.getInstance().uploadImageToStorage(projectId, imageUri, img.getId(), task1 -> {
+                if (!task1.isSuccessful() || task1.getResult() == null) {
+                    runOnUiThread(() -> {
+                        img.setDescription("שגיאה בהעלאה: " + (task1.getException() != null ? task1.getException().getMessage() : ""));
+                        int idx = categories.indexOf(pickedSection);
+                        if (idx != -1) categoriesAdapter.notifyImageChanged(idx);
+                        Toast.makeText(UploadImagesActivity.this, "שגיאה בהעלאת תמונה ל-Storage", Toast.LENGTH_LONG).show();
+                    });
+                    return;
+                }
 
-                        @Override
-                        public void onResult(String rawResult, Map<String, String> parsedDisplayKv) {
-                            runOnUiThread(() -> {
-                                // רענון קלף הסקשן לאחר עיבוד
-                                int idx = categories.indexOf(pickedSection);
-                                if (idx != -1) {
-                                    categoriesAdapter.notifyImageChanged(idx);
+                String downloadUrl = task1.getResult();
+                img.setUrl(downloadUrl); // מעכשיו נציג תמיד https
+                img.setStoragePath(ProjectRepository.getInstance().buildImageStoragePath(projectId, img.getId()));
+                img.setDescription("שומר למסד...");
+
+                // שמירה ראשונית למסד כדי שתהיה רשומה גם לפני הסיווג
+                ProjectRepository.getInstance().addImageToProject(projectId, img, task2 -> {
+                    runOnUiThread(() -> {
+                        int idx = categories.indexOf(pickedSection);
+                        if (idx != -1) categoriesAdapter.notifyImageChanged(idx);
+
+                        if (!task2.isSuccessful()) {
+                            Toast.makeText(UploadImagesActivity.this, "שגיאה בשמירה ל-DB", Toast.LENGTH_LONG).show();
+                        } else {
+                            // עדכון מערך תמונות בפרויקט (images/main) עם ה-downloadUrl
+                            upsertPropertyImagesArray(pickedSection.category, img.getUrl());
+                        }
+                    });
+
+                    // 3) סיווג → יעדכן את המסמך של התמונה (אותו id) עם התוצאות
+                    EnhancedGeminiHelper.classifyImageAndSave(
+                            UploadImagesActivity.this,
+                            imageUri,
+                            projectId,
+                            img,
+                            pickedSection.prompt,
+                            new EnhancedGeminiHelper.EnhancedClassificationCallback() {
+
+                                @Override
+                                public void onResult(String rawResult, Map<String, String> parsedDisplayKv) {
+                                    runOnUiThread(() -> {
+                                        img.setDescription("סיווג הושלם");
+                                        int idx = categories.indexOf(pickedSection);
+                                        if (idx != -1) {
+                                            categoriesAdapter.notifyImageChanged(idx);
+                                        }
+                                        showClassificationResult(pickedSection.category, parsedDisplayKv);
+                                    });
                                 }
-                                // הצגת תקציר נוח לפי קטגוריה
-                                showClassificationResult(pickedSection.category, parsedDisplayKv);
-                            });
-                        }
 
-                        @Override
-                        public void onError(String error) {
-                            runOnUiThread(() -> {
-                                img.setDescription("שגיאה בסיווג: " + error);
-                                int idx = categories.indexOf(pickedSection);
-                                if (idx != -1) {
-                                    categoriesAdapter.notifyImageChanged(idx);
+                                @Override
+                                public void onError(String error) {
+                                    runOnUiThread(() -> {
+                                        img.setDescription("שגיאה בסיווג: " + error);
+                                        int idx = categories.indexOf(pickedSection);
+                                        if (idx != -1) {
+                                            categoriesAdapter.notifyImageChanged(idx);
+                                        }
+                                        Toast.makeText(UploadImagesActivity.this, "שגיאה בסיווג: " + error, Toast.LENGTH_LONG).show();
+                                    });
                                 }
-                                Toast.makeText(UploadImagesActivity.this, "שגיאה בסיווג: " + error, Toast.LENGTH_LONG).show();
-                            });
-                        }
 
-                        @Override
-                        public void onSavedToDatabase() {
-                            runOnUiThread(() -> {
-                                Toast.makeText(UploadImagesActivity.this, "התמונה נשמרה והפרויקט עודכן!", Toast.LENGTH_SHORT).show();
-
-                                // ✅ עדכון המערך propertyImages
-                                upsertPropertyImagesArray(pickedSection.category, img.getUrl());
-                            });
-                        }
-
-
-                    }
-            );
+                                @Override
+                                public void onSavedToDatabase() {
+                                    runOnUiThread(() -> {
+                                        Toast.makeText(UploadImagesActivity.this, "התמונה נשמרה והפרויקט עודכן!", Toast.LENGTH_SHORT).show();
+                                    });
+                                }
+                            }
+                    );
+                });
+            });
         }
     }
 
@@ -236,7 +264,6 @@ public class UploadImagesActivity extends AppCompatActivity {
         );
     }
 
-
     private void upsertPropertyImagesArray(Image.Category category, String uriString) {
         if (uriString == null || uriString.trim().isEmpty()) return;
 
@@ -256,7 +283,6 @@ public class UploadImagesActivity extends AppCompatActivity {
                 }
         );
     }
-
 
     private @Nullable String arrayNameForCategory(Image.Category category) {
         switch (category) {
@@ -304,7 +330,7 @@ public class UploadImagesActivity extends AppCompatActivity {
 
                 ImageCategorySection sec = byCat.get(cat);
                 if (sec != null) {
-                    // ודאי שיש URL בר־תצוגה (downloadUrl/https), לא רק content://
+                    // downloadUrl/https (Glide תומך גם ב-content:// בתצוגה)
                     sec.images.add(img);
                 }
             }
@@ -313,14 +339,12 @@ public class UploadImagesActivity extends AppCompatActivity {
             try {
                 categoriesAdapter.notifyDataSetChanged();
             } catch (Throwable t) {
-                // fallback – במקרה ואין מתודה מותאמת
                 for (int i = 0; i < categories.size(); i++) {
                     categoriesAdapter.notifyItemChanged(i);
                 }
             }
         });
     }
-
 
     /**
      * מציג טוסט מסכם (מפה ידידותית בעברית מגיעה מה-Parser).

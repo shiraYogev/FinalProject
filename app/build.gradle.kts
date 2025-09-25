@@ -81,6 +81,7 @@ dependencies {
 
     // Image Loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 
     // CameraX
     implementation("androidx.camera:camera-camera2:1.3.1")
@@ -93,10 +94,17 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
+    // AndroidX + UI
     implementation("com.google.android.material:material:1.12.0")
 
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation ("com.google.android.flexbox:flexbox:3.0.0")
+
+    // Lifecycle (כי את משתמשת ב-LiveData)
+    implementation("androidx.lifecycle:lifecycle-livedata:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel:2.9.4") // :contentReference[oaicite:4]{index=4}
+
+
 
 }
 

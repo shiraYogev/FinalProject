@@ -22,7 +22,13 @@ public class Image {
     }
 
     private String id;
+    /** Remote display URL (prefer Firebase Storage downloadUrl). */
     private String url;
+    /** Original local content:// URI for fast/local preview (optional). */
+    private String localUri;
+    /** Storage path inside Firebase Storage, e.g. projects/{pid}/images/{id}.jpg (optional). */
+    private String storagePath;
+
     private String projectId;
     private Category category;
     private List<Subcategory> subcategories;
@@ -64,7 +70,6 @@ public class Image {
 
     @SuppressWarnings("unchecked")
     public Image(Map<String, Object> map) {
-        // defaults first
         this();
         if (map == null) return;
 
@@ -72,6 +77,12 @@ public class Image {
         if (idObj instanceof String) this.id = (String) idObj;
 
         this.url = (String) map.get("url");
+        // support legacy alternative keys if ever used
+        if (this.url == null) this.url = (String) map.get("downloadUrl");
+
+        this.localUri = (String) map.get("localUri");
+        this.storagePath = (String) map.get("storagePath");
+
         this.projectId = (String) map.get("projectId");
 
         Object catObj = map.get("category");
@@ -79,7 +90,6 @@ public class Image {
             try { this.category = Category.valueOf((String) catObj); } catch (Exception ignored) {}
         }
 
-        // subcategories
         Object subcatsObj = map.get("subcategories");
         if (subcatsObj instanceof List<?>) {
             this.subcategories.clear();
@@ -90,7 +100,6 @@ public class Image {
             }
         }
 
-        // aiClassifications
         Object aiObj = map.get("aiClassifications");
         if (aiObj instanceof Map<?, ?>) {
             this.aiClassifications.clear();
@@ -119,7 +128,6 @@ public class Image {
         Object verifiedObj = map.get("isVerified");
         this.isVerified = (verifiedObj instanceof Boolean) ? (Boolean) verifiedObj : false;
 
-        // finalClassification
         Object finalObj = map.get("finalClassification");
         if (finalObj instanceof Map<?, ?>) {
             this.finalClassification.clear();
@@ -137,15 +145,15 @@ public class Image {
         Map<String, Object> map = new HashMap<>();
         map.put("id", id);
         map.put("url", url);
+        map.put("localUri", localUri);
+        map.put("storagePath", storagePath);
         map.put("projectId", projectId);
         map.put("category", category != null ? category.name() : null);
 
-        // subcategories → List<String>
         List<String> subcatNames = new ArrayList<>();
         for (Subcategory sub : getSubcategories()) subcatNames.add(sub.name());
         map.put("subcategories", subcatNames);
 
-        // aiClassifications → Map<String,String>
         Map<String, String> aiClassNames = new HashMap<>();
         for (Map.Entry<Subcategory, String> entry : getAiClassifications().entrySet())
             aiClassNames.put(entry.getKey().name(), entry.getValue());
@@ -164,42 +172,26 @@ public class Image {
         return map;
     }
 
-    // ---------- Safe getters (never return null) ----------
-
+    // ---------- Safe getters ----------
     public String getId() { return id; }
     public String getUrl() { return url; }
+    public String getLocalUri() { return localUri; }
+    public String getStoragePath() { return storagePath; }
     public String getProjectId() { return projectId; }
     public Category getCategory() { return category; }
-
-    public List<Subcategory> getSubcategories() {
-        if (subcategories == null) subcategories = new ArrayList<>();
-        return subcategories;
-    }
-
-    public Map<Subcategory, String> getAiClassifications() {
-        if (aiClassifications == null) aiClassifications = new HashMap<>();
-        return aiClassifications;
-    }
-
+    public List<Subcategory> getSubcategories() { if (subcategories == null) subcategories = new ArrayList<>(); return subcategories; }
+    public Map<Subcategory, String> getAiClassifications() { if (aiClassifications == null) aiClassifications = new HashMap<>(); return aiClassifications; }
     public String getDescription() { return description; }
     public String getUploadDate() { return uploadDate; }
-
-    public List<String> getLabels() {
-        if (labels == null) labels = new ArrayList<>();
-        return labels;
-    }
-
+    public List<String> getLabels() { if (labels == null) labels = new ArrayList<>(); return labels; }
     public boolean isVerified() { return isVerified; }
-
-    public Map<Subcategory, String> getFinalClassification() {
-        if (finalClassification == null) finalClassification = new HashMap<>();
-        return finalClassification;
-    }
+    public Map<Subcategory, String> getFinalClassification() { if (finalClassification == null) finalClassification = new HashMap<>(); return finalClassification; }
 
     // ---------- Setters ----------
-
     public void setId(String id) { this.id = id; }
     public void setUrl(String url) { this.url = url; }
+    public void setLocalUri(String localUri) { this.localUri = localUri; }
+    public void setStoragePath(String storagePath) { this.storagePath = storagePath; }
     public void setProjectId(String projectId) { this.projectId = projectId; }
     public void setCategory(Category category) { this.category = category; }
     public void setSubcategories(List<Subcategory> subcategories) { this.subcategories = (subcategories != null) ? subcategories : new ArrayList<>(); }
