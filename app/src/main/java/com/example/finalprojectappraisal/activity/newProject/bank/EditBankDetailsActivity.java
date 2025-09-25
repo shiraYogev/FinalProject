@@ -73,7 +73,7 @@ public class EditBankDetailsActivity extends AppCompatActivity {
     }
 
     private void saveBankDetails() {
-        showLoading(true);
+        //showLoading(true);
 
         // יצירת אובייקט BankDetails חדש מהנתונים המעודכנים מהשדות
         BankDetails updatedBankDetails = new BankDetails();
