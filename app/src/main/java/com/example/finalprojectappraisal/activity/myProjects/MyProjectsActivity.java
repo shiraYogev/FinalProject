@@ -38,6 +38,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import android.app.AlertDialog;
+
 public class MyProjectsActivity extends AppCompatActivity
         implements FiltersBottomSheetDialogFragment.OnFiltersAppliedListener {
 
@@ -98,15 +100,18 @@ public class MyProjectsActivity extends AppCompatActivity
 
             @Override
             public void onDelete(Project project) {
-                ProjectRepository.getInstance().deleteProject(project.getProjectId(), task -> {
-                    if (task.isSuccessful()) {
-                        Toast.makeText(MyProjectsActivity.this, "הפרויקט נמחק", Toast.LENGTH_SHORT).show();
-                        reload(); // רענון אחרי מחיקה
-                    } else {
-                        Toast.makeText(MyProjectsActivity.this, "מחיקה נכשלה", Toast.LENGTH_SHORT).show();
-                        stopRefreshing();
-                    }
-                });
+                //ProjectRepository.getInstance().deleteProject(project.getProjectId(), task -> {
+                //    if (task.isSuccessful()) {
+                //        Toast.makeText(MyProjectsActivity.this, "הפרויקט נמחק", Toast.LENGTH_SHORT).show();
+                //        reload(); // רענון אחרי מחיקה
+                //    } else {
+                //        Toast.makeText(MyProjectsActivity.this, "מחיקה נכשלה", Toast.LENGTH_SHORT).show();
+                //        stopRefreshing();
+                //    }
+                //});
+
+                // ** קוד חדש: הצגת תיבת דו-שיח לאישור מחיקה **
+                showDeleteConfirmationDialog(project);
             }
         }, this, isAdmin, currentUserId);
 
@@ -362,4 +367,33 @@ public class MyProjectsActivity extends AppCompatActivity
             reload();
         });
     }
+    /** מציג תיבת דו-שיח לאישור מחיקת פרויקט */
+    /** מציג תיבת דו-שיח לאישור מחיקת פרויקט */
+    private void showDeleteConfirmationDialog(Project project) {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("אישור מחיקת פרויקט")
+                // ** כאן התיקון: שימוש ב-project.getFullAddress() במקום project.getAddress() **
+                .setMessage("האם אתה בטוח שברצונך למחוק את הפרויקט '" + project.getFullAddress() + "'? פעולה זו אינה ניתנת לשיחזור.")
+                .setPositiveButton("מחק", (dialog, which) -> {
+                    // אם המשתמש אישר, בצע מחיקה
+                    performProjectDeletion(project);
+                })
+                .setNegativeButton("ביטול", null)
+                .show();
+    }
+
+    /** מבצע את המחיקה בפועל לאחר האישור */
+    private void performProjectDeletion(Project project) {
+        ProjectRepository.getInstance().deleteProject(project.getProjectId(), task -> {
+            if (task.isSuccessful()) {
+                Toast.makeText(MyProjectsActivity.this, "הפרויקט נמחק בהצלחה", Toast.LENGTH_SHORT).show();
+                reload(); // רענון אחרי מחיקה
+            } else {
+                Toast.makeText(MyProjectsActivity.this, "מחיקה נכשלה: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                stopRefreshing();
+            }
+        });
+    }
+
+
 }
