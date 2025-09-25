@@ -1,8 +1,10 @@
 package com.example.finalprojectappraisal.database;
 
+import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -12,39 +14,32 @@ import com.example.finalprojectappraisal.database.validator.ProjectDataValidator
 import com.example.finalprojectappraisal.model.Appraiser;
 import com.example.finalprojectappraisal.model.BankDetails;
 import com.example.finalprojectappraisal.model.Client;
+import com.example.finalprojectappraisal.model.Image;
 import com.example.finalprojectappraisal.model.Project;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.example.finalprojectappraisal.model.Image;
 import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
-
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
-import android.net.Uri;
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Date;
-
-
+import java.util.Set;
 
 /**
  * Main repository class that handles Firebase Firestore operations for projects.
@@ -53,31 +48,28 @@ import java.util.Date;
  */
 public class ProjectRepository {
 
+    private static final String TAG = "ProjectRepository";
     private static ProjectRepository instance;
     private final FirebaseFirestore db;
     private final ProjectUpdateManager updateManager;
     private String currentProjectId;
 
-    // ADDED: Firebase Storage for documents (Bank details PDFs, etc.)
     private final FirebaseStorage storage;
     private final StorageReference storageRef;
-
-
 
     // LiveData for reactive programming
     private final MutableLiveData<Project> currentProject = new MutableLiveData<>();
     private final MutableLiveData<List<Project>> allProjects = new MutableLiveData<>();
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
 
-    // Listener for live queries (all projects / by appraiser)
-    private ListenerRegistration allProjectsListener;
-    // נשמור את ה-appraiserId האחרון ששימש לטעינה, כדי לרענן אחרי פעולות (מחיקה למשל)
-    private String lastUsedAppraiserIdString = null;
+    // Listener for live queries
+    private ListenerRegistration projectsListener;
+    private String lastUsedUserIdForListening = null;
 
 
     private ProjectRepository() {
         db = FirebaseFirestore.getInstance();
-        updateManager = new ProjectUpdateManager(db, errorMessage);  // Initialize Firebase Storage
+        updateManager = new ProjectUpdateManager(db, errorMessage);
         storage = FirebaseStorage.getInstance();
         storageRef = storage.getReference();
     }
@@ -94,16 +86,12 @@ public class ProjectRepository {
 
     // ========================= PROJECT CREATION =========================
 
-    /**
-     * Creates a new project in Firestore with auto-generated ID
-     */
-    public void createNewProject(Project project, OnCompleteListener<Void> listener) {
+    public void createNewProject(@NonNull Project project, @Nullable OnCompleteListener<Void> listener) {
         if (project == null) {
             handleError("Project cannot be null", listener);
             return;
         }
 
-        // Validate project data
         ProjectDataValidator.ValidationResult validation = ProjectDataValidator.validateProject(project);
         if (!validation.isValid()) {
             handleError("Validation failed: " + validation.getErrorsAsString(), listener);
@@ -119,21 +107,16 @@ public class ProjectRepository {
                 .addOnFailureListener(e -> errorMessage.setValue(FirestoreConstants.ERROR_CREATING_PROJECT + ": " + e.getMessage()));
     }
 
-    /**
-     * Creates a project with specific address as document ID
-     */
-    public void createProjectWithAddress(String fullAddress, Project project, OnCompleteListener<Void> listener) {
+    public void createProjectWithAddress(@NonNull String fullAddress, @NonNull Project project, @Nullable OnCompleteListener<Void> listener) {
         if (fullAddress == null || fullAddress.trim().isEmpty()) {
             handleError("Full address cannot be null or empty", listener);
             return;
         }
-
         if (project == null) {
             handleError("Project cannot be null", listener);
             return;
         }
 
-        // Validate project data
         ProjectDataValidator.ValidationResult validation = ProjectDataValidator.validateProject(project);
         if (!validation.isValid()) {
             handleError("Validation failed: " + validation.getErrorsAsString(), listener);
@@ -149,29 +132,21 @@ public class ProjectRepository {
 
     // ========================= PROJECT RETRIEVAL =========================
 
-    /**
-     * Gets a project by ID and returns DocumentSnapshot
-     */
-    public void getProject(String projectId, OnCompleteListener<DocumentSnapshot> listener) {
+    public void getProject(@NonNull String projectId, @Nullable OnCompleteListener<DocumentSnapshot> listener) {
         if (projectId == null || projectId.trim().isEmpty()) {
             handleError(FirestoreConstants.ERROR_PROJECT_NOT_FOUND, null);
             return;
         }
-
         db.collection(FirestoreConstants.COLLECTION_PROJECTS).document(projectId)
                 .get()
                 .addOnCompleteListener(listener);
     }
 
-    /**
-     * Loads a project and updates current project LiveData
-     */
-    public void loadProject(String projectId) {
+    public void loadProject(@NonNull String projectId) {
         if (projectId == null || projectId.trim().isEmpty()) {
             errorMessage.setValue(FirestoreConstants.ERROR_PROJECT_NOT_FOUND);
             return;
         }
-
         db.collection(FirestoreConstants.COLLECTION_PROJECTS).document(projectId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
@@ -195,164 +170,84 @@ public class ProjectRepository {
     }
 
     /**
-     * Loads all projects and updates allProjects LiveData
+     * טוענת פרויקטים שבהם המשתמש הוא:
+     * 1. השמאי הראשי (appraiserId)
+     * 2. אחד מהשמאים השותפים (co_appraiser_ids)
+     *
+     * @param userId ה-UID של המשתמש הנוכחי
      */
-    public void loadAllProjects() {
-        db.collection(FirestoreConstants.COLLECTION_PROJECTS)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    List<Project> projects = new ArrayList<>();
-                    for (DocumentSnapshot document : querySnapshot.getDocuments()) {
-                        try {
-                            Project project = document.toObject(Project.class);
-                            if (project != null) {
-                                projects.add(project);
-                                Log.d("FirestoreDebug", "Loaded project: " + project.getProjectId());
+    public void loadProjectsForAppraiser(@NonNull String userId) {
+        lastUsedUserIdForListening = userId;
+        stopListening();
+
+        Task<QuerySnapshot> query1 = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .whereEqualTo(FirestoreConstants.FIELD_APPRAISER_ID, userId)
+                .get();
+
+        Task<QuerySnapshot> query2 = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .whereArrayContains(FirestoreConstants.FIELD_CO_APPRAISER_IDS, userId)
+                .get();
+
+        Tasks.whenAllSuccess(query1, query2)
+                .addOnSuccessListener(results -> {
+                    Set<Project> combinedProjects = new HashSet<>();
+                    for (Object result : results) {
+                        QuerySnapshot snapshot = (QuerySnapshot) result;
+                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                            Project p = safeProjectFrom(doc);
+                            if (p != null) {
+                                combinedProjects.add(p);
                             }
-                        } catch (Exception e) {
-                            Log.e("FirestoreDebug", "Error parsing project: " + e.getMessage());
                         }
                     }
-                    Log.d("FirestoreDebug", "Loaded " + projects.size() + " projects from Firestore");
-                    allProjects.setValue(projects);
+
+                    List<Project> sortedProjects = new ArrayList<>(combinedProjects);
+                    sortedProjects.sort(Comparator.comparingLong(Project::getLastUpdateDateMillis).reversed());
+
+                    allProjects.setValue(sortedProjects);
+                    Log.d(TAG, "Loaded " + sortedProjects.size() + " projects for user " + userId + " (Primary/Co-Appraiser).");
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("FirestoreDebug", "Failed to load projects: " + e.getMessage());
-                    errorMessage.setValue("Error loading projects: " + e.getMessage());
+                    errorMessage.setValue("שגיאה בטעינת פרויקטים עבור משתמש: " + e.getMessage());
+                    allProjects.setValue(new ArrayList<>());
+                    Log.e(TAG, "Error loading projects for user " + userId + ": " + e.getMessage());
                 });
     }
 
     /**
-     * Loads all projects for a specific appraiser (by appraiserId) and keeps a live listener.
-     * appraiserIdValue type MUST match Firestore field type (String or Number).
+     * מפסיק להאזין לכל הפרויקטים (מסיר את ה-projectsListener)
      */
-    public void loadProjectsForAppraiser(Object appraiserIdValue) {
-        // detach previous listener (avoid double updates)
-        if (allProjectsListener != null) {
-            allProjectsListener.remove();
-            allProjectsListener = null;
+    public void stopListening() {
+        if (projectsListener != null) {
+            projectsListener.remove();
+            projectsListener = null;
+            Log.d(TAG, "Stopped listening to projects.");
         }
-        if (appraiserIdValue == null) {
-            allProjects.setValue(new ArrayList<>());
-            errorMessage.setValue("appraiserIdValue is null");
-            return;
-        }
-        Query q = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
-                .whereEqualTo("appraiserId", appraiserIdValue)
-                .orderBy("lastUpdateDate", Query.Direction.DESCENDING);
-        allProjectsListener = q.addSnapshotListener((snap, err) -> {
-            if (err != null) {
-                Log.e("FirestoreDebug", "listen error: " + err.getMessage());
-                allProjects.setValue(new ArrayList<>());
-                errorMessage.setValue("שגיאה בטעינת פרויקטים: " + err.getMessage());
-                return;
-            }
-            List<Project> out = new ArrayList<>();
-            if (snap != null) {
-                for (DocumentSnapshot d : snap.getDocuments()) {
-                    Project p = safeProjectFrom(d);
-                    if (p != null) out.add(p);
-                }
-            }
-            Log.d("FirestoreDebug", "Loaded (by appraiser) " + out.size() + " projects");
-            allProjects.setValue(out);
-        });
     }
 
-    public void loadActiveProjectsForAppraiser(String appraiserId) {
-        String TAG = "ProjectRepository";
-        Log.d(TAG, "Start loading active projects for appraiserId=" + appraiserId);
+    /**
+     * טעינת כל הפרויקטים עם מאזין חי (למנהלים בלבד)
+     */
+    public void loadAllProjectsWithListener() {
+        stopListening();
 
-        db.collection("appraisers")
-                .document(appraiserId)
-                .get()
-                .addOnSuccessListener(snapshot -> {
-                    Log.d(TAG, "Appraiser document fetch success. exists=" + snapshot.exists());
-
-                    if (!snapshot.exists()) {
-                        Log.w(TAG, "Appraiser document not found for id=" + appraiserId);
-                        allProjects.setValue(new ArrayList<>());
-                        return;
-                    }
-
-                    Object idsObj = snapshot.get("activeProjects");
-                    List<String> projectIds = new ArrayList<>();
-                    if (idsObj instanceof List) {
-                        for (Object o : (List<?>) idsObj) {
-                            if (o != null) projectIds.add(String.valueOf(o));
-                        }
-                    }
-
-                    Log.d(TAG, "Parsed activeProjects: " + projectIds);
-
-                    if (projectIds.isEmpty()) {
-                        Log.d(TAG, "No active projects for appraiserId=" + appraiserId);
-                        allProjects.setValue(new ArrayList<>());
-                        return;
-                    }
-
-                    List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
-                    for (String projectId : projectIds) {
-                        Log.d(TAG, "Fetching projectId=" + projectId);
-                        tasks.add(db.collection("projects").document(projectId).get());
-                    }
-
-                    Tasks.whenAllSuccess(tasks)
-                            .addOnSuccessListener(results -> {
-                                Log.d(TAG, "Successfully fetched all projects. count=" + results.size());
-                                List<Project> loaded = new ArrayList<>();
-                                for (Object obj : results) {
-                                    DocumentSnapshot doc = (DocumentSnapshot) obj;
-                                    if (doc.exists()) {
-                                        Project p = doc.toObject(Project.class);
-                                        if (p != null) {
-                                            p.setProjectId(doc.getId());
-                                            loaded.add(p);
-                                            Log.d(TAG, "Loaded project: " + doc.getId());
-                                        } else {
-                                            Log.w(TAG, "toObject returned null for projectId=" + doc.getId());
-                                        }
-                                    } else {
-                                        Log.w(TAG, "Project document does not exist: " + doc.getId());
-                                    }
-                                }
-                                allProjects.setValue(loaded);
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.e(TAG, "Error loading project documents", e);
-                                allProjects.setValue(new ArrayList<>());
-                            });
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching appraiser document", e);
-                    allProjects.setValue(new ArrayList<>());
-                });
-    }
-
-
-
-    /** Convenience wrappers when you know the type */
-    /** טען פרויקטים לפי appraiserId (String) עם מאזין חי. */
-    // גרסה עם fallback: נסה עם orderBy, ואם יש FAILED_PRECONDITION -> נופל חזרה ללא מיון
-    public void loadProjectsForAppraiserIdString(@NonNull String appraiserId) {
-        lastUsedAppraiserIdString = appraiserId;
-        if (allProjectsListener != null) { allProjectsListener.remove(); allProjectsListener = null; }
         Query q = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
-                .whereEqualTo("appraiserId", appraiserId)
-                .orderBy("lastUpdateDate", Query.Direction.DESCENDING);
-        allProjectsListener = q.addSnapshotListener((snap, err) -> {
+                .orderBy(FirestoreConstants.FIELD_LAST_UPDATE_DATE, Query.Direction.DESCENDING);
+
+        projectsListener = q.addSnapshotListener((snap, err) -> {
             if (err != null) {
-                // אין אינדקס? ננסה מיד ללא מיון כדי שלא תהיי תקועה
                 if (err instanceof FirebaseFirestoreException &&
                         ((FirebaseFirestoreException) err).getCode() == FirebaseFirestoreException.Code.FAILED_PRECONDITION) {
-                    loadProjectsForAppraiserNoOrder(appraiserId); // <-- ראי מטה
+                    Log.w(TAG, "Missing index for 'lastUpdateDate' field, falling back to unsorted query.");
+                    loadAllProjectsWithoutOrder();
                     return;
                 }
-                Log.e("FirestoreDebug", "listen error: " + err.getMessage());
+                Log.e(TAG, "listen error (all projects): " + err.getMessage());
                 allProjects.setValue(new ArrayList<>());
-                errorMessage.setValue("שגיאה בטעינת פרויקטים: " + err.getMessage());
+                errorMessage.setValue("שגיאה בטעינת כל הפרויקטים: " + err.getMessage());
                 return;
             }
+
             List<Project> out = new ArrayList<>();
             if (snap != null) {
                 for (DocumentSnapshot d : snap.getDocuments()) {
@@ -360,51 +255,43 @@ public class ProjectRepository {
                     if (p != null) out.add(p);
                 }
             }
+            Log.d(TAG, "Loaded (all projects) " + out.size() + " projects");
             allProjects.setValue(out);
         });
-    }
-
-
-    // בלי מיון (עד שיש אינדקס)
-    public void loadProjectsForAppraiserNoOrder(@NonNull String appraiserId) {
-        if (allProjectsListener != null) { allProjectsListener.remove(); allProjectsListener = null; }
-        Query q = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
-                .whereEqualTo("appraiserId", appraiserId);
-        allProjectsListener = q.addSnapshotListener((snap, err) -> {
-            if (err != null) {
-                Log.e("FirestoreDebug", "listen error(no order): " + err.getMessage());
-                allProjects.setValue(new ArrayList<>());
-                errorMessage.setValue("שגיאה בטעינת פרויקטים: " + err.getMessage());
-                return;
-            }
-            List<Project> out = new ArrayList<>();
-            if (snap != null) {
-                for (DocumentSnapshot d : snap.getDocuments()) {
-                    Project p = safeProjectFrom(d);
-                    if (p != null) out.add(p);
-                }
-            }
-            // מיון בצד הלקוח (רק לתצוגה)
-            out.sort(Comparator.comparingLong(Project::getLastUpdateDateMillis).reversed());
-
-            allProjects.setValue(out);
-        });
-    }
-    public void loadProjectsForAppraiserIdLong(long appraiserId) {
-        loadProjectsForAppraiser(appraiserId);
-    }
-
-    public void stopListening() {
-        if (allProjectsListener != null) {
-            allProjectsListener.remove();
-            allProjectsListener = null;
-        }
     }
 
     /**
-     * Loads projects with a specific status
+     * טעינת כל הפרויקטים ללא מיון (במקרה של חוסר אינדקס)
      */
-    public void loadProjectsByStatus(String status, OnCompleteListener<List<Project>> listener) {
+    private void loadAllProjectsWithoutOrder() {
+        stopListening();
+
+        Query q = db.collection(FirestoreConstants.COLLECTION_PROJECTS);
+
+        projectsListener = q.addSnapshotListener((snap, err) -> {
+            if (err != null) {
+                Log.e(TAG, "listen error (all projects no order): " + err.getMessage());
+                allProjects.setValue(new ArrayList<>());
+                errorMessage.setValue("שגיאה בטעינת כל הפרויקטים: " + err.getMessage());
+                return;
+            }
+
+            List<Project> out = new ArrayList<>();
+            if (snap != null) {
+                for (DocumentSnapshot d : snap.getDocuments()) {
+                    Project p = safeProjectFrom(d);
+                    if (p != null) out.add(p);
+                }
+            }
+
+            out.sort(Comparator.comparingLong(Project::getLastUpdateDateMillis).reversed());
+
+            Log.d(TAG, "Loaded (all projects no order) " + out.size() + " projects");
+            allProjects.setValue(out);
+        });
+    }
+
+    public void loadProjectsByStatus(@NonNull String status, @Nullable OnCompleteListener<List<Project>> listener) {
         if (status == null || status.trim().isEmpty()) {
             handleError("Status cannot be null or empty", null);
             return;
@@ -425,99 +312,71 @@ public class ProjectRepository {
                             System.err.println("Error loading project " + document.getId() + ": " + e.getMessage());
                         }
                     }
-                    listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(projects));
+                    if (listener != null) listener.onComplete(Tasks.forResult(projects));
                 })
                 .addOnFailureListener(e -> {
                     errorMessage.setValue(FirestoreConstants.ERROR_LOADING_PROJECTS + ": " + e.getMessage());
-                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(e));
+                    if (listener != null) listener.onComplete(Tasks.forException(e));
                 });
     }
 
     // ========================= PROJECT UPDATES (DELEGATED) =========================
 
-    /**
-     * Saves client details to the project (delegated to UpdateManager)
-     */
-    public void saveClientDetails(String projectId, Client client, OnCompleteListener<Void> listener) {
+    public void saveClientDetails(@NonNull String projectId, @NonNull Client client, @Nullable OnCompleteListener<Void> listener) {
         ProjectDataValidator.ValidationResult validation = ProjectDataValidator.validateClient(client);
         if (!validation.isValid()) {
             handleError("Client validation failed: " + validation.getErrorsAsString(), listener);
             return;
         }
-
         updateManager.saveClientDetails(projectId, client, listener);
     }
 
-    /**
-     * Saves property details to the project (delegated to UpdateManager)
-     */
-    public void savePropertyDetails(String projectId, Map<String, Object> propertyDetails, OnCompleteListener<Void> listener) {
+    public void savePropertyDetails(@NonNull String projectId, @NonNull Map<String, Object> propertyDetails, @Nullable OnCompleteListener<Void> listener) {
         updateManager.savePropertyDetails(projectId, propertyDetails, listener);
     }
 
-    /**
-     * Saves apartment details to the project (delegated to UpdateManager)
-     */
-    public void saveApartmentDetails(String projectId, Map<String, Object> apartmentDetails, OnCompleteListener<Void> listener) {
+    public void saveApartmentDetails(@NonNull String projectId, @NonNull Map<String, Object> apartmentDetails, @Nullable OnCompleteListener<Void> listener) {
         ProjectDataValidator.ValidationResult validation = ProjectDataValidator.validateApartmentDetails(apartmentDetails);
         if (!validation.isValid()) {
             handleError("Apartment details validation failed: " + validation.getErrorsAsString(), listener);
             return;
         }
 
-        // 1) שמירה ל-property_details
-
         updateManager.saveApartmentDetails(projectId, apartmentDetails, task -> {
             if (!task.isSuccessful()) {
                 if (listener != null) listener.onComplete(task);
                 return;
             }
-            // 2) ניקוי כפילויות מהשורש דרך ה-wrapper של ה-Repository
             cleanupRootDuplicates(projectId, cleanupTask -> {
                 if (listener != null) listener.onComplete(cleanupTask);
             });
         });
     }
-    public void cleanupRootDuplicates(String projectId,
-                                      com.google.android.gms.tasks.OnCompleteListener<Void> listener) {
+
+    public void cleanupRootDuplicates(@NonNull String projectId, @Nullable OnCompleteListener<Void> listener) {
         updateManager.cleanupRootDuplicateFields(projectId, listener);
     }
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-    /**
-     * Saves property features to the project (delegated to UpdateManager)
-     */
-    public void savePropertyFeatures(String projectId, Map<String, Object> features, OnCompleteListener<Void> listener) {
+    public void savePropertyFeatures(@NonNull String projectId, @NonNull Map<String, Object> features, @Nullable OnCompleteListener<Void> listener) {
         ProjectDataValidator.ValidationResult validation = ProjectDataValidator.validatePropertyFeatures(features);
         if (!validation.isValid()) {
             handleError("Property features validation failed: " + validation.getErrorsAsString(), listener);
             return;
         }
-
         updateManager.savePropertyFeatures(projectId, features, listener);
     }
 
-    /**
-     * Updates project status (delegated to UpdateManager)
-     */
-    public void updateProjectStatus(String projectId, String status, OnCompleteListener<Void> listener) {
+    public void updateProjectStatus(@NonNull String projectId, @NonNull String status, @Nullable OnCompleteListener<Void> listener) {
         updateManager.updateProjectStatus(projectId, status, listener);
     }
 
-    /**
-     * Updates multiple fields at once (delegated to UpdateManager)
-     */
-    public void updateMultipleFields(String projectId, Map<String, Object> fieldsToUpdate, OnCompleteListener<Void> listener) {
+    public void updateMultipleFields(@NonNull String projectId, @NonNull Map<String, Object> fieldsToUpdate, @Nullable OnCompleteListener<Void> listener) {
         updateManager.updateMultipleFields(projectId, fieldsToUpdate, listener);
     }
 
     // ========================= PROJECT DELETION =========================
 
-    /**
-     * Deletes a project from Firestore
-     */
-    public void deleteProject(String projectId, OnCompleteListener<Void> listener) {
+    public void deleteProject(@NonNull String projectId, @Nullable OnCompleteListener<Void> listener) {
         if (projectId == null || projectId.trim().isEmpty()) {
             handleError(FirestoreConstants.ERROR_PROJECT_NOT_FOUND, listener);
             return;
@@ -527,29 +386,28 @@ public class ProjectRepository {
                 .delete()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        // Clear current project if it's the one being deleted
                         if (projectId.equals(currentProjectId)) {
                             currentProjectId = null;
                             currentProject.setValue(null);
                         }
-                        if (lastUsedAppraiserIdString != null) {
-                            loadProjectsForAppraiserIdString(lastUsedAppraiserIdString);
+                        if (lastUsedUserIdForListening != null) {
+                            loadProjectsForAppraiser(lastUsedUserIdForListening);
                         } else {
-                            loadAllProjects(); // fallback אם לא השתמשנו במסנן
+                            loadAllProjectsWithListener();
                         }
+                        Log.d(TAG, "Project " + projectId + " deleted successfully.");
+                    } else {
+                        Log.e(TAG, "Error deleting project " + projectId + ": " + task.getException().getMessage());
                     }
                     if (listener != null) {
                         listener.onComplete(task);
                     }
                 })
                 .addOnFailureListener(e -> errorMessage.setValue(FirestoreConstants.ERROR_DELETING_PROJECT + ": " + e.getMessage()));
-            }
-
-
+    }
 
 
     // ========================= IMAGE MANAGEMENT =========================
-
     /**
      * Saves image path fields into projects/{projectId}/images/main (merge)
      * Allowed keys: front_image, interior_image, tabu_crop_image
@@ -577,6 +435,7 @@ public class ProjectRepository {
             if (listener != null) listener.onComplete(task);
         });
     }
+
 
     // טוען תמונות משני מקורות: תת-האוסף images/* וגם המסמך images/main.
 // מוסף סינון: רק מחרוזות שמתחילות ב-"http" (מתעלם מ-content://).
@@ -723,7 +582,6 @@ public class ProjectRepository {
                 .addOnFailureListener(e -> listener.onComplete(Tasks.forException(e)));
     }
 
-
     /**
      * Convenience: update a single image path field key->value
      * fieldName must be one of:
@@ -737,7 +595,6 @@ public class ProjectRepository {
         data.put(fieldName, path);
         saveImagePaths(projectId, data, listener);
     }
-
     public void addImageToProject(String projectId, Image image, OnCompleteListener<Void> listener) {
         if (projectId == null || image == null) {
             handleError("Project ID and Image are required", listener);
@@ -752,68 +609,66 @@ public class ProjectRepository {
                 .addOnFailureListener(e -> errorMessage.setValue("שגיאה בהעלאת תמונה: " + e.getMessage()));
     }
 
-    public void updateImageInProject(String projectId, Image image, OnCompleteListener<Void> listener) {
+    public void updateImageInProject(@NonNull String projectId, @NonNull Image image, @Nullable OnCompleteListener<Void> listener) {
         if (projectId == null || image == null) {
             handleError("Project ID and Image are required", listener);
             return;
         }
         db.collection(FirestoreConstants.COLLECTION_PROJECTS)
                 .document(projectId)
-                .collection("images")
+                .collection(FirestoreConstants.SUBCOLLECTION_IMAGES) // <-- שינוי כאן
                 .document(image.getId())
                 .set(image.toMap())
                 .addOnCompleteListener(listener)
                 .addOnFailureListener(e -> errorMessage.setValue("שגיאה בעדכון תמונה: " + e.getMessage()));
     }
 
-    public void deleteImageFromProject(String projectId, String imageId, OnCompleteListener<Void> listener) {
+    public void deleteImageFromProject(@NonNull String projectId, @NonNull String imageId, @Nullable OnCompleteListener<Void> listener) {
         if (projectId == null || imageId == null) {
             handleError("Project ID and Image ID are required", listener);
             return;
         }
         db.collection(FirestoreConstants.COLLECTION_PROJECTS)
                 .document(projectId)
-                .collection("images")
+                .collection(FirestoreConstants.SUBCOLLECTION_IMAGES) // <-- שינוי כאן
                 .document(imageId)
                 .delete()
                 .addOnCompleteListener(listener)
                 .addOnFailureListener(e -> errorMessage.setValue("שגיאה במחיקת תמונה: " + e.getMessage()));
     }
 
-    // שליפת כל התמונות של פרויקט:
-    // שליפת כל התמונות כ-List<Image> (ללא toObject)
-    public void getImagesForProject(String projectId, OnCompleteListener<List<Image>> listener) {
+    public void getImagesForProject(@NonNull String projectId, @Nullable OnCompleteListener<List<Image>> listener) {
         if (projectId == null) {
             handleError("Project ID is required", null);
             return;
         }
         db.collection(FirestoreConstants.COLLECTION_PROJECTS)
                 .document(projectId)
-                .collection("images")
+                .collection(FirestoreConstants.SUBCOLLECTION_IMAGES) // <-- שינוי כאן
                 .get()
                 .addOnCompleteListener(task -> {
                     if (!task.isSuccessful() || task.getResult() == null) {
                         Exception e = (task.getException() != null) ? task.getException() : new Exception("images fetch failed");
-                        listener.onComplete(Tasks.forException(e));
+                        if (listener != null) listener.onComplete(Tasks.forException(e));
                         return;
                     }
                     List<Image> out = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : task.getResult()) {
-                        Map<String, Object> data = doc.getData(); // <-- לא toObject(Image.class)
+                        Map<String, Object> data = doc.getData();
                         if (data == null) continue;
                         try {
-                            out.add(new Image(data)); // <-- ממפה מתוך Map<String,Object>
-                        } catch (Exception ignore) {}
+                            out.add(new Image(data));
+                        } catch (Exception ignore) {
+                            Log.e(TAG, "Error parsing image " + doc.getId() + ": " + ignore.getMessage());
+                        }
                     }
-                    listener.onComplete(Tasks.forResult(out));
-                }) .addOnFailureListener(e -> listener.onComplete(Tasks.forException(e)));
-
+                    if (listener != null) listener.onComplete(Tasks.forResult(out));
+                }).addOnFailureListener(e -> {
+                    if (listener != null) listener.onComplete(Tasks.forException(e));
+                });
     }
 
-    public void upsertPropertyImage(@NonNull String projectId,
-                                    @NonNull String name,
-                                    @NonNull String path,
-                                    OnCompleteListener<Void> listener) {
+    public void upsertPropertyImage(@NonNull String projectId, @NonNull String name, @NonNull String path, @Nullable OnCompleteListener<Void> listener) {
         if (projectId.trim().isEmpty() || name.trim().isEmpty() || path.trim().isEmpty()) {
             handleError("projectId/name/path are required", listener);
             return;
@@ -823,10 +678,8 @@ public class ProjectRepository {
             if (listener != null) listener.onComplete(task);
         });
     }
-    public void removePropertyImageIfMatches(@NonNull String projectId,
-                                             @NonNull String name,
-                                             @NonNull String expectedPath,
-                                             OnCompleteListener<Void> listener) {
+
+    public void removePropertyImageIfMatches(@NonNull String projectId, @NonNull String name, @NonNull String expectedPath, @Nullable OnCompleteListener<Void> listener) {
         if (projectId.trim().isEmpty() || name.trim().isEmpty() || expectedPath.trim().isEmpty()) {
             handleError("projectId/name/expectedPath are required", listener);
             return;
@@ -836,6 +689,7 @@ public class ProjectRepository {
             if (listener != null) listener.onComplete(task);
         });
     }
+
     /** Minimal set of structured fields recommended for the summary prompt. */
     public void getProjectFieldsForSummary(String projectId, OnCompleteListener<Map<String, Object>> listener) {
         db.collection(FirestoreConstants.COLLECTION_PROJECTS) // << במקום "projects" קבוע
@@ -881,15 +735,11 @@ public class ProjectRepository {
         }
     }
 
-
     // ========================= UTILITY METHODS =========================
 
-    /**
-     * Checks if a project exists
-     */
-    public void projectExists(String projectId, OnCompleteListener<Boolean> listener) {
+    public void projectExists(@NonNull String projectId, @Nullable OnCompleteListener<Boolean> listener) {
         if (projectId == null || projectId.trim().isEmpty()) {
-            listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(false));
+            if (listener != null) listener.onComplete(Tasks.forResult(false));
             return;
         }
 
@@ -897,83 +747,56 @@ public class ProjectRepository {
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful() && task.getResult() != null) {
-                        listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(task.getResult().exists()));
+                        if (listener != null) listener.onComplete(Tasks.forResult(task.getResult().exists()));
                     } else {
-                        listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(false));
+                        if (listener != null) listener.onComplete(Tasks.forResult(false));
                     }
                 });
     }
 
-
-    /** Safe mapping from DocumentSnapshot to Project:
-     * - אם toObject נכשל, לא חוזרים ריקים: שולפים ידנית שדות עיקריים (status, address, note, client)
-     * - משלים projectId מה-docId אם חסר
-     * - lastUpdateDate נתמך כ-Timestamp/Long/Double
-     */
     private Project safeProjectFrom(DocumentSnapshot d) {
         Project p;
         try {
             p = d.toObject(Project.class);
+            if (p == null) {
+                p = new Project();
+                Log.w(TAG, "toObject returned null for " + d.getId() + ", creating empty project.");
+            }
         } catch (Exception e) {
-            Log.w("FirestoreDebug", "toObject failed for " + d.getId() + ": " + e.getMessage());
+            Log.w(TAG, "toObject failed for " + d.getId() + ": " + e.getMessage() + ", manually parsing basic fields.");
             p = new Project();
-            // 👇 שליפה ידנית של שדות בסיסיים כדי שהכרטיס לא יהיה ריק
-            try {
-                Object st = d.get(FirestoreConstants.FIELD_PROJECT_STATUS);
-                if (st instanceof String) {
-                    p.setProjectStatus((String) st);
-                }
-            } catch (Exception ignore) {}
+
+            try { p.setProjectStatus((String) d.get(FirestoreConstants.FIELD_PROJECT_STATUS)); } catch (Exception ignore) {}
+            try { p.setFullAddress((String) d.get(FirestoreConstants.FIELD_FULL_ADDRESS)); } catch (Exception ignore) {}
+            try { p.setNote((String) d.get("note")); } catch (Exception ignore) {} // "note" נשאר כמחרוזת אם הוא לא קבוע
 
             try {
-                Object addr = d.get(FirestoreConstants.FIELD_FULL_ADDRESS);
-                if (addr instanceof String) {
-                    p.setFullAddress((String) addr);
-                }
-            } catch (Exception ignore) {}
-
-            try {
-                Object note = d.get("note");
-                if (note instanceof String) {
-                    p.setNote((String) note);
-                }
-            } catch (Exception ignore) {}
-
-            // client כמפה -> אובייקט Client (רק אם קיים)
-            try {
-                Object clientObj = d.get("client");
-                if (clientObj instanceof java.util.Map) {
+                Object clientObj = d.get("client"); // "client" נשאר כמחרוזת אם הוא לא קבוע
+                if (clientObj instanceof Map) {
                     @SuppressWarnings("unchecked")
-                    java.util.Map<String,Object> cm = (java.util.Map<String,Object>) clientObj;
-                    com.example.finalprojectappraisal.model.Client c = new com.example.finalprojectappraisal.model.Client();
-                    Object id   = cm.get("id");
-                    Object name = cm.get("fullName");
-                    Object mail = cm.get("email");
-                    Object phone= cm.get("phoneNumber");
-                    if (id   instanceof String) c.setClientId((String) id);
-                    if (name instanceof String) c.setFullName((String) name);
-                    if (mail instanceof String) c.setEmail((String) mail);
-                    if (phone instanceof String) c.setPhoneNumber((String) phone);
+                    Map<String, Object> cm = (Map<String, Object>) clientObj;
+                    Client c = new Client();
+                    // ודא שהשדות האלה מוגדרים גם ב-FirestoreConstants אם הם קיימים
+                    try { c.setClientId((String) cm.get("id")); } catch (Exception ignore) {}
+                    try { c.setFullName((String) cm.get("fullName")); } catch (Exception ignore) {}
+                    try { c.setEmail((String) cm.get("email")); } catch (Exception ignore) {}
+                    try { c.setPhoneNumber((String) cm.get("phoneNumber")); } catch (Exception ignore) {}
                     p.setClient(c);
                 }
             } catch (Exception ignore) {}
         }
 
-        if (p == null) p = new Project();
-
-        // השלמת projectId מה-doc id אם חסר
         try {
             if (p.getProjectId() == null || p.getProjectId().trim().isEmpty()) {
                 p.setProjectId(d.getId());
             }
         } catch (Exception ignore) {}
 
-        // lastUpdateDate כ-Timestamp/Long/Double -> millis
         try {
-            Object ts = d.get("lastUpdateDate");
+            Object ts = d.get("lastUpdateDate"); // "lastUpdateDate" אם לא קבוע
             long millis = 0L;
-            if (ts instanceof com.google.firebase.Timestamp) {
-                millis = ((com.google.firebase.Timestamp) ts).toDate().getTime();
+            if (ts instanceof Timestamp) {
+                millis = ((Timestamp) ts).toDate().getTime();
             } else if (ts instanceof Long) {
                 millis = (Long) ts;
             } else if (ts instanceof Double) {
@@ -983,39 +806,51 @@ public class ProjectRepository {
                 p.setLastUpdateDate(new Date(millis));
             }
         } catch (Exception e) {
-            Log.w("FirestoreDebug", "lastUpdateDate parse failed for " + d.getId() + ": " + e.getMessage());
+            Log.w(TAG, "lastUpdateDate parse failed for " + d.getId() + ": " + e.getMessage());
         }
+
+        try {
+            Object coAppraiserIdsObj = d.get(FirestoreConstants.FIELD_CO_APPRAISER_IDS);
+            if (coAppraiserIdsObj instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<String> ids = (List<String>) coAppraiserIdsObj;
+                p.setCoAppraiserIds(ids);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to load co_appraiser_ids for " + d.getId() + ": " + e.getMessage());
+        }
+
+        try {
+            Object appraiserIdObj = d.get(FirestoreConstants.FIELD_APPRAISER_ID);
+            if (appraiserIdObj instanceof String) {
+                p.setAppraiserId((String) appraiserIdObj);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to load appraiser_id for " + d.getId() + ": " + e.getMessage());
+        }
+
 
         return p;
     }
 
-
-    /**
-     * Refreshes the current project data
-     */
     public void refreshCurrentProject() {
         if (currentProjectId != null) {
             loadProject(currentProjectId);
         }
     }
 
-    /**
-     * Clears all cached data
-     */
     public void clearCache() {
         currentProjectId = null;
         currentProject.setValue(null);
         allProjects.setValue(new ArrayList<>());
         errorMessage.setValue(null);
+        stopListening();
     }
 
-    /**
-     * Handles errors consistently
-     */
-    private void handleError(String message, OnCompleteListener<Void> listener) {
+    private void handleError(@NonNull String message, @Nullable OnCompleteListener<Void> listener) {
         errorMessage.setValue(message);
         if (listener != null) {
-            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception(message)));
+            listener.onComplete(Tasks.forException(new Exception(message)));
         }
     }
 
@@ -1037,90 +872,81 @@ public class ProjectRepository {
         return currentProjectId;
     }
 
-    public void setCurrentProjectId(String projectId) {
+    public void setCurrentProjectId(@Nullable String projectId) {
         this.currentProjectId = projectId;
     }
 
-    /**
-     * Gets the update manager for advanced update operations
-     */
     public ProjectUpdateManager getUpdateManager() {
         return updateManager;
     }
 
-    public void addPdfToProject(String projectId, Uri pdfUri, String fileName, OnCompleteListener<Void> listener) {
+    public void addPdfToProject(@NonNull String projectId, @NonNull Uri pdfUri, @NonNull String fileName, @Nullable OnCompleteListener<Void> listener) {
         if (projectId == null || pdfUri == null || fileName == null) {
             handleError("Project ID, PDF URI, and file name are required", listener);
             return;
         }
-        // יצירת רפרנס לקובץ ב-Firebase Storage
         StorageReference pdfRef = storageRef.child("projects/" + projectId + "/documents/" + fileName);
-        // העלאת הקובץ
         pdfRef.putFile(pdfUri)
                 .addOnSuccessListener(taskSnapshot -> {
-                    // קבלת URL של הקובץ שהועלה
                     pdfRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                                // יצירת מודל והוספתו ל-Firestore
                                 Map<String, Object> docData = new HashMap<>();
                                 docData.put("fileName", fileName);
                                 docData.put("url", uri.toString());
                                 docData.put("timestamp", new Date());
                                 db.collection(FirestoreConstants.COLLECTION_PROJECTS)
                                         .document(projectId)
-                                        .collection("documents") // קולקציה חדשה למסמכים
-                                        .add(docData) // שימוש ב-add() ליצירת ID אוטומטי
+                                        .collection("documents") // "documents" אם לא קבוע
+                                        .add(docData)
                                         .addOnSuccessListener(documentReference -> {
-                                            // המשימה הצליחה, מעבירים הודעת הצלחה חזרה ל-listener המקורי
                                             if (listener != null) {
-                                                listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(null));
+                                                listener.onComplete(Tasks.forResult(null));
                                             }
                                         })
                                         .addOnFailureListener(e -> {
                                             errorMessage.setValue("שגיאה בשמירת פרטי המסמך: " + e.getMessage());
                                             if (listener != null) {
-                                                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(e));
+                                                listener.onComplete(Tasks.forException(e));
                                             }
                                         });
                             })
                             .addOnFailureListener(e -> {
                                 errorMessage.setValue("שגיאה בהשגת URL: " + e.getMessage());
                                 if (listener != null) {
-                                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(e));
+                                    listener.onComplete(Tasks.forException(e));
                                 }
                             });
                 })
                 .addOnFailureListener(e -> {
                     errorMessage.setValue("שגיאה בהעלאת מסמך: " + e.getMessage());
                     if (listener != null) {
-                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(e));
+                        listener.onComplete(Tasks.forException(e));
                     }
                 });
     }
-    public void saveBankDetailsToProject(String projectId, BankDetails bankDetails, OnCompleteListener<Void> listener) {
-        db.collection("projects")
+
+    public void saveBankDetailsToProject(@NonNull String projectId, @NonNull BankDetails bankDetails, @Nullable OnCompleteListener<Void> listener) {
+        db.collection(FirestoreConstants.COLLECTION_PROJECTS)
                 .document(projectId)
-                .update("bankDetails", bankDetails)
+                .update("bankDetails", bankDetails) // "bankDetails" אם לא קבוע
                 .addOnCompleteListener(listener);
     }
-
-    // הוסף את המתודה הזאת ל-ProjectRepository.java
 
     /**
      * שליפת הרשאות משתמש לפי UID
      */
-    public void getUserPermissions(String userId, OnCompleteListener<Appraiser.AccessPermission> listener) {
+    public void getUserPermissions(@NonNull String userId, @Nullable OnCompleteListener<Appraiser.AccessPermission> listener) {
         if (userId == null || userId.trim().isEmpty()) {
-            listener.onComplete(Tasks.forResult(Appraiser.AccessPermission.VIEWER));
+            if (listener != null) listener.onComplete(Tasks.forResult(Appraiser.AccessPermission.VIEWER));
             return;
         }
 
-        db.collection("appraisers")
+        db.collection(FirestoreConstants.COLLECTION_APPRAISERS) // <-- שינוי כאן
                 .document(userId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (!documentSnapshot.exists()) {
-                        // אם המשתמש לא קיים בטבלת appraisers, הוא viewer בלבד
-                        listener.onComplete(Tasks.forResult(Appraiser.AccessPermission.VIEWER));
+                        Log.w(TAG, "Appraiser document not found for user: " + userId + ". Defaulting to VIEWER.");
+                        if (listener != null) listener.onComplete(Tasks.forResult(Appraiser.AccessPermission.VIEWER));
                         return;
                     }
 
@@ -1130,91 +956,204 @@ public class ProjectRepository {
                                 ? appraiser.getAccessPermissions()
                                 : Appraiser.AccessPermission.USER;
 
-                        listener.onComplete(Tasks.forResult(permission));
+                        if (listener != null) listener.onComplete(Tasks.forResult(permission));
                     } catch (Exception e) {
-                        Log.e("FirestoreDebug", "Error parsing appraiser permissions: " + e.getMessage());
-                        listener.onComplete(Tasks.forResult(Appraiser.AccessPermission.USER));
+                        Log.e(TAG, "Error parsing appraiser permissions for " + userId + ": " + e.getMessage());
+                        if (listener != null) listener.onComplete(Tasks.forResult(Appraiser.AccessPermission.USER));
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("FirestoreDebug", "Error fetching user permissions: " + e.getMessage());
-                    listener.onComplete(Tasks.forResult(Appraiser.AccessPermission.USER));
+                    Log.e(TAG, "Error fetching user permissions for " + userId + ": " + e.getMessage());
+                    if (listener != null) listener.onComplete(Tasks.forResult(Appraiser.AccessPermission.USER));
                 });
     }
 
-    // הוסף את המתודות האלה ל-ProjectRepository.java
-
     /**
-     * טעינת כל הפרויקטים עם מאזין חי (למנהלים בלבד)
+     * ** 🆕 מתודה חדשה: טעינת כל השמאים במערכת **
+     * (צריך קולקציית "appraisers" ב-Firestore).
+     *
+     * @param listener מאזין לקבלת רשימת השמאים.
      */
-    public void loadAllProjectsWithListener() {
-        if (allProjectsListener != null) {
-            allProjectsListener.remove();
-            allProjectsListener = null;
-        }
-
-        Query q = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
-                .orderBy("lastUpdateDate", Query.Direction.DESCENDING);
-
-        allProjectsListener = q.addSnapshotListener((snap, err) -> {
-            if (err != null) {
-                // אם אין אינדקס, נסה ללא מיון
-                if (err instanceof FirebaseFirestoreException &&
-                        ((FirebaseFirestoreException) err).getCode() == FirebaseFirestoreException.Code.FAILED_PRECONDITION) {
-                    loadAllProjectsWithoutOrder();
-                    return;
-                }
-                Log.e("FirestoreDebug", "listen error (all projects): " + err.getMessage());
-                allProjects.setValue(new ArrayList<>());
-                errorMessage.setValue("שגיאה בטעינת כל הפרויקטים: " + err.getMessage());
-                return;
-            }
-
-            List<Project> out = new ArrayList<>();
-            if (snap != null) {
-                for (DocumentSnapshot d : snap.getDocuments()) {
-                    Project p = safeProjectFrom(d);
-                    if (p != null) out.add(p);
-                }
-            }
-            Log.d("FirestoreDebug", "Loaded (all projects) " + out.size() + " projects");
-            allProjects.setValue(out);
-        });
+    public void getAllAppraisers(@Nullable OnCompleteListener<List<Appraiser>> listener) {
+        db.collection(FirestoreConstants.COLLECTION_APPRAISERS)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        List<Appraiser> appraisers = new ArrayList<>();
+                        for (DocumentSnapshot doc : task.getResult()) {
+                            try {
+                                Appraiser appraiser = doc.toObject(Appraiser.class);
+                                if (appraiser != null) {
+                                    appraiser.setAppraiserId(doc.getId()); // ודא שיש ID
+                                    appraisers.add(appraiser);
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing appraiser document " + doc.getId() + ": " + e.getMessage());
+                            }
+                        }
+                        if (listener != null) listener.onComplete(Tasks.forResult(appraisers));
+                    } else {
+                        Log.e(TAG, "Failed to get all appraisers: " + (task.getException() != null ? task.getException().getMessage() : "Unknown error"));
+                        if (listener != null) listener.onComplete(Tasks.forException(task.getException() != null ? task.getException() : new Exception("Failed to load appraisers")));
+                    }
+                });
     }
 
     /**
-     * טעינת כל הפרויקטים ללא מיון (במקרה של חוסר אינדקס)
+     * טוענת פרויקטים **פעילים** שבהם המשתמש הוא:
+     * 1. השמאי הראשי (appraiserId)
+     * 2. אחד מהשמאים השותפים (co_appraiser_ids)
+     * ושהסטטוס שלהם אינו "completed" או "cancelled".
+     *
+     * @param userId ה-UID של המשתמש הנוכחי
      */
-    private void loadAllProjectsWithoutOrder() {
-        if (allProjectsListener != null) {
-            allProjectsListener.remove();
-            allProjectsListener = null;
-        }
+    public void loadActiveProjectsForAppraiser(@NonNull String userId) {
+        lastUsedUserIdForListening = userId;
+        stopListening();
 
-        Query q = db.collection(FirestoreConstants.COLLECTION_PROJECTS);
+        // שאילתה 1: שמאי ראשי, פרויקטים פעילים
+        Task<QuerySnapshot> query1 = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .whereEqualTo(FirestoreConstants.FIELD_APPRAISER_ID, userId)
+                .whereNotIn(FirestoreConstants.FIELD_PROJECT_STATUS,
+                        List.of(FirestoreConstants.STATUS_COMPLETED, FirestoreConstants.STATUS_CANCELLED)) // <-- הוספת תנאי סינון
+                .get();
 
-        allProjectsListener = q.addSnapshotListener((snap, err) -> {
-            if (err != null) {
-                Log.e("FirestoreDebug", "listen error (all projects no order): " + err.getMessage());
-                allProjects.setValue(new ArrayList<>());
-                errorMessage.setValue("שגיאה בטעינת כל הפרויקטים: " + err.getMessage());
-                return;
-            }
+        // שאילתה 2: שמאי שותף, פרויקטים פעילים
+        Task<QuerySnapshot> query2 = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .whereArrayContains(FirestoreConstants.FIELD_CO_APPRAISER_IDS, userId)
+                .whereNotIn(FirestoreConstants.FIELD_PROJECT_STATUS,
+                        List.of(FirestoreConstants.STATUS_COMPLETED, FirestoreConstants.STATUS_CANCELLED)) // <-- הוספת תנאי סינון
+                .get();
 
-            List<Project> out = new ArrayList<>();
-            if (snap != null) {
-                for (DocumentSnapshot d : snap.getDocuments()) {
-                    Project p = safeProjectFrom(d);
-                    if (p != null) out.add(p);
-                }
-            }
+        Tasks.whenAllSuccess(query1, query2)
+                .addOnSuccessListener(results -> {
+                    Set<Project> combinedProjects = new HashSet<>();
+                    for (Object result : results) {
+                        QuerySnapshot snapshot = (QuerySnapshot) result;
+                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                            Project p = safeProjectFrom(doc);
+                            if (p != null) {
+                                combinedProjects.add(p);
+                            }
+                        }
+                    }
 
-            // מיון בצד הלקוח
-            out.sort(Comparator.comparingLong(Project::getLastUpdateDateMillis).reversed());
+                    List<Project> sortedProjects = new ArrayList<>(combinedProjects);
+                    sortedProjects.sort(Comparator.comparingLong(Project::getLastUpdateDateMillis).reversed());
 
-            Log.d("FirestoreDebug", "Loaded (all projects no order) " + out.size() + " projects");
-            allProjects.setValue(out);
-        });
+                    allProjects.setValue(sortedProjects);
+                    Log.d(TAG, "Loaded " + sortedProjects.size() + " ACTIVE projects for user " + userId + " (Primary/Co-Appraiser).");
+                })
+                .addOnFailureListener(e -> {
+                    errorMessage.setValue("שגיאה בטעינת פרויקטים פעילים עבור משתמש: " + e.getMessage());
+                    allProjects.setValue(new ArrayList<>());
+                    Log.e(TAG, "Error loading active projects for user " + userId + ": " + e.getMessage());
+                });
     }
 
+    /**
+     * מעדכן את רשימת השמאים השותפים בפרויקט, וכן מעדכן את רשימת הפרויקטים המוקצים
+     * (בתוך activeProjects) במסמכי השמאים הרלוונטיים.
+     *
+     * @param projectId ה-ID של הפרויקט לעדכון.
+     * @param newCoAppraiserIds רשימת ה-UID של השמאים שנבחרו להיות שותפים כעת.
+     * @param listener מאזין להשלמת הפעולה.
+     */
+    public void updateProjectAndAppraiserAssignments(
+            @NonNull String projectId,
+            @NonNull List<String> newCoAppraiserIds,
+            @Nullable OnCompleteListener<Void> listener
+    ) {
+        // שלב 1: קבל את הפרויקט הנוכחי כדי לדעת מי היו השמאים הקודמים
+        db.collection(FirestoreConstants.COLLECTION_PROJECTS).document(projectId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    Project existingProject = documentSnapshot.toObject(Project.class);
+                    if (existingProject == null) {
+                        handleError(FirestoreConstants.ERROR_PROJECT_NOT_FOUND_WITH_ID + projectId, listener);
+                        return;
+                    }
+
+                    // שמאים שהיו קודם ואינם ברשימה החדשה (צריך להסיר מהם את הפרויקט)
+                    List<String> oldCoAppraiserIds = (existingProject.getCoAppraiserIds() != null)
+                            ? existingProject.getCoAppraiserIds() : new ArrayList<>();
+
+                    Set<String> toRemoveFromAppraisers = new HashSet<>(oldCoAppraiserIds);
+                    toRemoveFromAppraisers.removeAll(newCoAppraiserIds);
+
+                    // שמאים חדשים שנוספו (צריך להוסיף להם את הפרויקט)
+                    Set<String> toAddToAppraisers = new HashSet<>(newCoAppraiserIds);
+                    toAddToAppraisers.removeAll(oldCoAppraiserIds);
+
+                    // וודא שגם יוצר הפרויקט מטופל, אם הוא לא נמצא ב-coAppraiserIds אבל צריך להיות לו ProjectID
+                    // הוסף את יוצר הפרויקט לרשימת השמאים שצריך לעדכן (אם לא ברשימה הנוכחית של co-appraisers)
+                    String mainAppraiserId = existingProject.getAppraiserId();
+                    if (mainAppraiserId != null) {
+                        // אם הוא השמאי הראשי, וודא שהפרויקט מוקצה לו
+                        if (!oldCoAppraiserIds.contains(mainAppraiserId) && !newCoAppraiserIds.contains(mainAppraiserId)) {
+                            // אם הוא לא היה ברשימת השותפים הקודמת וגם לא ברשימה החדשה (כשותף),
+                            // וודא שהפרויקט נוסף ל-activeProjects שלו.
+                            toAddToAppraisers.add(mainAppraiserId);
+                        } else if (oldCoAppraiserIds.contains(mainAppraiserId) && !newCoAppraiserIds.contains(mainAppraiserId)) {
+                            // אם הוא היה שותף קודם והוסר מרשימת השותפים החדשה, אבל הוא עדיין השמאי הראשי,
+                            // וודא שהוא לא מוסר מהפרויקטים שהוקצו לו.
+                            // במקרה כזה, הסר אותו מ-toRemoveFromAppraisers
+                            toRemoveFromAppraisers.remove(mainAppraiserId);
+                        }
+                    }
+
+
+                    // שלב 2: עדכן את הפרויקט עצמו
+                    Map<String, Object> projectUpdates = new HashMap<>();
+                    projectUpdates.put(FirestoreConstants.FIELD_CO_APPRAISER_IDS, newCoAppraiserIds);
+                    projectUpdates.put(FirestoreConstants.FIELD_LAST_UPDATE_DATE, com.google.firebase.firestore.FieldValue.serverTimestamp());
+
+                    // שלב 3: צור רשימת משימות לעדכוני שמאים
+                    List<Task<Void>> appraiserUpdateTasks = new ArrayList<>();
+
+                    // הסר את הפרויקט מהשמאים שהוסרו (אם הפרויקט לא הוקצה להם דרך appraiserId)
+                    for (String appraiserId : toRemoveFromAppraisers) {
+                        // וודא שאנחנו לא מנסים להסיר את הפרויקט מהשמאי הראשי אם הוא נמחק מרשימת השותפים
+                        if (mainAppraiserId != null && mainAppraiserId.equals(appraiserId)) {
+                            continue; // השמאי הראשי תמיד מקושר לפרויקט
+                        }
+                        DocumentReference appraiserRef = db.collection(FirestoreConstants.COLLECTION_APPRAISERS).document(appraiserId);
+                        appraiserUpdateTasks.add(appraiserRef.update(
+                                FirestoreConstants.FIELD_APPRAISER_ASSIGNED_PROJECTS,
+                                com.google.firebase.firestore.FieldValue.arrayRemove(projectId)
+                        ));
+                    }
+
+                    // הוסף את הפרויקט לשמאים החדשים
+                    for (String appraiserId : toAddToAppraisers) {
+                        DocumentReference appraiserRef = db.collection(FirestoreConstants.COLLECTION_APPRAISERS).document(appraiserId);
+                        appraiserUpdateTasks.add(appraiserRef.update(
+                                FirestoreConstants.FIELD_APPRAISER_ASSIGNED_PROJECTS,
+                                com.google.firebase.firestore.FieldValue.arrayUnion(projectId)
+                        ));
+                    }
+
+                    // שלב 4: בצע את כל העדכונים
+                    Tasks.whenAll(appraiserUpdateTasks)
+                            .continueWithTask(task -> {
+                                if (!task.isSuccessful()) {
+                                    throw task.getException();
+                                }
+                                return db.collection(FirestoreConstants.COLLECTION_PROJECTS).document(projectId).update(projectUpdates);
+                            })
+                            .addOnCompleteListener(task -> {
+                                if (task.isSuccessful()) {
+                                    Log.d(TAG, "Successfully updated project assignments and appraiser lists for project " + projectId);
+                                } else {
+                                    Log.e(TAG, "Failed to update project assignments or appraiser lists for project " + projectId + ": " + task.getException().getMessage());
+                                    errorMessage.setValue("שגיאה בעדכון הקצאות פרויקט: " + task.getException().getMessage());
+                                }
+                                if (listener != null) listener.onComplete(task);
+                            });
+
+                })
+                .addOnFailureListener(e -> {
+                    handleError("שגיאה בקבלת פרטי הפרויקט לפני עדכון הקצאות: " + e.getMessage(), listener);
+                });
+    }
 }
