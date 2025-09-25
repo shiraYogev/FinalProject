@@ -18,7 +18,8 @@ import androidx.cardview.widget.CardView;
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.activity.myProjects.MyProjectsActivity;
 import com.example.finalprojectappraisal.activity.newProject.client.ClientDetailsActivity;
-import com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity;
+// removed: UploadImagesActivity import
+import com.example.finalprojectappraisal.activity.AllProjects.AllProjectsViewActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -26,8 +27,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 public class HomePageActivity extends AppCompatActivity {
 
     // UI Components
-    private LinearLayout newProjectButton, myProjectsButton, uploadImagesButton, settingsButton;
-    private CardView cardNewProject, cardMyProjects, cardUploadImages, cardSettings;
+    private LinearLayout newProjectButton, myProjectsButton, allProjectsViewOnlyButton, settingsButton;
+    private CardView cardNewProject, cardMyProjects, cardAllProjectsViewOnly, cardSettings;
     private TextView userNameText, totalProjectsDisplay, greetingText;
     private ImageView notificationsButton, userAvatar;
 
@@ -54,34 +55,19 @@ public class HomePageActivity extends AppCompatActivity {
 
         userNameText = findViewById(R.id.user_name);
         loadUserData();
-
-        LinearLayout btnMyProjects = findViewById(R.id.button_my_projects);
-        btnMyProjects.setOnClickListener(v -> {
-            Intent intent = new Intent(HomePageActivity.this, MyProjectsActivity.class);
-            startActivity(intent);
-        });
-
-
-        // מעבר לדף פרטים אישיים
-        ImageView userAvatar = findViewById(R.id.user_avatar);
-        userAvatar.setOnClickListener(v -> {
-           Intent intent = new Intent(HomePageActivity.this, ProfileActivity.class);
-           startActivity(intent);
-        });
-
     }
 
     private void initializeViews() {
         // Action buttons
         newProjectButton = findViewById(R.id.button_new_project);
         myProjectsButton = findViewById(R.id.button_my_projects);
-        uploadImagesButton = findViewById(R.id.button_upload_images);
+        allProjectsViewOnlyButton = findViewById(R.id.button_all_projects_view_only); // NEW
         settingsButton = findViewById(R.id.button_settings);
 
         // Cards
         cardNewProject = findViewById(R.id.card_new_project);
         cardMyProjects = findViewById(R.id.card_my_projects);
-        cardUploadImages = findViewById(R.id.card_upload_images);
+        cardAllProjectsViewOnly = findViewById(R.id.card_all_projects_view_only); // NEW
         cardSettings = findViewById(R.id.card_settings);
 
         // Text views
@@ -95,7 +81,7 @@ public class HomePageActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        // כפתור ליצירת פרויקט חדש
+        // New Project
         View.OnClickListener newProjectListener = v -> {
             addRippleEffect(v);
             intent = new Intent(HomePageActivity.this, ClientDetailsActivity.class);
@@ -105,7 +91,7 @@ public class HomePageActivity extends AppCompatActivity {
         newProjectButton.setOnClickListener(newProjectListener);
         cardNewProject.setOnClickListener(newProjectListener);
 
-        // כפתור להציג את הפרויקטים שלי
+        // My Projects
         View.OnClickListener myProjectsListener = v -> {
             addRippleEffect(v);
             intent = new Intent(HomePageActivity.this, MyProjectsActivity.class);
@@ -115,42 +101,36 @@ public class HomePageActivity extends AppCompatActivity {
         myProjectsButton.setOnClickListener(myProjectsListener);
         cardMyProjects.setOnClickListener(myProjectsListener);
 
-        // כפתור להעלאת תמונות
-        View.OnClickListener uploadImagesListener = v -> {
+        // All Projects (View Only) - NEW
+        View.OnClickListener viewAllListener = v -> {
             addRippleEffect(v);
-            intent = new Intent(HomePageActivity.this, UploadImagesActivity.class);
+            intent = new Intent(HomePageActivity.this, AllProjectsViewActivity.class);
             startActivity(intent);
             overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
         };
-        uploadImagesButton.setOnClickListener(uploadImagesListener);
-        cardUploadImages.setOnClickListener(uploadImagesListener);
+        allProjectsViewOnlyButton.setOnClickListener(viewAllListener);
+        cardAllProjectsViewOnly.setOnClickListener(viewAllListener);
 
-        // כפתור להגדרות
+        // Settings
         View.OnClickListener settingsListener = v -> {
             addRippleEffect(v);
-             intent = new Intent(HomePageActivity.this, SettingsActivity.class);
+            intent = new Intent(HomePageActivity.this, SettingsActivity.class);
             startActivity(intent);
             overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
         };
         settingsButton.setOnClickListener(settingsListener);
         cardSettings.setOnClickListener(settingsListener);
 
-        // כפתור התראות
+        // Notifications
         notificationsButton.setOnClickListener(v -> {
             addRippleEffect(v);
-            // TODO: יצירת אקטיביטי התראות
-            // intent = new Intent(HomePageActivity.this, NotificationsActivity.class);
-            // startActivity(intent);
-            // overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
+            // TODO: NotificationsActivity
         });
 
-        // פרופיל משתמש
+        // Profile
         userAvatar.setOnClickListener(v -> {
             addRippleEffect(v);
-            // TODO: יצירת אקטיביטי פרופיל
-            // intent = new Intent(HomePageActivity.this, ProfileActivity.class);
-            // startActivity(intent);
-            // overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
+            // TODO: ProfileActivity
         });
     }
 
@@ -173,21 +153,21 @@ public class HomePageActivity extends AppCompatActivity {
         cardAnimation2.setStartOffset(250);
         cardMyProjects.startAnimation(cardAnimation2);
 
+        // Replaced: cardUploadImages -> cardAllProjectsViewOnly
         Animation cardAnimation3 = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
         cardAnimation3.setStartOffset(300);
-        cardUploadImages.startAnimation(cardAnimation3);
+        cardAllProjectsViewOnly.startAnimation(cardAnimation3);
 
         Animation cardAnimation4 = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
         cardAnimation4.setStartOffset(350);
         cardSettings.startAnimation(cardAnimation4);
 
-        // Animate recent projects card
+        // Recent projects card
         CardView recentCard = findViewById(R.id.recent_projects_card);
         Animation recentAnimation = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
         recentAnimation.setStartOffset(400);
         recentCard.startAnimation(recentAnimation);
     }
-
 
     private void setDynamicGreeting() {
         java.util.Calendar calendar = java.util.Calendar.getInstance();
@@ -203,43 +183,31 @@ public class HomePageActivity extends AppCompatActivity {
         } else {
             greeting = "לילה טוב";
         }
-
         greetingText.setText(greeting);
     }
 
     private void loadProjectStats() {
-        // TODO: יישום אמיתי עם בסיס נתונים
-        // כרגע נתונים סטטיים לדוגמה
-
+        // TODO: Replace with real DB count
         int totalProjects = getTotalProjectsCount();
-
-        // אנימציה של מספרים עם ספירה (כמו באפליקציות בנקים)
         animateCounterBanking(totalProjectsDisplay, 0, totalProjects);
     }
 
     private void animateCounterBanking(TextView textView, int start, int end) {
-        // אנימציית ספירה מתוחכמת יותר כמו באפליקציות בנקים
         android.animation.ValueAnimator animator = android.animation.ValueAnimator.ofInt(start, end);
         animator.setDuration(1500);
         animator.setInterpolator(new android.view.animation.DecelerateInterpolator());
-        animator.addUpdateListener(animation -> {
-            textView.setText(String.valueOf(animation.getAnimatedValue()));
-        });
+        animator.addUpdateListener(animation -> textView.setText(String.valueOf(animation.getAnimatedValue())));
         animator.start();
     }
 
     private int getTotalProjectsCount() {
-        // TODO: יישום אמיתי עם בסיס נתונים
-        // כרגע מחזיר מספר סטטי לדוגמה
+        // TODO: Real implementation
         return 12;
     }
 
     private void addRippleEffect(View view) {
-        // אפקט ריפל לכפתורים
         Animation scaleAnimation = AnimationUtils.loadAnimation(this, R.anim.button_scale);
         view.startAnimation(scaleAnimation);
-
-        // אפקט הברה קל
         view.setAlpha(0.7f);
         handler.postDelayed(() -> view.setAlpha(1.0f), 150);
     }
@@ -247,7 +215,6 @@ public class HomePageActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // רענון נתונים כשחוזרים לאקטיביטי
         loadProjectStats();
         setDynamicGreeting();
     }
@@ -255,47 +222,30 @@ public class HomePageActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // ניקוי handler למניעת memory leaks
-        if (handler != null) {
-            handler.removeCallbacksAndMessages(null);
-        }
+        if (handler != null) handler.removeCallbacksAndMessages(null);
     }
 
-    // מתודות עזר נוספות
+    // ---- Data loading helpers ----
 
-    /**
-     * מתודה לטעינת פרטי משתמש מהשרת או מבסיס הנתונים
-     */
     private void loadUserProfile() {
-        // TODO: יישום עם API או בסיס נתונים
+        // TODO
     }
 
-    /**
-     * מתודה לטעינת פרויקטים אחרונים
-     */
     private void loadRecentProjects() {
-        // TODO: יישום עם בסיס נתונים
-        // יש לעדכן את הרשימה בקובץ ה-XML
+        // TODO
     }
 
-    /**
-     * מתודה לשמירת מצב האפליקציה
-     */
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        // TODO: שמירת מצב נוכחי
+        // TODO
     }
 
-    /**
-     * מתודה לשחזור מצב האפליקציה
-     */
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        // TODO: שחזור מצב שמור
+        // TODO
     }
-
 
     private void loadUserData() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -323,9 +273,7 @@ public class HomePageActivity extends AppCompatActivity {
                     Log.e("HomePageActivity", "Error loading user data", e);
                 });
 
-        // Greeting and stats remain the same
         setDynamicGreeting();
         loadProjectStats();
     }
-
 }

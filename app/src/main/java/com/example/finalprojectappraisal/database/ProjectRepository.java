@@ -577,6 +577,153 @@ public class ProjectRepository {
             if (listener != null) listener.onComplete(task);
         });
     }
+
+    // טוען תמונות משני מקורות: תת-האוסף images/* וגם המסמך images/main.
+// מוסף סינון: רק מחרוזות שמתחילות ב-"http" (מתעלם מ-content://).
+    public void loadAllImagesForProject(
+            @NonNull String projectId,
+            @NonNull com.google.android.gms.tasks.OnCompleteListener<List<Image>> listener) {
+
+        if (projectId.trim().isEmpty()) {
+            listener.onComplete(Tasks.forResult(new ArrayList<>()));
+            return;
+        }
+
+        Task<QuerySnapshot> tSub = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .document(projectId)
+                .collection("images")
+                .get();
+
+        Task<DocumentSnapshot> tMain = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .document(projectId)
+                .collection("images")
+                .document("main")
+                .get();
+
+        Tasks.whenAllComplete(tSub, tMain)
+                .addOnCompleteListener(done -> {
+                    List<Image> out = new ArrayList<>();
+                    java.util.HashSet<String> dedup = new java.util.HashSet<>(); // מניעת כפולים לפי URL
+
+                    // 1) מסמכים בתת-האוסף (כולל "main" אם קיים שם כ-document)
+                    if (tSub.isSuccessful() && tSub.getResult() != null) {
+                        for (QueryDocumentSnapshot doc : tSub.getResult()) {
+                            Map<String, Object> data = doc.getData();
+                            if (data == null) continue;
+
+                            // קודם ננסה למפות לאובייקט Image
+                            try {
+                                Image im = new Image(data);
+                                String u = im.getUrl();
+                                if (u != null && u.startsWith("http") && dedup.add(u)) {
+                                    im.setProjectId(projectId);
+                                    out.add(im);
+                                }
+                            } catch (Exception ignore) {}
+
+                            // ואז נסרוק כל שדה – כל String שמתחיל ב-http
+                            for (Map.Entry<String, Object> e : data.entrySet()) {
+                                Object v = e.getValue();
+
+                                // ערכי רשימה (front_image/interior_image הם לעתים Arrays)
+                                if (v instanceof java.util.List<?>) {
+                                    for (Object item : (List<?>) v) {
+                                        if (item instanceof String) {
+                                            String s = (String) item;
+                                            if (s.startsWith("http") && dedup.add(s)) {
+                                                Image im2 = new Image();
+                                                im2.setProjectId(projectId);
+                                                im2.setUrl(s);
+                                                out.add(im2);
+                                            }
+                                        }
+                                    }
+                                    continue;
+                                }
+
+                                // ערך בודד
+                                if (v instanceof String) {
+                                    String s = (String) v;
+                                    if (s.startsWith("http") && dedup.add(s)) {
+                                        Image im2 = new Image();
+                                        im2.setProjectId(projectId);
+                                        im2.setUrl(s);
+                                        out.add(im2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 2) המסמך images/main — אם הוא קיים – ניקח רק http(s) (תומך גם במערכים)
+                    if (tMain.isSuccessful() && tMain.getResult() != null && tMain.getResult().exists()) {
+                        Map<String, Object> mainData = tMain.getResult().getData();
+                        if (mainData != null) {
+                            for (Map.Entry<String, Object> e : mainData.entrySet()) {
+                                Object v = e.getValue();
+
+                                if (v instanceof java.util.List<?>) {
+                                    for (Object item : (List<?>) v) {
+                                        if (item instanceof String) {
+                                            String s = (String) item;
+                                            if (s.startsWith("http") && dedup.add(s)) {
+                                                Image im = new Image();
+                                                im.setProjectId(projectId);
+                                                im.setUrl(s);
+                                                out.add(im);
+                                            }
+                                        }
+                                    }
+                                    continue;
+                                }
+
+                                if (v instanceof String) {
+                                    String s = (String) v;
+                                    if (s.startsWith("http") && dedup.add(s)) {
+                                        Image im = new Image();
+                                        im.setProjectId(projectId);
+                                        im.setUrl(s);
+                                        out.add(im);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    listener.onComplete(Tasks.forResult(out));
+                })
+                .addOnFailureListener(e -> listener.onComplete(Tasks.forException(e)));
+    }
+
+
+    // מיקום אחיד לתמונות ב-Storage
+    public String buildImageStoragePath(@NonNull String projectId, @NonNull String imageId) {
+        return "projects/" + projectId + "/images/" + imageId; // אין חובה לסיומת
+    }
+
+    /**
+     * Uploads a local content:// image to Firebase Storage and returns the downloadUrl (https).
+     */
+    public void uploadImageToStorage(@NonNull String projectId,
+                                     @NonNull android.net.Uri localUri,
+                                     @NonNull String imageId,
+                                     @NonNull com.google.android.gms.tasks.OnCompleteListener<String> listener) {
+
+        String path = buildImageStoragePath(projectId, imageId);
+        StorageReference ref = storageRef.child(path);
+
+        ref.putFile(localUri)
+                .addOnSuccessListener(taskSnapshot ->
+                        ref.getDownloadUrl().addOnSuccessListener(uri ->
+                                listener.onComplete(Tasks.forResult(uri.toString()))
+                        ).addOnFailureListener(e ->
+                                listener.onComplete(Tasks.forException(e))
+                        )
+                )
+                .addOnFailureListener(e -> listener.onComplete(Tasks.forException(e)));
+    }
+
+
     /**
      * Convenience: update a single image path field key->value
      * fieldName must be one of:
@@ -691,7 +838,8 @@ public class ProjectRepository {
     }
     /** Minimal set of structured fields recommended for the summary prompt. */
     public void getProjectFieldsForSummary(String projectId, OnCompleteListener<Map<String, Object>> listener) {
-        db.collection("projects").document(projectId)
+        db.collection(FirestoreConstants.COLLECTION_PROJECTS) // << במקום "projects" קבוע
+                .document(projectId)
                 .get()
                 .addOnCompleteListener(task -> {
                     if (!task.isSuccessful() || task.getResult() == null || !task.getResult().exists()) {
@@ -700,20 +848,32 @@ public class ProjectRepository {
                     }
                     DocumentSnapshot doc = task.getResult();
                     Map<String, Object> map = new HashMap<>();
-                    // Adapt keys to your @PropertyName mapping:
-                    putIfExists(doc, map, "rooms_count");
-                    putIfExists(doc, map, "building_condition");
-                    putIfExists(doc, map, "has_elevator");
-                    putIfExists(doc, map, "has_parking");
-                    putIfExists(doc, map, "has_storage");
-                    putIfExists(doc, map, "apartment_flooring");
-                    putIfExists(doc, map, "apartment_windows");
-                    putIfExists(doc, map, "apartment_kitchen");
-                    putIfExists(doc, map, "apartment_bathroom_fixtures");
-                    // Add more if helpful
+
+                    // >>> התאמה לסכמה שלך (Project.java) לפי @PropertyName / @SerializedName:
+                    putIfExists(doc, map, "number_of_rooms");            // מס' חדרים
+                    putIfExists(doc, map, "physical_condition");         // מצב הבניין
+                    putIfExists(doc, map, "has_elevator");               // מעלית
+                    putIfExists(doc, map, "has_parking");                // חניה
+                    putIfExists(doc, map, "has_storage");                // מחסן
+                    putIfExists(doc, map, "apartment_flooring");         // ריצוף
+                    putIfExists(doc, map, "apartment_windows");          // חלונות
+                    putIfExists(doc, map, "apartment_kitchen");          // מטבח
+                    putIfExists(doc, map, "apartment_bathroom_fixtures");// אמבטיה/כלים סניטריים
+
+                    // תוספות שימושיות להצגה:
+                    putIfExists(doc, map, "registered_apartment_area");  // שטח רשום
+                    putIfExists(doc, map, "gross_apartment_area");       // שטח ברוטו
+                    putIfExists(doc, map, "apartment_story");            // קומה
+                    putIfExists(doc, map, "apartment_number(municipal_form)"); // מס' דירה (טופס עירייה)
+                    putIfExists(doc, map, "property_location");          // מיקום
+                    putIfExists(doc, map, "building_type");              // סוג בניין
+                    putIfExists(doc, map, "number_of_floors");           // מס' קומות בבניין
+                    putIfExists(doc, map, "apartment_directions");       // כיווני אוויר (List)
+
                     listener.onComplete(Tasks.forResult(map));
                 });
     }
+
     private static void putIfExists(DocumentSnapshot doc, Map<String, Object> out, String key) {
         if (doc.contains(key)) {
             Object v = doc.get(key);
