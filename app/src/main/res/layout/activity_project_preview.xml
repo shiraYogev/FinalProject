@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:layoutDirection="rtl">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <!-- Report section -->
+        <TextView
+            android:id="@+id/sectionReport"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="דוח"
+            android:textStyle="bold"
+            android:textSize="18sp"
+        android:paddingBottom="6dp"/>
+
+        <ProgressBar
+            android:id="@+id/progressProject"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:visibility="gone"/>
+
+        <!-- Header fields -->
+        <TextView
+            android:id="@+id/txtTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="—"
+            android:textStyle="bold"
+            android:textSize="16sp"/>
+
+        <TextView
+            android:id="@+id/txtAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="—"
+            android:paddingTop="2dp"/>
+
+        <TextView
+            android:id="@+id/txtClient"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="לקוח: —"
+            android:paddingTop="2dp"/>
+
+        <TextView
+            android:id="@+id/txtStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="סטטוס: —"
+            android:paddingTop="2dp"/>
+
+        <TextView
+            android:id="@+id/txtUpdated"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="עודכן: —"
+            android:paddingTop="2dp"/>
+
+        <!-- Key/Value details table -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp" />
+
+        <!-- Images section -->
+        <TextView
+            android:id="@+id/sectionImages"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="תמונות"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:paddingTop="16dp"
+            android:paddingBottom="6dp"/>
+
+        <ProgressBar
+            android:id="@+id/progressImages"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/txtImagesEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="אין תמונות להצגה"
+            android:visibility="gone"
+            android:gravity="center"
+            android:paddingBottom="8dp"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvImages"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+</ScrollView>
