@@ -41,7 +41,7 @@ public class AllProjectsViewActivity extends AppCompatActivity implements Projec
         rv.setAdapter(adapter);
 
         progress.setVisibility(View.VISIBLE);
-        repo.loadAllProjects();
+        repo.loadAllProjectsWithListener(); // <-- שנה לשם המתודה הנכון
         repo.getAllProjects().observe(this, this::render);
         repo.getErrorMessage().observe(this, msg -> {
             if (msg != null && !msg.isEmpty()) {
