@@ -43,4 +43,63 @@
     <color name="red_color">#F44336</color>
     <color name="blue_color">#2196F3</color>
 
+    <!-- Primary Dark Navy Colors -->
+    <color name="dark_navy_primary">#0F172A</color>
+    <color name="dark_navy_secondary">#1E293B</color>
+    <color name="dark_navy_tertiary">#334155</color>
+
+    <!-- Glass Surface Colors -->
+    <color name="glass_surface">#1A334155</color>
+    <color name="glass_surface_strong">#33334155</color>
+
+    <!-- Card Background Colors -->
+    <color name="card_surface_primary">#1A1E293B</color>
+    <color name="card_surface_secondary">#FFFFFF</color>
+
+    <!-- Primary Blue Shades -->
+    <color name="primary_blue">#3B82F6</color>
+    <color name="primary_blue_dark">#1D4ED8</color>
+    <color name="primary_blue_light">#60A5FA</color>
+    <color name="primary_blue_20">#203B82F6</color>
+
+    <!-- Accent Colors -->
+    <color name="accent_blue_light">#60A5FA</color>
+    <color name="accent_purple">#8B5CF6</color>
+    <color name="accent_purple_20">#208B5CF6</color>
+    <color name="accent_green">#10B981</color>
+    <color name="accent_green_light">#34D399</color>
+    <color name="accent_green_20">#2010B981</color>
+    <color name="accent_orange">#F59E0B</color>
+    <color name="accent_orange_20">#20F59E0B</color>
+
+    <!-- Gradient Colors -->
+    <color name="primary_gradient_start">#3B82F6</color>
+    <color name="primary_gradient_end">#1D4ED8</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary_white">#FFFFFF</color>
+    <color name="text_secondary_white">#B8C5FF</color>
+    <color name="text_primary_dark">#1F2937</color>
+    <color name="text_secondary_dark">#6B7280</color>
+
+    <!-- Icon Colors -->
+    <color name="icon_primary">#FFFFFF</color>
+    <color name="icon_secondary">#B8C5FF</color>
+
+    <!-- Background Overlays -->
+    <color name="icon_bg_white_20">#33FFFFFF</color>
+    <color name="overlay_dark">#80000000</color>
+
+    <!-- Status Colors -->
+    <color name="success_green">#10B981</color>
+    <color name="warning_orange">#F59E0B</color>
+    <color name="error_red">#EF4444</color>
+
+    <color name="primary_blue_10">#1A007AFF</color>
+    <color name="divider_light">#F0F0F0</color>
+    <color name="error_color">#FF3B30</color>
+
+    <color name="surface_deep">#0F172A</color>
+    <color name="surface_card">#162238</color>
+
 </resources>

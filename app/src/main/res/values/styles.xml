@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- צורת פינות אחידה -->
+    <style name="App.Shape.M" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
+    </style>
+
+    <!-- סטייל לכרטיסים (MaterialCardView) -->
+    <!-- שימי לב: parent הוא Widget.Material3.CardView.Elevated -->
+    <style name="App.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="shapeAppearance">@style/App.Shape.M</item>
+        <item name="cardBackgroundColor">?attr/colorSurface</item>
+        <item name="strokeColor">?attr/colorOutlineVariant</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="cardElevation">8dp</item>
+        <item name="rippleColor">?attr/colorSecondaryContainer</item>
+    </style>
+
+    <!-- טיפוגרפיה לדוגמה -->
+    <style name="Text.Title" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">sans-serif</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Text.Subtitle" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">sans-serif-medium</item>
+        <item name="android:alpha">0.8</item>
+    </style>
+
+    <style name="Text.Counter" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">sans-serif</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+</resources>
