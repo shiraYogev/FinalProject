@@ -16,6 +16,7 @@ public final class FirestoreConstants {
     // =========================
     public static final String COLLECTION_PROJECTS = "projects";
     public static final String COLLECTION_CLIENTS = "clients";
+    public static final String COLLECTION_APPRAISERS = "appraisers";
 
     // =========================
     // Subcollection Names
@@ -39,6 +40,11 @@ public final class FirestoreConstants {
     public static final String FIELD_BUILDING_TYPE = "buildingType";
     public static final String FIELD_BUILDING_CONDITION = "buildingCondition";
     public static final String FIELD_NUMBER_OF_FLOORS = "numberOfFloors";
+
+    public static final String FIELD_APPRAISER_ID = "appraiserId";
+    public static final String FIELD_CO_APPRAISER_IDS = "coAppraiserIds";
+    public static final String FIELD_LAST_UPDATE_DATE = "lastUpdateDate";
+
 
     // =========================
     // Field Names - Apartment
@@ -97,4 +103,11 @@ public final class FirestoreConstants {
     public static final String STATUS_IN_PROGRESS = "in_progress";
     public static final String STATUS_COMPLETED = "completed";
     public static final String STATUS_CANCELLED = "cancelled";
+
+    // =========================
+// Field Names - Appraiser (עבור ה-AppraiserRepository או לשליפת הרשאות)
+// =========================
+    public static final String FIELD_APPRAISER_ACCESS_PERMISSIONS = "accessPermissions";
+    public static final String FIELD_APPRAISER_ASSIGNED_PROJECTS = "activeProjects"; // <-- זו השורה החדשה!
+
 }

@@ -3,12 +3,14 @@ package com.example.finalprojectappraisal.activity.myProjects;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import java.util.stream.Collectors;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -22,6 +24,7 @@ import com.example.finalprojectappraisal.activity.myProjects.filter.ProjectFilte
 import com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity;
 import com.example.finalprojectappraisal.adapter.ProjectsAdapter;
 import com.example.finalprojectappraisal.database.ProjectRepository;
+import com.example.finalprojectappraisal.database.constants.FirestoreConstants;
 import com.example.finalprojectappraisal.model.Project;
 import com.example.finalprojectappraisal.model.Appraiser;
 import com.example.finalprojectappraisal.utils.FilterChipUtils;
@@ -35,8 +38,10 @@ import com.google.firebase.auth.FirebaseUser;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import android.app.AlertDialog;
 
@@ -63,6 +68,9 @@ public class MyProjectsActivity extends AppCompatActivity
     // הרשאות משתמש
     private boolean isAdmin = false;
     private String currentUserId = null;
+
+    // רשימה של כל השמאים במערכת (לשימוש בדיאלוג הקצאה)
+    private List<Appraiser> allAppraisers = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,6 +121,11 @@ public class MyProjectsActivity extends AppCompatActivity
                 // ** קוד חדש: הצגת תיבת דו-שיח לאישור מחיקה **
                 showDeleteConfirmationDialog(project);
             }
+
+            @Override
+            public void onAssignAppraiser(Project project) { // ** 🆕 מימוש המתודה החדשה **
+                showAssignAppraiserDialog(project);
+            }
         }, this, isAdmin, currentUserId);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -132,6 +145,8 @@ public class MyProjectsActivity extends AppCompatActivity
 
         // מאזין לשינויים בפרויקטים
         subscribeProjectsLive();
+        // ** 🆕 טעינה של כל השמאים בפתיחת האפליקציה (רק פעם אחת) **
+        loadAllAppraisers();
 
         // חיפוש לפי כתובת בלבד
         searchBar.addTextChangedListener(new TextWatcher() {
@@ -394,6 +409,117 @@ public class MyProjectsActivity extends AppCompatActivity
             }
         });
     }
+
+    // ----------------------------------------------------------------------
+    // ** 🆕 מתודות חדשות: הקצאת שמאי **
+    // ----------------------------------------------------------------------
+
+    /**
+     * מציג דיאלוג לבחירת שמאים שותפים לפרויקט.
+     * מנהלים יכולים להקצות שמאים אחרים.
+     * @param project הפרויקט שאליו מקצים שמאים.
+     */
+    private void showAssignAppraiserDialog(Project project) {
+        if (project == null || allAppraisers.isEmpty()) {
+            Toast.makeText(this, "לא ניתן להקצות שמאים כרגע. נסה שוב מאוחר יותר.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // רשימת שמות השמאים להצגה בדיאלוג
+        String[] appraiserNames = allAppraisers.stream()
+                .map(Appraiser::getFullName)
+                .toArray(String[]::new);
+
+        // רשימה של ה-IDs של השמאים עבור הלוגיקה
+        List<String> allAppraiserIds = allAppraisers.stream()
+                .map(Appraiser::getAppraiserId)
+                .collect(Collectors.toList());
+
+        // מצב הבחירה הנוכחי: אילו שמאים שותפים כבר מוקצים לפרויקט?
+        boolean[] checkedAppraisers = new boolean[allAppraiserIds.size()];
+        List<String> currentCoAppraiserIds = project.getCoAppraiserIds();
+
+        for (int i = 0; i < allAppraiserIds.size(); i++) {
+            // אל תציע את יוצר הפרויקט (appraiserId) כשמאי שותף, הוא כבר "שותף ראשי"
+            if (project.getAppraiserId().equals(allAppraiserIds.get(i))) {
+                checkedAppraisers[i] = false; // הוא לא יכול להיות שותף
+            } else {
+                checkedAppraisers[i] = currentCoAppraiserIds.contains(allAppraiserIds.get(i));
+            }
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("בחר שמאים שותפים לפרויקט")
+                .setMultiChoiceItems(appraiserNames, checkedAppraisers,
+                        (dialog, which, isChecked) -> {
+                            // כפתור ביטול עבור יוצר הפרויקט
+                            if (project.getAppraiserId().equals(allAppraiserIds.get(which))) {
+                                Toast.makeText(MyProjectsActivity.this, "יוצר הפרויקט הוא תמיד חלק מהצוות ואינו ניתן להסרה כשותף", Toast.LENGTH_LONG).show();
+                                ((AlertDialog) dialog).getListView().setItemChecked(which, false); // לבטל את הבחירה
+                            } else {
+                                checkedAppraisers[which] = isChecked;
+                            }
+                        })
+                .setPositiveButton("שמור", (dialog, id) -> {
+                    List<String> selectedAppraiserIds = new ArrayList<>();
+                    for (int i = 0; i < allAppraiserIds.size(); i++) {
+                        if (checkedAppraisers[i] && !project.getAppraiserId().equals(allAppraiserIds.get(i))) {
+                            selectedAppraiserIds.add(allAppraiserIds.get(i));
+                        }
+                    }
+                    // וודא שיוצר הפרויקט תמיד כלול בלוגיקה (גם אם לא ב-coAppraiserIds)
+                    // אבל ה-coAppraiserIds הם רק "שותפים"
+                    assignAppraiserToProject(project, selectedAppraiserIds);
+                })
+                .setNegativeButton("ביטול", (dialog, id) -> {
+                    // ביטול
+                });
+        builder.create().show();
+    }
+
+
+    /**
+     * שומר את רשימת השמאים השותפים המעודכנת לפרויקט ב-Firestore.
+     * @param project הפרויקט לעדכון.
+     * @param selectedCoAppraiserIds רשימת ה-UID של השמאים שנבחרו להיות שותפים.
+     */
+    private void assignAppraiserToProject(Project project, List<String> selectedCoAppraiserIds) {
+        if (project == null || TextUtils.isEmpty(project.getProjectId())) {
+            Toast.makeText(this, "שגיאה: פרטי פרויקט חסרים.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 🆕 קריאה למתודה החדשה ב-ProjectRepository שמעדכנת גם את הפרויקט וגם את השמאים
+        ProjectRepository.getInstance().updateProjectAndAppraiserAssignments(
+                project.getProjectId(),
+                selectedCoAppraiserIds,
+                task -> {
+                    if (task.isSuccessful()) {
+                        Toast.makeText(MyProjectsActivity.this, "שמאים שותפים עודכנו בהצלחה ✅", Toast.LENGTH_SHORT).show();
+                        reload(); // ⬅️ השתמש ב-reload() אם זו המתודה שלך לרענון נתונים
+                    } else {
+                        Toast.makeText(MyProjectsActivity.this, "עדכון שמאים שותפים נכשל: " + task.getException().getMessage() + " ❌", Toast.LENGTH_LONG).show();
+                        Log.e("MyProjectsActivity", "Error updating co-appraisers: " + task.getException().getMessage());
+                    }
+                });
+    }
+
+    // ** 🆕 מתודה חדשה: טעינת כל השמאים מה-Firestore **
+    private void loadAllAppraisers() {
+        ProjectRepository.getInstance().getAllAppraisers(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                allAppraisers.clear();
+                allAppraisers.addAll(task.getResult());
+                Log.d("MyProjectsActivity", "Loaded " + allAppraisers.size() + " appraisers.");
+            } else {
+                Log.e("MyProjectsActivity", "Failed to load appraisers: " + (task.getException() != null ? task.getException().getMessage() : "Unknown error"));
+                Toast.makeText(MyProjectsActivity.this, "שגיאה בטעינת השמאים במערכת", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+
+
 
 
 }

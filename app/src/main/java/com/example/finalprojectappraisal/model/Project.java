@@ -33,6 +33,10 @@ public class Project {
     @SerializedName("appraiser_id")
     private String appraiserId;
 
+    // **  השדה החדש: שמאים שותפים לפרויקט (Co-Appraisers) **
+    @SerializedName("co_appraiser_ids") // השם שיופיע ב-Firestore
+    private List<String> coAppraiserIds;
+
 
     // Creation and update timestamps
     private long creationDate;
@@ -166,6 +170,7 @@ public class Project {
         this.lastUpdateDate = null;                     // server will fill on write
         this.projectStatus = "In Progress";
         this.propertyImages = new ArrayList<>();
+        this.coAppraiserIds = new ArrayList<>();
     }
 
     /**
@@ -189,7 +194,7 @@ public class Project {
                    boolean hasElevator, boolean hasStorageRoom,
                    String hasAirConditioning, boolean hasParking,
                    boolean hasCentralHeating, String apartmentIncludes,
-                   String bathroomFixtures) {
+                   String bathroomFixtures, List<String> coAppraiserIds) {
 
         this(); // Initialize default values
 
@@ -220,6 +225,7 @@ public class Project {
         this.hasCentralHeating = hasCentralHeating;
         this.apartmentIncludes = apartmentIncludes;
         this.bathroomFixtures = bathroomFixtures;
+        this.coAppraiserIds = coAppraiserIds;
     }
     // Constructor to initialize the project details
     public Project(String projectId, Client client, String appraiserId, String fullAddress, String location,
@@ -255,6 +261,41 @@ public class Project {
     public void setClient(Client client) {
         this.client = client;
         updateLastUpdateDate();
+    }
+
+    /**
+     * מחזיר את רשימת השמאים השותפים המוקצים לפרויקט.
+     * @return List of Appraiser UIDs.
+     */
+    @PropertyName("co_appraiser_ids")
+    public List<String> getCoAppraiserIds() {
+        if (coAppraiserIds == null) {
+            coAppraiserIds = new ArrayList<>();
+        }
+        return coAppraiserIds;
+    }
+
+    /**
+     * מגדיר את רשימת השמאים השותפים המוקצים לפרויקט.
+     */
+    @PropertyName("co_appraiser_ids")
+    public void setCoAppraiserIds(List<String> coAppraiserIds) {
+        this.coAppraiserIds = coAppraiserIds;
+        updateLastUpdateDate();
+    }
+
+    /**
+     * 🆕 בודק האם שמאי מסוים מוקצה לפרויקט, כולל השמאי הראשי.
+     */
+    @Exclude
+    public boolean isAppraiserAssigned(String appraiserIdToCheck) {
+        if (appraiserIdToCheck == null) return false;
+
+        // 1. בדוק אם הוא ה-appraiserId הראשי
+        if (appraiserIdToCheck.equals(this.appraiserId)) return true;
+
+        // 2. בדוק אם הוא מופיע ברשימת השמאים השותפים המוקצים
+        return getCoAppraiserIds().contains(appraiserIdToCheck);
     }
 
 
@@ -669,6 +710,7 @@ public class Project {
                 ", projectStatus='" + projectStatus + '\'' +
                 ", projectDescription='" + projectDescription + '\'' +
                 ", propertyImages=" + propertyImages +
+                ", coAppraiserIds=" + (coAppraiserIds != null ? coAppraiserIds.toString() : "[]") +
                 '}';
     }
 

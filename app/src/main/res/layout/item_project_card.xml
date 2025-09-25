@@ -2,6 +2,7 @@
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     card_view:cardCornerRadius="12dp"
@@ -29,39 +30,39 @@
             android:id="@+id/btnMore"
             android:layout_width="32dp"
             android:layout_height="32dp"
-            android:src="@android:drawable/ic_menu_more"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:contentDescription="עוד אפשרויות"
             android:layout_gravity="top|start"
             android:layout_marginStart="4dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="עוד אפשרויות"
+            android:src="@android:drawable/ic_menu_more"
             card_view:tint="#666" />
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="266dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
             android:layout_weight="1"
-            android:paddingStart="12dp"
-            android:gravity="right">
+            android:gravity="right"
+            android:orientation="vertical"
+            android:paddingStart="12dp">
 
             <TextView
                 android:id="@+id/txtAddress"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="כתובת"
+                android:textColor="#333"
                 android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#333" />
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/txtNote"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
                 android:text="הערה אופציונלית"
                 android:textColor="#666"
-                android:textSize="13sp"
-                android:paddingTop="2dp"
-                android:paddingBottom="2dp"/>
+                android:textSize="13sp" />
 
             <TextView
                 android:id="@+id/txtStatus"
@@ -83,77 +84,100 @@
                 android:id="@+id/txtDate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:paddingBottom="4dp"
                 android:text="תאריך עדכון"
                 android:textColor="#999"
-                android:textSize="12sp"
-                android:paddingBottom="4dp" />
+                android:textSize="12sp" />
 
             <com.google.android.flexbox.FlexboxLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:alignItems="center"
                 app:flexWrap="wrap"
-                app:justifyContent="flex_end"
-                app:alignItems="center">
+                app:justifyContent="flex_end">
+
+                <Button
+                    android:id="@+id/btnAssignAppraiser"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:drawableStart="@android:drawable/ic_menu_add"
+                    android:minWidth="64dp"
+                    android:minHeight="48dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="הוסף שמאי"
+                    android:textSize="13sp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
 
                 <Button
                     android:id="@+id/btnMap"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginBottom="4dp"
                     android:minWidth="64dp"
                     android:minHeight="48dp"
                     android:text="מפה"
-                    android:textSize="13sp"
-                    android:layout_marginEnd="4dp" />
+                    android:textSize="13sp" />
 
                 <Button
                     android:id="@+id/btnEdit"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginBottom="4dp"
                     android:minWidth="64dp"
                     android:minHeight="48dp"
                     android:text="ערוך"
-                    android:textSize="13sp"
-                    android:layout_marginEnd="4dp" />
+                    android:textSize="13sp" />
 
                 <Button
                     android:id="@+id/btnImages"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginBottom="4dp"
                     android:minWidth="64dp"
                     android:minHeight="48dp"
                     android:text="תמונות"
-                    android:textSize="13sp"
-                    android:layout_marginEnd="4dp" />
+                    android:textSize="13sp" />
 
                 <Button
                     android:id="@+id/btnReport"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginBottom="4dp"
                     android:minWidth="64dp"
                     android:minHeight="48dp"
                     android:text="דו&quot;ח"
-                    android:textSize="13sp"
-                    android:layout_marginEnd="4dp" />
+                    android:textSize="13sp" />
 
                 <Button
                     android:id="@+id/btnChangeStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginBottom="4dp"
                     android:minWidth="64dp"
                     android:minHeight="48dp"
                     android:text="שינוי סטטוס"
-                    android:textSize="13sp"
-                    android:layout_marginEnd="4dp" />
+                    android:textSize="13sp" />
 
                 <Button
                     android:id="@+id/btnDelete"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
+                    android:layout_marginBottom="4dp"
                     android:minWidth="64dp"
                     android:minHeight="48dp"
                     android:text="מחיקה"
-                    android:textSize="13sp"
-                    android:textColor="#B71C1C" />
+                    android:textColor="#B71C1C"
+                    android:textSize="13sp" />
             </com.google.android.flexbox.FlexboxLayout>
         </LinearLayout>
     </LinearLayout>

@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import java.util.stream.Collectors; // נצטרך את זה אם נציג את השמאים השותפים
 // import com.bumptech.glide.Glide; // אם תרצי טעינת תמונות ממוזערות
 
 public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.ProjectViewHolder> {
@@ -38,6 +39,8 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         void onImages(Project project);
         void onReport(Project project);
         void onDelete(Project project);
+        void onAssignAppraiser(Project project);
+
     }
 
     private final Context context;
@@ -130,6 +133,17 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         // **הוספה חדשה: קביעת הרשאות לכפתורים**
         boolean canEdit = determineEditPermission(project);
 
+        // 🆕 כפתור "הקצה שמאי" גלוי רק למנהלים
+        if (isAdmin && project != null) {
+            holder.btnAssignAppraiser.setVisibility(View.VISIBLE);
+            holder.btnAssignAppraiser.setOnClickListener(v -> {
+                if (listener != null) listener.onAssignAppraiser(project);
+            });
+        } else {
+            holder.btnAssignAppraiser.setVisibility(View.GONE);
+        }
+
+
         // כפתורי עריכה ומחיקה - רק למי שמורשה
         holder.btnEdit.setVisibility(canEdit ? View.VISIBLE : View.GONE);
         holder.btnDelete.setVisibility(canEdit ? View.VISIBLE : View.GONE);
@@ -177,8 +191,8 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             // מנהלים יכולים לערוך את כל הפרויקטים
             return true;
         } else {
-            // משתמשים רגילים יכולים לערוך רק את הפרויקטים שלהם
-            return currentUserId.equals(project.getAppraiserId());
+            // משתמש רגיל יכול לערוך אם הוא השמאי הראשי או שמאי שותף
+            return project.isAppraiserAssigned(currentUserId);
         }
     }
 
@@ -310,7 +324,7 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
     static class ProjectViewHolder extends RecyclerView.ViewHolder {
         ImageView imageThumb;
         TextView txtAddress, txtNote, txtStatus, txtClient, txtDate;
-        Button btnEdit, btnImages, btnReport, btnDelete, btnChangeStatus, btnMap;
+        Button btnEdit, btnImages, btnReport, btnDelete, btnChangeStatus, btnMap, btnAssignAppraiser;
         View btnMore;
 
         public ProjectViewHolder(@NonNull View itemView) {
@@ -328,6 +342,8 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             btnMore    = itemView.findViewById(R.id.btnMore);
             btnChangeStatus = itemView.findViewById(R.id.btnChangeStatus);
             btnMap     = itemView.findViewById(R.id.btnMap);
+            btnAssignAppraiser = itemView.findViewById(R.id.btnAssignAppraiser); // ** 🆕 אתחול הכפתור החדש **
+            // txtAppraisers = itemView.findViewById(R.id.txtAppraisers); // אם הוספת אותו
         }
     }
 
@@ -369,6 +385,10 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             if (o.getLastUpdateDateMillis() != n.getLastUpdateDateMillis()) return false;
 
             if (!eq(o.getNote(), n.getNote())) return false;
+
+            // ** 🆕 הוסף השוואה לשמאים שותפים **
+            if (!o.getCoAppraiserIds().equals(n.getCoAppraiserIds())) return false;
+
 
             // אם יש עוד שדות שמופיעים ב-ViewHolder – אפשר להוסיף כאן
             return true;
