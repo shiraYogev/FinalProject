@@ -17,6 +17,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.activity.HomePageActivity;
 import com.example.finalprojectappraisal.database.ProjectRepository;
 import com.example.finalprojectappraisal.model.BankDetails;
 import com.example.finalprojectappraisal.classifer.gemini.GeminiBankExtractor;
@@ -222,6 +223,9 @@ public class BankDetailsActivity extends AppCompatActivity {
 
     private void saveBankDetailsToFirestore(BankDetails bankDetails) {
         Log.d("BankDetailsActivity", "Saving bank details to Firestore for project: " + projectId);
+        // הצגת ProgressBar בזמן השמירה
+        progressBar.setVisibility(View.VISIBLE);
+
 
         // שמירת הנתונים ל-Firestore תחת הפרויקט
         ProjectRepository.getInstance().saveBankDetailsToProject(projectId, bankDetails, new OnCompleteListener<Void>() {
@@ -235,7 +239,10 @@ public class BankDetailsActivity extends AppCompatActivity {
                         Toast.makeText(BankDetailsActivity.this, "המסמך והנתונים נשמרו בהצלחה!", Toast.LENGTH_LONG).show();
 
                         // אפשר לעבור לעמוד הבא או לחזור
-                        showDataExtractionSuccess(bankDetails);
+                        Intent homeIntent = new Intent(BankDetailsActivity.this, HomePageActivity.class);
+                        homeIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(homeIntent);
+                        finish(); // סגירת BankDetailsActivity
                     } else {
                         Log.e("BankDetailsActivity", "Failed to save bank details", task.getException());
                         Toast.makeText(BankDetailsActivity.this, "הקובץ הועלה אך שמירת הנתונים נכשלה", Toast.LENGTH_LONG).show();
