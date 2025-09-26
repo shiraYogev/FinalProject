@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
     android:layoutDirection="rtl"
     android:textDirection="rtl"
-    android:focusableInTouchMode="true">
+    android:background="@drawable/modern_gradient_bg"
+    android:focusableInTouchMode="true"
+    android:padding="0dp">
 
-    <!-- Progress overlay -->
+    <!-- שכבת טעינה -->
     <FrameLayout
         android:id="@+id/progress"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="#80FFFFFF"
+        android:background="#80000000"
         android:visibility="gone"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -24,15 +26,33 @@
         <ProgressBar
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:layout_gravity="center" />
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/primary_blue"/>
     </FrameLayout>
 
+    <!-- כותרת -->
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="תיאור הנכס"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif"
+        android:textColor="@color/text_primary_white"
+        android:layout_marginTop="32dp"
+        android:layout_marginHorizontal="24dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ScrollView -->
     <ScrollView
         android:id="@+id/scroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/title"
         app:layout_constraintBottom_toTopOf="@+id/actionsRow"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -41,15 +61,18 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layoutDirection="rtl"
-            android:textDirection="rtl">
+            android:padding="24dp"
+            android:layoutDirection="rtl">
 
-            <!-- Maintenance -->
+            <!-- תחזוקה -->
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="תחזוקה / שיפוצים (ידני)"
-                android:layout_marginBottom="12dp">
+                android:hint="תחזוקה / שיפוצים"
+                app:boxBackgroundColor="#F2F2F2"
+                app:boxStrokeColor="@color/primary_blue"
+                android:layout_marginBottom="16dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edtMaintenance"
@@ -57,15 +80,19 @@
                     android:layout_height="wrap_content"
                     android:inputType="textMultiLine"
                     android:minLines="2"
-                    android:maxLines="5" />
+                    android:maxLines="5"
+                    android:textColor="@android:color/black" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- What the apartment includes -->
+            <!-- מה כלול בדירה -->
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="מה כלול בדירה (ידני)"
-                android:layout_marginBottom="12dp">
+                android:hint="מה כלול בדירה"
+                app:boxBackgroundColor="#F2F2F2"
+                app:boxStrokeColor="@color/primary_blue"
+                android:layout_marginBottom="16dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edtApartmentIncludes"
@@ -73,63 +100,79 @@
                     android:layout_height="wrap_content"
                     android:inputType="textMultiLine"
                     android:minLines="2"
-                    android:maxLines="5" />
+                    android:maxLines="5"
+                    android:textColor="@android:color/black" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Property Summary + AI buttons -->
+            <!-- כותרת תקציר -->
             <TextView
-                android:id="@+id/labelSummary"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="תקציר כללי (3 משפטים)"
                 android:textSize="16sp"
                 android:textStyle="bold"
+                android:textColor="@color/text_primary_white"
                 android:layout_marginTop="8dp"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="12dp"/>
 
+            <!-- כפתורי AI -->
             <LinearLayout
                 android:id="@+id/aiRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="end"
-                android:layout_marginBottom="8dp">
+                android:layout_marginBottom="12dp">
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnAiSummary"
                     android:layout_width="wrap_content"
-                    android:layout_height="40dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
                     android:minWidth="88dp"
-                    android:text="צור תקציר אוטומטי" />
+                    android:paddingVertical="10dp"
+                    android:text="צור תקציר אוטומטי"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    app:icon="@drawable/ic_lightning"
+                    app:iconPadding="8dp"
+                    app:iconTint="@color/primary_blue"
+                    android:textColor="@color/primary_blue" />
 
-                <!-- Optional: Regenerate / Refine -->
-                <Space
-                    android:layout_width="8dp"
-                    android:layout_height="0dp" />
+                <Space android:layout_width="8dp" android:layout_height="0dp"/>
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnAiRegenerate"
                     android:layout_width="wrap_content"
-                    android:layout_height="40dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
                     android:minWidth="72dp"
-                    android:text="גרסה נוספת" />
+                    android:paddingVertical="10dp"
+                    android:text="גרסה נוספת"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:textColor="@color/primary_blue" />
 
-                <Space
-                    android:layout_width="8dp"
-                    android:layout_height="0dp" />
+                <Space android:layout_width="8dp" android:layout_height="0dp"/>
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnAiRefine"
                     android:layout_width="wrap_content"
-                    android:layout_height="40dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
                     android:minWidth="72dp"
-                    android:text="מיקוד" />
+                    android:paddingVertical="10dp"
+                    android:text="מיקוד"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:textColor="@color/primary_blue" />
             </LinearLayout>
 
+            <!-- תיאור כללי -->
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="תיאור כללי (ניתן לעריכה)">
+                android:hint="תיאור כללי (ניתן לעריכה)"
+                app:boxBackgroundColor="#F2F2F2"
+                app:boxStrokeColor="@color/primary_blue">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edtPropertySummary"
@@ -137,50 +180,58 @@
                     android:layout_height="wrap_content"
                     android:inputType="textMultiLine"
                     android:minLines="3"
-                    android:maxLines="6" />
+                    android:maxLines="6"
+                    android:textColor="@android:color/black" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Optional helper text -->
+            <!-- טקסט עזר -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="* התקציר ייווצר מ־תמונה אחת מייצגת לכל קטגוריה + שדות קיימים, ותמיד ניתן לערוך ידנית."
+                android:text="* התקציר ייווצר מתמונה מייצגת + שדות קיימים. תמיד ניתן לערוך."
                 android:textSize="12sp"
-                android:textColor="#666666"
-                android:layout_marginTop="6dp" />
-
+                android:textColor="@color/text_secondary_white"
+                android:layout_marginTop="8dp"/>
         </LinearLayout>
     </ScrollView>
 
-    <!-- Bottom actions -->
+    <!-- כפתורי תחתית -->
     <LinearLayout
         android:id="@+id/actionsRow"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:paddingHorizontal="24dp"
         android:paddingTop="8dp"
-        android:paddingBottom="8dp"
+        android:paddingBottom="24dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSkip"
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:text="דלג" />
+            android:text="דלג"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:textColor="@color/text_primary_white"
+            app:strokeColor="@color/text_primary_white"
+            app:cornerRadius="12dp"/>
 
-        <Space
-            android:layout_width="12dp"
-            android:layout_height="0dp" />
+        <Space android:layout_width="12dp" android:layout_height="0dp"/>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSaveSummary"
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="2"
-            android:text="שמור" />
+            android:text="שמור"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@color/primary_blue"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_check"
+            app:iconGravity="textStart"/>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

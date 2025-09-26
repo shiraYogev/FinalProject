@@ -102,4 +102,5 @@
     <color name="surface_deep">#0F172A</color>
     <color name="surface_card">#162238</color>
 
+    <color name="input_background_soft">#F2F2F2</color>
 </resources>

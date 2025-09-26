@@ -1,32 +1,83 @@
-<!-- file: app/src/main/res/layout/ApartmentDetails.xml -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="12dp">
+    android:background="@drawable/modern_gradient_bg"
+    android:layoutDirection="rtl"
+    android:padding="0dp">
 
+    <!-- כותרת המסך -->
+    <TextView
+        android:id="@+id/title_apartment_details"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="פרטי הדירה"
+        android:textColor="@color/text_primary_white"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif"
+        android:layout_marginTop="32dp"
+        android:layout_marginHorizontal="24dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- טוען -->
     <ProgressBar
         android:id="@+id/progress"
         style="?android:attr/progressBarStyle"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:layout_gravity="center_horizontal"
-        android:visibility="gone"/>
+        android:visibility="gone"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="16dp"
+        android:indeterminateTint="@color/primary_blue"
+        app:layout_constraintTop_toBottomOf="@id/title_apartment_details"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerEdit"
-        android:layout_width="match_parent"
+    <!-- RecyclerView בתוך קלף -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/details_card"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        app:strokeColor="@android:color/transparent"
+        app:cardElevation="4dp"
+        app:cardCornerRadius="16dp"
+        app:layout_constraintTop_toBottomOf="@id/progress"
+        app:layout_constraintBottom_toTopOf="@id/btnSaveAll"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <Button
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerEdit"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp"
+            android:clipToPadding="false"
+            android:scrollbars="vertical" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- כפתור שמירה -->
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSaveAll"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="שמור והמשך"
-        android:layout_marginTop="8dp"/>
-
-
-
-</LinearLayout>
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/primary_blue"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="24dp"
+        app:cornerRadius="12dp"
+        app:icon="@drawable/ic_check"
+        app:iconGravity="textStart"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>
