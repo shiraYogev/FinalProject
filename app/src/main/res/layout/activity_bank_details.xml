@@ -10,7 +10,7 @@
     android:padding="16dp"
     tools:context=".activity.newProject.bank.BankDetailsActivity">
 
-    <!-- כותרת המסך -->
+    <!-- כותרת -->
     <TextView
         android:id="@+id/txtTitle"
         android:layout_width="0dp"
@@ -21,8 +21,7 @@
         android:textColor="?android:attr/textColorPrimary"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        />
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- כפתור העלאת PDF -->
     <Button
@@ -30,11 +29,21 @@
         android:layout_width="0dp"
         android:layout_height="48dp"
         android:text="העלה קובץ PDF"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="24dp"
         app:layout_constraintTop_toBottomOf="@id/txtTitle"
         app:layout_constraintStart_toStartOf="@id/txtTitle"
-        app:layout_constraintEnd_toEndOf="@id/txtTitle"
-        />
+        app:layout_constraintEnd_toEndOf="@id/txtTitle" />
+
+    <!-- כפתור עריכה ידנית (חדש) -->
+    <Button
+        android:id="@+id/editManuallyButton"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:text="עריכת פרטים ידנית"
+        android:layout_marginTop="12dp"
+        app:layout_constraintTop_toBottomOf="@id/uploadPdfButton"
+        app:layout_constraintStart_toStartOf="@id/uploadPdfButton"
+        app:layout_constraintEnd_toEndOf="@id/uploadPdfButton" />
 
     <!-- שם הקובץ שנבחר -->
     <TextView
@@ -47,11 +56,11 @@
         android:ellipsize="end"
         android:singleLine="true"
         android:layout_marginTop="12dp"
-        app:layout_constraintTop_toBottomOf="@id/uploadPdfButton"
-        app:layout_constraintStart_toStartOf="@id/uploadPdfButton"
-        app:layout_constraintEnd_toEndOf="@id/uploadPdfButton" />
+        app:layout_constraintTop_toBottomOf="@id/editManuallyButton"
+        app:layout_constraintStart_toStartOf="@id/editManuallyButton"
+        app:layout_constraintEnd_toEndOf="@id/editManuallyButton" />
 
-    <!-- ProgressBar עבור תהליך ההעלאה -->
+    <!-- ProgressBar -->
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleLarge"

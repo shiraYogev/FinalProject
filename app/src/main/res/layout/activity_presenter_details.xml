@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:layoutDirection="rtl">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- ===== Appraiser (שמאי) ===== -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            app:cardUseCompatPadding="true"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="פרטי שמאי"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <!-- appraiser_name -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="שם השמאי">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_appraiser_name"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- appraisal_date -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="תאריך השומה (DD/MM/YYYY)">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_appraisal_date"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="date" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- appraiser_role -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="תפקיד השמאי">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_appraiser_role"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ===== Presenter (מוסר) ===== -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="פרטי מוסר"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <!-- name_of_presenter -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="שם המוסר">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_name_of_presenter"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- id_of_presenter -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="ת.ז. המוסר (9 ספרות)"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="9">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_id_of_presenter"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number"
+                        android:maxLength="9" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- type_of_presenter_id -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="סוג מזהה המוסר (ת.ז/דרכון)">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_type_of_presenter_id"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- role_of_presenter -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="תפקיד המוסר">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_role_of_presenter"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- holder_status -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="סטטוס מחזיק">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_holder_status"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ===== Actions ===== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:paddingTop="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_save"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="שמירה" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_finish"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="סיום"
+                android:layout_marginStart="12dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
