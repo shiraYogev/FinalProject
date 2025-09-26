@@ -101,5 +101,6 @@
 
     <color name="surface_deep">#0F172A</color>
     <color name="surface_card">#162238</color>
+    <color name="glass_surface_light">#F0FFFFFF</color>
 
 </resources>

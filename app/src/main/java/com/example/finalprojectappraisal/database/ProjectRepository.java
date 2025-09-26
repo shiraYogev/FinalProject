@@ -1014,15 +1014,11 @@ public class ProjectRepository {
         // שאילתה 1: שמאי ראשי, פרויקטים פעילים
         Task<QuerySnapshot> query1 = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
                 .whereEqualTo(FirestoreConstants.FIELD_APPRAISER_ID, userId)
-                .whereNotIn(FirestoreConstants.FIELD_PROJECT_STATUS,
-                        List.of(FirestoreConstants.STATUS_COMPLETED, FirestoreConstants.STATUS_CANCELLED)) // <-- הוספת תנאי סינון
                 .get();
 
         // שאילתה 2: שמאי שותף, פרויקטים פעילים
         Task<QuerySnapshot> query2 = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
                 .whereArrayContains(FirestoreConstants.FIELD_CO_APPRAISER_IDS, userId)
-                .whereNotIn(FirestoreConstants.FIELD_PROJECT_STATUS,
-                        List.of(FirestoreConstants.STATUS_COMPLETED, FirestoreConstants.STATUS_CANCELLED)) // <-- הוספת תנאי סינון
                 .get();
 
         Tasks.whenAllSuccess(query1, query2)
