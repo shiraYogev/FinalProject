@@ -1,51 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="8dp">
+    android:layout_margin="12dp"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="6dp"
+    app:strokeColor="@android:color/transparent"
+    android:layoutDirection="rtl"
+    android:backgroundTint="@android:color/transparent">
 
-    <!-- תמונה ריבועית -->
-    <ImageView
-        android:id="@+id/imageView"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="220dp"
-        android:layout_centerHorizontal="true"
-        android:scaleType="centerCrop"
-        android:background="@drawable/image_border"
-        android:src="@drawable/button_primary"
-        android:contentDescription="תמונת נכס" />
+        android:layout_height="match_parent"
+        android:padding="16dp">
 
-    <!-- כפתור מחיקה בפינה העליונה -->
-    <ImageButton
-        android:id="@+id/btnDeleteImage"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_margin="12dp"
-        android:background="@drawable/avatar_circle_bg"
-        android:src="@drawable/bg_card"
-        android:contentDescription="מחק תמונה"
-        android:scaleType="centerInside"
-        android:padding="6dp" />
+        <!-- תמונה -->
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:layout_centerHorizontal="true"
+            android:scaleType="centerCrop"
+            android:background="@drawable/image_container_bg"
+            android:src="@drawable/item_image_thumbnail"
+            android:contentDescription="תמונת נכס" />
 
-    <EditText
-        android:id="@+id/editDescription"
-        android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:layout_below="@id/imageView"
-        android:layout_marginTop="12dp"
-        android:hint="תיאור התמונה..."
-        android:textSize="13sp"
-        android:textColor="@android:color/black"
-        android:textColorHint="@android:color/darker_gray"
-        android:background="@drawable/edittext_background"
-        android:padding="18dp"
-        android:gravity="top|start"
-        android:minLines="4"
-        android:maxLines="6"
-        android:scrollbars="vertical"
-        android:inputType="textMultiLine|textCapSentences" />
+        <!-- כפתור מחיקה עגול -->
+        <ImageButton
+            android:id="@+id/btnDeleteImage"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="12dp"
+            android:background="@drawable/avatar_circle_bg"
+            android:src="@drawable/ic_close"
+            android:contentDescription="מחק תמונה"
+            android:scaleType="center"
+            android:padding="10dp"
+            app:tint="@color/text_primary_dark" />
 
-</RelativeLayout>
+        <!-- תיאור התמונה -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/descriptionLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/imageView"
+            android:layout_marginTop="16dp"
+            android:hint="תיאור התמונה"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            app:boxCornerRadiusTopStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:boxStrokeColor="@color/primary_blue"
+            app:hintTextColor="@color/primary_blue"
+            app:boxStrokeWidth="2dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minLines="3"
+                android:maxLines="5"
+                android:inputType="textMultiLine|textCapSentences"
+                android:textColor="@color/text_primary_dark"
+                android:textSize="14sp"
+                android:gravity="top|start" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+    </RelativeLayout>
+
+</com.google.android.material.card.MaterialCardView>

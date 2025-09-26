@@ -28,23 +28,23 @@
     <string name="classify_cabinets">זהה ארונות</string>
     <string name="result_placeholder">תוצאות הזיהוי יופיעו כאן</string>
 
-    <string name="client_id_firebase" >193264017428-24qch0o58m7nk06lt77e3inueh241bi5.apps.googleusercontent.com</string>
+    <string name="client_id_firebase">193264017428-24qch0o58m7nk06lt77e3inueh241bi5.apps.googleusercontent.com</string>
 
     <string name="edit">עריכה</string>
 
-        <!-- תוכן לנגישות / contentDescription -->
-        <string name="cd_main_card_icon">אייקון סטטיסטיקות ראשי</string>
-        <string name="cd_new_project">צור פרויקט חדש</string>
-        <string name="cd_all_projects">פתח כל הפרויקטים (צפייה)</string>
-        <string name="cd_my_projects">פתח הפרויקטים שלי</string>
-        <string name="cd_settings">פתח הגדרות</string>
+    <!-- תוכן לנגישות / contentDescription -->
+    <string name="cd_main_card_icon">אייקון סטטיסטיקות ראשי</string>
+    <string name="cd_new_project">צור פרויקט חדש</string>
+    <string name="cd_all_projects">פתח כל הפרויקטים (צפייה)</string>
+    <string name="cd_my_projects">פתח הפרויקטים שלי</string>
+    <string name="cd_settings">פתח הגדרות</string>
 
-        <!-- אופציונלי: אם תרצי להשתמש גם לאייקונים אחרים בעמוד -->
-        <string name="cd_notifications">התראות</string>
-        <string name="cd_user_avatar">תמונת פרופיל</string>
+    <!-- אופציונלי: אם תרצי להשתמש גם לאייקונים אחרים בעמוד -->
+    <string name="cd_notifications">התראות</string>
+    <string name="cd_user_avatar">תמונת פרופיל</string>
 
 
-    </resources>
+</resources>
 
 
 

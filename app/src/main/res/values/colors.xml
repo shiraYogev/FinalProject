@@ -103,4 +103,5 @@
     <color name="surface_card">#162238</color>
     <color name="glass_surface_light">#F0FFFFFF</color>
 
+    <color name="input_background_soft">#F2F2F2</color>
 </resources>

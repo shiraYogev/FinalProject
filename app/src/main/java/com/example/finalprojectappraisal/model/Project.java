@@ -37,9 +37,13 @@ public class Project {
     @SerializedName("co_appraiser_ids") // השם שיופיע ב-Firestore
     private List<String> coAppraiserIds;
 
-
     // Creation and update timestamps
     private long creationDate;
+    @SerializedName("appraisal_date")
+    private String appraisalDate;  // appraisal_date (DD/MM/YYYY)
+    @SerializedName("appraiser_role")
+    private String appraiserRole;  // appraiser_role
+
     @ServerTimestamp
     private Date lastUpdateDate;
     // Property details
@@ -240,10 +244,19 @@ public class Project {
         this.numberOfFloors = numberOfFloors;
         // שאר השדות (אם רוצים אפשר להוסיף כאן בהמשך)
     }
+    @PropertyName("appraisal_date")
+    public String getAppraisalDate() { return appraisalDate; }
+    @PropertyName("appraisal_date")
+    public void setAppraisalDate(String v) { this.appraisalDate = v; }
 
+    @PropertyName("appraiser_role")
+    public String getAppraiserRole() { return appraiserRole; }
+    @PropertyName("appraiser_role")
+    public void setAppraiserRole(String v) { this.appraiserRole = v; }
     public void updateLastUpdateDate() {
         this.lastUpdateDate = new Date(System.currentTimeMillis());
     }
+
 
     // Getters and Setters
     public String getProjectId() {

@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="4dp"
-    android:background="@android:color/white">
+    android:layout_margin="16dp"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="8dp"
+    app:strokeColor="@android:color/transparent"
+    app:cardBackgroundColor="@android:color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
         <!-- כותרת הקטגוריה -->
         <TextView
@@ -22,19 +24,22 @@
             android:text="סלון"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="@color/textColorPrimary"
+            android:textColor="@color/text_primary_dark"
             android:gravity="center"
             android:layout_marginBottom="12dp" />
 
-        <!-- ViewPager2 לתמונות -->
+        <!-- ViewPager לתמונות -->
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/viewPagerImages"
             android:layout_width="match_parent"
-            android:layout_height="300dp"
+            android:layout_height="250dp"
             android:layout_marginBottom="12dp"
-            android:background="@drawable/button_add_image" />
+            android:clipToPadding="false"
+            android:clipChildren="false"
+            android:overScrollMode="never"
+            android:background="@drawable/image_container_bg" />
 
-        <!-- אינדיקטור עמודים (אופציונלי) -->
+        <!-- אינדיקטור (אופציונלי) -->
         <LinearLayout
             android:id="@+id/layoutPageIndicator"
             android:layout_width="match_parent"
@@ -45,20 +50,20 @@
             android:visibility="gone" />
 
         <!-- כפתור הוספת תמונה -->
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAddImage"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/button_add_image"
-            android:drawableLeft="@drawable/baseline_add_photo_alternate_24"
-            android:drawablePadding="8dp"
-            android:gravity="center"
-            android:padding="12dp"
+            android:layout_height="48dp"
             android:text="+ הוסף תמונה"
-            android:textColor="@color/textColorPrimary"
+            android:textColor="@color/text_primary_dark"
             android:textSize="14sp"
-            android:textStyle="bold" />
-
+            android:textStyle="bold"
+            android:backgroundTint="@null"
+            android:background="@drawable/button_add_image"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/baseline_add_photo_alternate_24"
+            app:iconTint="@color/text_primary_dark"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"/>
     </LinearLayout>
-
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>
