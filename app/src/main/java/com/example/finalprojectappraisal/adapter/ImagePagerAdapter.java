@@ -36,8 +36,17 @@ public class ImagePagerAdapter extends RecyclerView.Adapter<ImagePagerAdapter.Pa
     public PagerViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_image_in_pager, parent, false);
+
+        // הבטחה שכל עמוד ימלא את ה-ViewPager2
+        RecyclerView.LayoutParams lp = new RecyclerView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        );
+        v.setLayoutParams(lp);
+
         return new PagerViewHolder(v);
     }
+
 
     @Override
     public void onBindViewHolder(@NonNull PagerViewHolder holder, int position) {
