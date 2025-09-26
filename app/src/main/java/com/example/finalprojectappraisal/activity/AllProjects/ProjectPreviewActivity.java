@@ -1,3 +1,4 @@
+// file: app/src/main/java/com/example/finalprojectappraisal/activity/AllProjects/ProjectPreviewActivity.java
 package com.example.finalprojectappraisal.activity.AllProjects;
 
 import android.os.Bundle;
@@ -17,16 +18,17 @@ import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.database.ProjectRepository;
 import com.example.finalprojectappraisal.model.Image;
 import com.example.finalprojectappraisal.model.Project;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 public class ProjectPreviewActivity extends AppCompatActivity {
 
@@ -39,6 +41,106 @@ public class ProjectPreviewActivity extends AppCompatActivity {
 
     private String projectId;
     private final ProjectRepository repo = ProjectRepository.getInstance();
+
+    // ---------- helper specs for sections ----------
+    static class FieldSpec {
+        final String label;   // caption in Hebrew
+        final String path;    // Firestore key (supports dot notation)
+        FieldSpec(String label, String path) { this.label = label; this.path = path; }
+    }
+    static class SectionSpec {
+        final String title;
+        final List<FieldSpec> fields;
+        SectionSpec(String title, List<FieldSpec> fields) { this.title = title; this.fields = fields; }
+    }
+
+    // ---------- sections (match your DB keys) ----------
+    private static final List<SectionSpec> SECTIONS = Arrays.asList(
+            // bankDetails.*
+            new SectionSpec("פרטי בנק", Arrays.asList(
+                    new FieldSpec("שם בנק",                  "bankDetails.bankName"),
+                    new FieldSpec("שם סניף",                 "bankDetails.branchName"),
+                    new FieldSpec("אימייל סניף",             "bankDetails.branchEmail"),
+                    new FieldSpec("שם בנקאי",                "bankDetails.bankerName"),
+                    new FieldSpec("תאריך מסמך (לועזי)",      "bankDetails.documentDateGre"),
+                    new FieldSpec("תאריך מסמך (עברי)",       "bankDetails.documentDateHe"),
+                    new FieldSpec("מס׳ שומה",                "bankDetails.valuationNumber"),
+                    new FieldSpec("מס׳ הלוואה",              "bankDetails.loanNumber"),
+                    new FieldSpec("סוג הלוואה",              "bankDetails.typeOfLoan"),
+                    new FieldSpec("כותרת עמוד 1",            "bankDetails.page1Header"),
+                    new FieldSpec("מס׳ חלקה",                "bankDetails.lotNumber"),
+                    new FieldSpec("גוש עיקרי",               "bankDetails.mainParcel"),
+                    new FieldSpec("תת־חלקה",                 "bankDetails.subParcel"),
+                    new FieldSpec("כתובת מקוצרת",            "bankDetails.shortAddress"),
+                    new FieldSpec("שם הלווה",                 "bankDetails.loanerName"),
+                    new FieldSpec("תעודת זהות הלווה",         "bankDetails.loanerId"),
+                    new FieldSpec("מטרת ההלוואה",            "bankDetails.purposeOfLoan"),
+                    new FieldSpec("זהות הלקוח",               "bankDetails.identityOfCustomer"),
+                    new FieldSpec("תאריך סופי לשומה",         "bankDetails.appraisalFinalDate")
+            )),
+
+            // client.*
+            new SectionSpec("פרטי לקוח", Arrays.asList(
+                    new FieldSpec("שם הלקוח",    "client.fullName"),
+                    new FieldSpec("ת״ז לקוח",    "client.clientId"),
+                    new FieldSpec("טלפון",       "client.phoneNumber"),
+                    new FieldSpec("אימייל",      "client.email")
+            )),
+
+            // presenter_details.*
+            new SectionSpec("פרטי שמאי/מוסר", Arrays.asList(
+                    new FieldSpec("שם מוסר",               "presenter_details.name_of_presenter"),
+                    new FieldSpec("ת״ז מוסר",             "presenter_details.id_of_presenter"),
+                    new FieldSpec("סוג מזהה מוסר",        "presenter_details.type_of_presenter_id"),
+                    new FieldSpec("תפקיד המוסר",           "presenter_details.role_of_presenter"),
+                    new FieldSpec("סטטוס מחזיק",          "presenter_details.holder_status")
+            )),
+
+            // root fields (registration + address)
+            new SectionSpec("רישום וכתובת", Arrays.asList(
+                    new FieldSpec("כתובת מלאה",               "full_address"),
+                    new FieldSpec("בניין – כניסה",            "building_entry"),
+                    new FieldSpec("בניין – מספר",             "building_number"),
+                    new FieldSpec("מס׳ אזור",                 "zone_number"),
+                    new FieldSpec("מס׳ תכנית בניין עיר",      "building_city_plan_number"),
+                    new FieldSpec("תקציר נכס",                "property_summary")
+            )),
+
+            // property & environment (mix of root + property_details.*)
+            new SectionSpec("מאפייני סביבה ומבנה", Arrays.asList(
+                    new FieldSpec("מאפייני סביבה",       "environment_characteristics"),
+                    new FieldSpec("מיקום הנכס",          "property_details.property_location"),
+                    new FieldSpec("סוג בניין",            "property_details.building_type"),
+                    new FieldSpec("מצב הבניין",          "property_details.physical_condition"),
+                    new FieldSpec("תחזוקה",               "property_details.maintenance"),
+                    new FieldSpec("חומרי בנייה",          "property_details.construction_material"),
+                    new FieldSpec("חיפוי חוץ",            "property_details.external_cladding"),
+                    new FieldSpec("מס׳ קומות בבניין",     "property_details.number_of_floors"),
+                    new FieldSpec("יש מעלית",             "property_details.has_elevator")
+            )),
+
+            // apartment details (property_details.*)
+            new SectionSpec("פרטי דירה", Arrays.asList(
+                    new FieldSpec("מס׳ דירה (טופס עירייה)",     "property_details.apartment_number(municipal_form)"),
+                    new FieldSpec("קומה",                         "property_details.apartment_story"),
+                    new FieldSpec("מס׳ חדרים",                    "property_details.number_of_rooms"),
+                    new FieldSpec("שטח רשום (מ\"ר)",             "property_details.registered_apartment_area"),
+                    new FieldSpec("שטח ברוטו (מ\"ר)",            "property_details.gross_apartment_area"),
+                    new FieldSpec("כיווני אוויר",                 "property_details.apartment_directions"),
+                    new FieldSpec("ריצוף",                        "property_details.apartment_flooring"),
+                    new FieldSpec("חלונות",                       "property_details.apartment_windows"),
+                    new FieldSpec("מטבח",                         "property_details.apartment_kitchen"),
+                    new FieldSpec("דלת כניסה",                    "property_details.apartment_main_entrance_door"),
+                    new FieldSpec("דלתות/משקופים פנימיים",        "property_details.apartment_interior_doors_and_frames"),
+                    new FieldSpec("אמבטיה/כלים סניטריים",         "property_details.apartment_bathroom_fixtures"),
+                    new FieldSpec("כולל בדירה",                   "property_details.apartment_includes"),
+                    new FieldSpec("סורגים",                       "property_details.has_bars"),
+                    new FieldSpec("מיזוג אוויר",                  "property_details.apartment_air_conditioning"),
+                    new FieldSpec("חניה",                         "property_details.has_parking"),
+                    new FieldSpec("מחסן",                         "property_details.has_storage"),
+                    new FieldSpec("חימום מרכזי/קמין",             "property_details.central_heating_or_fireplace")
+            ))
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,13 +160,14 @@ public class ProjectPreviewActivity extends AppCompatActivity {
         progressProject = findViewById(R.id.progressProject);
         progressImages = findViewById(R.id.progressImages);
 
-        // טבלת פרטים (RTL)
+        // Details table (RTL)
         rvDetails = findViewById(R.id.rvDetails);
+        rvDetails.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         rvDetails.setLayoutManager(new LinearLayoutManager(this));
         detailsAdapter = new KeyValueAdapter();
         rvDetails.setAdapter(detailsAdapter);
 
-        // גריד תמונות
+        // Images grid
         rvImages = findViewById(R.id.rvImages);
         rvImages.setNestedScrollingEnabled(false);
         rvImages.setLayoutManager(new GridLayoutManager(this, 3));
@@ -72,7 +175,7 @@ public class ProjectPreviewActivity extends AppCompatActivity {
         rvImages.setAdapter(imagesAdapter);
 
         loadHeader();
-        loadDetails();    // ← בונה בלוקים מלאים מתוך כל הדוקומנט
+        loadDetailsSummary();
         loadImages();
     }
 
@@ -99,9 +202,7 @@ public class ProjectPreviewActivity extends AppCompatActivity {
 
         Long ts = null;
         if (p.getLastUpdateDate() != null) ts = p.getLastUpdateDate().getTime();
-        String last = (ts != null)
-                ? DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.getDefault()).format(new Date(ts))
-                : "—";
+        String last = (ts != null) ? DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.getDefault()).format(new Date(ts)) : "—";
 
         txtTitle.setText(address);
         txtAddress.setText(address);
@@ -110,112 +211,48 @@ public class ProjectPreviewActivity extends AppCompatActivity {
         txtUpdated.setText("עודכן: " + last);
     }
 
-    // --------- DETAILS (בלוקים + שורות) ---------
-    private void loadDetails() {
-        // נשלוף את כל המסמך כדי לכסות את כל השדות ב-JSON
+    // --------- DETAILS (sections & fields) ---------
+    private void loadDetailsSummary() {
         repo.getProject(projectId, task -> {
             if (!task.isSuccessful() || task.getResult() == null || !task.getResult().exists()) {
                 detailsAdapter.submit(new ArrayList<>());
                 return;
             }
-            Map<String, Object> m = task.getResult().getData();
-            if (m == null) m = new LinkedHashMap<>();
+            DocumentSnapshot doc = task.getResult();
 
-            List<Row> rows = new ArrayList<>();
+            List<KeyValue> rows = new ArrayList<>();
 
-            // === פרטי בנק ===
-            rows.add(Row.header("פרטי בנק"));
-            addIfNotEmpty(rows, "שם בנק", m.get("bank_name"));
-            addIfNotEmpty(rows, "שם סניף", m.get("branch_name"));
-            addIfNotEmpty(rows, "אימייל הסניף", m.get("branch_email"));
-            addIfNotEmpty(rows, "שם בנקאי", m.get("banker_name"));
-            addIfNotEmpty(rows, "תאריך מסמך (לועזי)", m.get("document_date_gre"));
-            addIfNotEmpty(rows, "תאריך מסמך (עברי)", m.get("document_date_he"));
-            addIfNotEmpty(rows, "מס׳ שומה", m.get("valuation_number"));
-            addIfNotEmpty(rows, "מס׳ הלוואה", m.get("loan_number"));
-            addIfNotEmpty(rows, "סוג הלוואה", m.get("type_of_loan"));
-            addIfNotEmpty(rows, "כותרת עמוד 1", m.get("page1_header"));
+            for (SectionSpec sec : SECTIONS) {
+                // section header row (always shown)
+                rows.add(KeyValue.header(sec.title));
 
-            // === פרטי שמאי/מוסר ===
-            rows.add(Row.header("פרטי שמאי/מוסר"));
-            addIfNotEmpty(rows, "שם שמאי", m.get("appraiser_name"));
-            addIfNotEmpty(rows, "תאריך שמאות", m.get("appraisal_date"));
-            addIfNotEmpty(rows, "תפקיד שמאי", m.get("appraiser_role"));
-            addIfNotEmpty(rows, "שם מוסר", m.get("name_of_presenter"));
-            addIfNotEmpty(rows, "ת״ז מוסר", m.get("id_of_presenter"));
-            addIfNotEmpty(rows, "סוג תעודה", m.get("type_of_presenter_id"));
-            addIfNotEmpty(rows, "תפקיד מוסר", m.get("role_of_presenter"));
-            addIfNotEmpty(rows, "מצב מחזיק", m.get("holder_status"));
-            addIfNotEmpty(rows, "תאריך סופי לשומה", m.get("appraisal_final_date"));
-
-            // === רישום וכתובת ===
-            rows.add(Row.header("רישום וכתובת"));
-            addIfNotEmpty(rows, "מס׳ חלקה", m.get("lot_number"));
-            addIfNotEmpty(rows, "גוש ראשי", m.get("main_parcel"));
-            addIfNotEmpty(rows, "גוש משנה", m.get("sub_parcel"));
-            addIfNotEmpty(rows, "כתובת קצרה", m.get("short_address"));
-            addIfNotEmpty(rows, "כתובת מלאה", m.get("full_address"));
-            addIfNotEmpty(rows, "כניסה", m.get("building_entry"));
-            addIfNotEmpty(rows, "מס׳ בניין", m.get("building_number"));
-            addIfNotEmpty(rows, "מס׳ אזור", m.get("zone_number"));
-            addIfNotEmpty(rows, "תכנית עיר", m.get("building_city_plan_number"));
-            addIfNotEmpty(rows, "תאריך מסמכי רישום", m.get("registration_document_date"));
-            addIfNotEmpty(rows, "תקציר נכס", m.get("property_summary"));
-
-            // === מאפייני סביבה ומבנה ===
-            rows.add(Row.header("מאפייני סביבה ומבנה"));
-            addIfNotEmpty(rows, "מאפייני סביבה", m.get("environment_characteristics"));
-            addIfNotEmpty(rows, "מיקום", m.get("property_location"));
-            addIfNotEmpty(rows, "סוג בניין", m.get("building_type"));
-            addIfNotEmpty(rows, "מצב פיזי", m.get("physical_condition"));
-            addIfNotEmpty(rows, "תחזוקה", m.get("maintenance"));
-            addIfNotEmpty(rows, "חומר בניה", m.get("construction_material"));
-            addIfNotEmpty(rows, "חיפוי חוץ", m.get("external_cladding"));
-            addIfNotEmpty(rows, "מס׳ קומות", m.get("number_of_floors"));
-
-            // === דירה (נתונים כלליים) ===
-            rows.add(Row.header("פרטי דירה"));
-            addIfNotEmpty(rows, "מס׳ דירה (טופס עירייה)", m.get("apartment_number(municipal_form)"));
-            addIfNotEmpty(rows, "קומה", m.get("apartment_story"));
-            addIfNotEmpty(rows, "מס׳ חדרים", m.get("number_of_rooms"));
-            addIfNotEmpty(rows, "כולל", m.get("apartment_includes"));
-            addIfNotEmpty(rows, "כיווני אוויר", m.get("apartment_directions"));
-            addIfNotEmpty(rows, "שטח רשום (מ\"ר)", m.get("registered_apartment_area"));
-            addIfNotEmpty(rows, "שטח ברוטו (מ\"ר)", m.get("gross_apartment_area"));
-
-            // === חומרים וגמרים ===
-            rows.add(Row.header("חומרים וגמרים"));
-            addIfNotEmpty(rows, "מטבח", m.get("apartment_kitchen"));
-            addIfNotEmpty(rows, "ריצוף", m.get("apartment_flooring"));
-            addIfNotEmpty(rows, "דלת כניסה", m.get("apartment_main_entrance_door"));
-            addIfNotEmpty(rows, "דלתות/משקופים פנימיים", m.get("apartment_interior_doors_and_frames"));
-            addIfNotEmpty(rows, "חלונות", m.get("apartment_windows"));
-
-            // === מתקנים ===
-            rows.add(Row.header("מתקנים"));
-            addYesNo(rows, "מעלית", m.get("has_elevator"));
-            addYesNo(rows, "חניה", m.get("has_parking"));
-            addYesNo(rows, "מחסן", m.get("has_storage"));
-            addYesNo(rows, "חימום מרכזי/קמין", m.get("central_heating_or_fireplace"));
-            addIfNotEmpty(rows, "מיזוג אוויר", m.get("apartment_air_conditioning"));
-            addYesNo(rows, "סורגים", m.get("has_bars"));
+                for (FieldSpec f : sec.fields) {
+                    Object raw = doc.get(f.path);        // supports dot-notation
+                    String display = toDisplayValue(raw);
+                    if (display == null || display.trim().isEmpty()) display = "—";
+                    rows.add(KeyValue.row(f.label, display));
+                }
+            }
 
             detailsAdapter.submit(rows);
         });
     }
 
-    private static void addIfNotEmpty(List<Row> rows, String label, Object value) {
-        if (value == null) return;
-        String s = String.valueOf(value).trim();
-        if (s.isEmpty() || "null".equalsIgnoreCase(s)) return;
-        rows.add(Row.line(label + " : " + s));
-    }
+    private String toDisplayValue(Object val) {
+        if (val == null) return null;
 
-    private static void addYesNo(List<Row> rows, String label, Object value) {
-        boolean b = false;
-        if (value instanceof Boolean) b = (Boolean) value;
-        else if (value != null) b = "true".equalsIgnoreCase(String.valueOf(value));
-        rows.add(Row.line(label + " : " + (b ? "כן" : "לא")));
+        if (val instanceof Boolean) return ((Boolean) val) ? "כן" : "לא";
+
+        if (val instanceof List<?>) {
+            List<?> list = (List<?>) val;
+            if (list.isEmpty()) return null;
+            List<String> parts = new ArrayList<>();
+            for (Object o : list) if (o != null) parts.add(String.valueOf(o));
+            return parts.isEmpty() ? null : String.join(", ", parts);
+        }
+
+        String s = String.valueOf(val).trim();
+        return s.isEmpty() ? null : s;
     }
 
     private static String safe(String s, String def) { return (s == null || s.trim().isEmpty()) ? def : s; }
@@ -244,11 +281,11 @@ public class ProjectPreviewActivity extends AppCompatActivity {
 
     /** --- Adapters --- */
 
-    // שורות (כותרת או שורה רגילה — טקסט בודד, RTL)
+    // Key/Value with header support
     static class KeyValueAdapter extends RecyclerView.Adapter<KeyValueAdapter.H> {
-        private final List<Row> data = new ArrayList<>();
+        private final List<KeyValue> data = new ArrayList<>();
 
-        void submit(List<Row> rows) {
+        void submit(List<KeyValue> rows) {
             data.clear();
             if (rows != null) data.addAll(rows);
             notifyDataSetChanged();
@@ -261,55 +298,63 @@ public class ProjectPreviewActivity extends AppCompatActivity {
         }
 
         @Override public void onBindViewHolder(@NonNull H h, int pos) {
-            Row row = data.get(pos);
+            KeyValue kv = data.get(pos);
 
-            // reset
-            h.txtHeader.setVisibility(View.GONE);
-            h.txtLine.setVisibility(View.GONE);
-            h.divider.setVisibility(View.VISIBLE);
+            // RTL align
+            h.key.setTextDirection(View.TEXT_DIRECTION_RTL);
+            h.value.setTextDirection(View.TEXT_DIRECTION_RTL);
+            h.key.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
+            h.value.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
 
-            ViewGroup.MarginLayoutParams rootLp = (ViewGroup.MarginLayoutParams) h.root.getLayoutParams();
-            if (rootLp != null) { rootLp.topMargin = 0; h.root.setLayoutParams(rootLp); }
-
-            if (row.isHeader) {
-                h.txtHeader.setText(row.text);
-                h.txtHeader.setVisibility(View.VISIBLE);
-                h.divider.setVisibility(View.GONE);
-                if (rootLp != null) { rootLp.topMargin = (pos == 0) ? 8 : 16; h.root.setLayoutParams(rootLp); }
+            if (kv.isHeader) {
+                // header style: bold key, empty value, extra top padding
+                h.key.setText(kv.key);
+                h.key.setTypeface(h.key.getTypeface(), android.graphics.Typeface.BOLD);
+                h.value.setText("");
+                h.itemView.setPadding(h.itemView.getPaddingLeft(),
+                        (int) (h.itemView.getResources().getDisplayMetrics().density * 12),
+                        h.itemView.getPaddingRight(),
+                        h.itemView.getPaddingBottom());
             } else {
-                h.txtLine.setText(row.text);
-                h.txtLine.setVisibility(View.VISIBLE);
+                // normal row
+                h.key.setTypeface(null, android.graphics.Typeface.NORMAL);
+                h.key.setText(kv.key + " :");
+                h.value.setText(kv.value == null ? "—" : kv.value);
             }
         }
 
         @Override public int getItemCount() { return data.size(); }
 
         static class H extends RecyclerView.ViewHolder {
-            View root, divider;
-            TextView txtHeader, txtLine;
-            H(@NonNull View v) {
-                super(v);
-                root = v.findViewById(R.id.rowRoot);
-                txtHeader = v.findViewById(R.id.txtHeader);
-                txtLine = v.findViewById(R.id.txtLine);
-                divider = v.findViewById(R.id.divider);
-            }
+            TextView key, value;
+            H(@NonNull View v) { super(v); key = v.findViewById(R.id.txtKey); value = v.findViewById(R.id.txtValue); }
         }
     }
 
-    static class Row {
-        final String text;
+    static class KeyValue {
         final boolean isHeader;
-        Row(String t, boolean h) { text = t; isHeader = h; }
-        static Row header(String t) { return new Row(t, true); }
-        static Row line(String t) { return new Row(t, false); }
+        final String key;
+        final String value;
+        private KeyValue(boolean isHeader, String key, String value) {
+            this.isHeader = isHeader; this.key = key; this.value = value;
+        }
+        static KeyValue header(String title) { return new KeyValue(true, title, ""); }
+        static KeyValue row(String key, String value) { return new KeyValue(false, key, value); }
     }
 
-    // גריד תמונות
+    // Images grid (URL/content://)
     static class ImagesGridAdapter extends RecyclerView.Adapter<ImagesGridAdapter.H> {
         private final List<Image> data = new ArrayList<>();
-        ImagesGridAdapter(List<Image> init) { if (init != null) data.addAll(init); }
-        void submit(List<Image> items) { data.clear(); if (items != null) data.addAll(items); notifyDataSetChanged(); }
+
+        ImagesGridAdapter(List<Image> init) {
+            if (init != null) data.addAll(init);
+        }
+
+        void submit(List<Image> items) {
+            data.clear();
+            if (items != null) data.addAll(items);
+            notifyDataSetChanged();
+        }
 
         @NonNull @Override public H onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View v = android.view.LayoutInflater.from(parent.getContext())
@@ -320,6 +365,7 @@ public class ProjectPreviewActivity extends AppCompatActivity {
         @Override public void onBindViewHolder(@NonNull H h, int pos) {
             Image im = data.get(pos);
             String url = (im != null) ? im.getUrl() : null;
+
             if (url == null || url.trim().isEmpty()) {
                 h.img.setImageResource(android.R.drawable.ic_menu_report_image);
             } else {
