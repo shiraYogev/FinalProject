@@ -1,101 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/modern_gradient_bg"
-    android:layoutDirection="rtl">
-
-    <ImageView
-        android:id="@+id/logo"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:src="@drawable/ic_building_large"  android:contentDescription="לוגו שמאות נדלן"
-        app:tint="@android:color/white"  android:layout_marginTop="120dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="24dp"
+    android:background="#E8F5E9"
+    tools:context=".activity.MainActivity">
 
     <TextView
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text='שמאות נדל"ן'
-        android:textSize="36sp"
+        android:text="שמאות"
+        android:textSize="32sp"
         android:textStyle="bold"
-        android:textColor="@color/text_primary_white"
-        android:fontFamily="sans-serif-black"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/logo"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:textColor="#2E7D32"
+        android:layout_marginTop="40dp" />
 
-    <TextView
-        android:id="@+id/subtitle"
-        android:layout_width="0dp"
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:src="@drawable/ic_home_logo"
+        android:contentDescription="לוגו בתים"
+        android:layout_marginTop="16dp" />
+
+    <!-- כפתור גוגל אמיתי -->
+    <Button
+        android:id="@+id/googleButton"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="ברוך הבא"
-        android:textSize="18sp"
-        android:textColor="@color/text_secondary_white"
-        android:gravity="center"
-        android:layout_marginHorizontal="32dp"
-        android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@id/title"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:layout_marginTop="40dp"
+        android:layout_marginBottom="24dp"
+        android:text="כניסה עם גוגל"
+        android:drawableEnd="@drawable/ic_google_logo"
+        android:layoutDirection="rtl"
+        android:textDirection="rtl"
+        android:backgroundTint="#FFFFFF"
+        android:textColor="#000000"
+        android:drawablePadding="8dp"
+        android:elevation="2dp" />
 
+
+    <!-- כפתורי התחברות / הרשמה -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:gravity="center"
-        android:paddingHorizontal="40dp"
-        android:layout_marginBottom="40dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:layout_marginTop="8dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/googleButton"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:text="כניסה עם גוגל"
-            android:textSize="16sp"
-            android:textColor="@color/text_primary_white"
-            app:strokeColor="@color/text_secondary_white"
-            app:strokeWidth="1dp"
-            app:icon="@drawable/ic_google_logo_white"
-            app:iconGravity="end"
-            app:iconSize="24dp"
-            app:iconTint="@android:color/white"
-            app:cornerRadius="12dp"
-            android:layout_marginBottom="24dp"/>
-
-        <com.google.android.material.button.MaterialButton
+        <Button
             android:id="@+id/loginButton"
-            style="@style/Widget.Material3.Button"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:text="כבר יש לי חשבון: התחברות"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/white"
-            app:cornerRadius="12dp"
-            android:backgroundTint="@color/primary_blue"
-            android:layout_marginBottom="12dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/signUpButton"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="חדש כאן? צור חשבון"
-            android:textSize="16sp"
-            android:textColor="@color/accent_green_light"
-            android:layout_marginTop="8dp" />
+            android:text="התחברות"
+            android:backgroundTint="#66BB6A"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="8dp" />
 
+        <Button
+            android:id="@+id/signUpButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="הרשמה"
+            android:backgroundTint="#43A047"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="8dp" />
     </LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>
