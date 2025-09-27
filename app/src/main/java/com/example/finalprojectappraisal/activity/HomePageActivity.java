@@ -132,7 +132,11 @@ public class HomePageActivity extends AppCompatActivity {
 
         userAvatar.setOnClickListener(v -> {
             addRippleEffect(v);
-            // TODO: ProfileActivity
+            // ✅ הפעלה של ProfileActivity
+            Intent profileIntent = new Intent(HomePageActivity.this, ProfileActivity.class);
+            startActivity(profileIntent);
+            // מומלץ להשתמש באנימציה עקבית של Slide-in:
+            overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
         });
     }
 
