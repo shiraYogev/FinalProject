@@ -7,6 +7,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -30,6 +32,15 @@ public class AllProjectsViewActivity extends AppCompatActivity implements Projec
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_all_projects_view);
+        View overlay = findViewById(R.id.status_bar_overlay);
+        if (overlay != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(overlay, (v, insets) -> {
+                int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+                overlay.getLayoutParams().height = top;
+                overlay.requestLayout();
+                return insets;
+            });
+        }
         setTitle("כל הפרויקטים (צפייה)");
 
         rv = findViewById(R.id.rvProjects);
