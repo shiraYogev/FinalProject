@@ -1,8 +1,25 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.google.gms.google.services)
 
 }
+
+// Load GEMINI_API_KEY from local.properties (project root).
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
+// Fallbacks: gradle.properties or environment variable if needed
+val geminiKey: String = localProps.getProperty("GEMINI_API_KEY")
+    ?: (project.findProperty("GEMINI_API_KEY") as String?)
+    ?: System.getenv("GEMINI_API_KEY")
+    ?: ""
+
+// (אופציונלי לדיבוג: לא מדפיסים את המפתח עצמו)
+println("GEMINI_API_KEY present in build? ${geminiKey.isNotEmpty()} length=${geminiKey.length}")
 
 android {
     namespace = "com.example.finalprojectappraisal"
@@ -18,6 +35,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        // העברת ה-Key ל-BuildConfig
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
     }
 
 
@@ -36,6 +55,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 
     packaging {
@@ -69,7 +89,8 @@ dependencies {
     implementation("androidx.cardview:cardview:1.0.0")
 
     // AI & Cloud Services
-    implementation("com.google.ai.client.generativeai:generativeai:0.2.1")
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+    //implementation("com.google.ai.client.generativeai:generativeai:0.2.1")
     implementation("com.google.cloud:google-cloud-storage:2.22.5") {
         exclude(group = "com.google.api.grpc", module = "proto-google-common-protos")
         exclude(group = "com.google.protobuf", module = "protobuf-java")
