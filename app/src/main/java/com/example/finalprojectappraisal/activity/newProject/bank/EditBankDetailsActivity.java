@@ -218,4 +218,4 @@ public class EditBankDetailsActivity extends AppCompatActivity {
             btnCancel.setEnabled(true);
         }
     }
-}.
+}
