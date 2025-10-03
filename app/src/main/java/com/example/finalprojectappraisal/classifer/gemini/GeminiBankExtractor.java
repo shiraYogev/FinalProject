@@ -1,12 +1,10 @@
 package com.example.finalprojectappraisal.classifer.gemini;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.pdf.PdfRenderer;
 import android.net.Uri;
-import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
+import com.example.finalprojectappraisal.BuildConfig;
 import com.example.finalprojectappraisal.model.BankDetails;
 import com.google.ai.client.generativeai.GenerativeModel;
 import com.google.ai.client.generativeai.java.GenerativeModelFutures;
@@ -15,13 +13,15 @@ import com.google.ai.client.generativeai.type.GenerateContentResponse;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class GeminiBankExtractor {
-    private static final String API_KEY = "AIzaSyDhFwyH9JqdiElWGTKMPBnw_fAYxhk5pYo"; // החליפי ב-API שלך
     private static final String TAG = "GeminiBankExtractor";
+    private static final String API_KEY =
+            BuildConfig.GEMINI_API_KEY != null ? BuildConfig.GEMINI_API_KEY.trim() : "";
     private static final Executor executor = Executors.newSingleThreadExecutor();
 
     public interface BankDataExtractionCallback {
@@ -30,25 +30,18 @@ public class GeminiBankExtractor {
     }
 
     /**
-     * חילוץ נתונים מקובץ PDF של פרטי הבנק
+     * חילוץ נתונים מקובץ PDF של פרטי הבנק (שליחת הקובץ ישירות)
      */
     public static void extractBankDetailsFromPDF(Context context, Uri pdfUri, BankDataExtractionCallback callback) {
         executor.execute(() -> {
             try {
-                Log.d(TAG, "Starting bank details extraction from PDF: " + pdfUri);
-
-                // המרת הדף הראשון של ה-PDF לתמונה
-                Bitmap pdfBitmap = convertPdfToBitmap(context, pdfUri);
-                if (pdfBitmap == null) {
-                    callback.onError("לא ניתן להמיר את ה-PDF לתמונה");
-                    return;
-                }
+                Log.d(TAG, "Starting bank details extraction from PDF Uri: " + pdfUri);
 
                 // יצירת prompt מפורט לחילוץ נתונים
                 String prompt = createBankDataExtractionPrompt();
 
-                // שליחה ל-Gemini
-                extractDataWithGemini(pdfBitmap, prompt, callback);
+                // שליחה ל-Gemini עם ה-Uri של הקובץ
+                extractDataWithGemini(context, pdfUri, prompt, callback);
 
             } catch (Exception e) {
                 Log.e(TAG, "Error extracting bank details", e);
@@ -58,87 +51,89 @@ public class GeminiBankExtractor {
     }
 
     /**
-     * המרת הדף הראשון של PDF לתמונה
-     */
-    private static Bitmap convertPdfToBitmap(Context context, Uri pdfUri) {
-        try {
-            ParcelFileDescriptor fileDescriptor = context.getContentResolver().openFileDescriptor(pdfUri, "r");
-            if (fileDescriptor == null) {
-                Log.e(TAG, "Cannot open PDF file descriptor");
-                return null;
-            }
-
-            PdfRenderer pdfRenderer = new PdfRenderer(fileDescriptor);
-            PdfRenderer.Page page = pdfRenderer.openPage(0); // דף ראשון
-
-            // יצירת Bitmap בגודל מתאים
-            Bitmap bitmap = Bitmap.createBitmap(page.getWidth(), page.getHeight(), Bitmap.Config.ARGB_8888);
-            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-
-            page.close();
-            pdfRenderer.close();
-            fileDescriptor.close();
-
-            Log.d(TAG, "Successfully converted PDF to bitmap");
-            return bitmap;
-
-        } catch (IOException e) {
-            Log.e(TAG, "Error converting PDF to bitmap", e);
-            return null;
-        }
-    }
-
-    /**
-     * יצירת prompt לחילוץ נתוני הבנק
+     * יצירת prompt לחילוץ נתוני הבנק - מתוקן לפי הדרישות
      */
     private static String createBankDataExtractionPrompt() {
-        return "אתה מומחה לחילוץ נתונים ממסמכים בנקיים בעברית. אנא חלץ את הנתונים הבאים ממסמך הבנק בתמונה והחזר תשובה בפורמט JSON בלבד:\n" +
+        return "אתה מומחה לחילוץ נתונים ממסמכים בנקיים בעברית. אנא חלץ את הנתונים הבאים ממסמך הבנק והחזר תשובה בפורמט JSON בלבד:\n" +
                 "\n" +
                 "{\n" +
                 "    \"bank_name\": \"שם הבנק בעברית\",\n" +
                 "    \"branch_name\": \"שם הסניף בעברית\",\n" +
                 "    \"branch_email\": \"כתובת אימייל של הסניף\",\n" +
-                "    \"banker_name\": \"שם הבנקאי בעברית\",\n" +
-                "    \"document_date_gre\": \"תאריך המסמך בפורמט YYYY-MM-DD\",\n" +
-                "    \"document_date_he\": \"תאריך המסמך בעברית\",\n" +
-                "    \"valuation_number\": \"מספר השמאי\",\n" +
-                "    \"loan_number\": \"מספר ההלוואה (מספרים בלבד)\",\n" +
-                "    \"type_of_loan\": \"סוג ההלוואה בעברית\",\n" +
-                "    \"page1_header\": \"כותרת עמוד 1 בעברית\",\n" +
-                "    \"lot_number\": \"מספר החלקה (מספרים בלבד)\",\n" +
-                "    \"main_parcel\": \"חלקה ראשית (מספרים בלבד)\",\n" +
-                "    \"sub_parcel\": \"חלקת משנה (מספרים בלבד)\",\n" +
-                "    \"short_address\": \"כתובת קצרה בעברית\",\n" +
-                "    \"loaner_name\": \"שם הלווה בעברית\",\n" +
-                "    \"loaner_id\": \"מספר זהות הלווה (9 ספרות)\",\n" +
-                "    \"purpose_of_loan\": \"מטרת ההלוואה בעברית\",\n" +
-                "    \"identity_of_customer\": \"זהות הלקוח בעברית\",\n" +
-                "    \"appraisal_final_date\": \"תאריך סיום השמאות בפורמט DD/MM/YYYY\"\n" +
+                "    \"banker_name\": \"שם הבנקאי בעברית (מופיע בתחתית המסמך האחרון לפני 'בכבוד רב')\",\n" +
+                "    \"document_date_gre\": \"תאריך המסמך בפורמט YYYY-MM-DD (התאריך שמופיע בראש המסמך)\",\n" +
+                "    \"document_date_he\": \"תאריך המסמך בפורמט DD/MM/YYYY\",\n" +
+                "    \"valuation_number\": \"מספר השומה בפורמט יישוב/שנה/מספר (למשל: עפולה/25/10761) - חפש בתחילת המסמך השני\",\n" +
+                "    \"loan_number\": \"מס' תיק - המספר הארוך שמופיע ליד 'מס' תיק' (9-10 ספרות)\",\n" +
+                "    \"type_of_loan\": \"סוג ההלוואה (מוכוונת/לא מוכוונת) - מופיע ליד 'סוג ההלוואה:'\",\n" +
+                "    \"page1_header\": \"כותרת עמוד 1 (נספח ל...)\",\n" +
+                "    \"lot_number\": \"מספר הגוש (מספרים בלבד) - מופיע בטבלה תחת 'גוש'\",\n" +
+                "    \"main_parcel\": \"חלקה ראשית (מספרים בלבד) - מופיע בטבלה תחת 'חלקה'\",\n" +
+                "    \"sub_parcel\": \"תת חלקה (מספרים בלבד) - מופיע בטבלה תחת 'תת חלקה'\",\n" +
+                "    \"short_address\": \"כתובת מלאה (רחוב מספר, יישוב)\",\n" +
+                "    \"loaner_name\": \"שם הלווה בעברית - מופיע ליד 'שם הלווה:'\",\n" +
+                "    \"loaner_id\": \"מס' זהות הלווה (9 ספרות) - מופיע ליד 'מס' זהות:'\",\n" +
+                "    \"purpose_of_loan\": \"מטרת השמאות (למשל: רכישת נכס) - מופיע ליד 'מטרת השמאות:'\",\n" +
+                "    \"identity_of_customer\": \"שם הלווה כפי שמופיע בתחילת המסמך השני, ליד 'לכבוד' או 'שם הלוואה:'\",\n" +
+                "    \"appraisal_final_date\": \"המועד הקצוב לשמאות בפורמט DD/MM/YYYY - חפש במסמך השני את השדה 'המועד הקצוב לשמאות:'\"\n" +
                 "}\n" +
                 "\n" +
-                "חשוב:\n" +
-                "1. החזר רק JSON תקין ללא טקסט נוסף\n" +
-                "2. אם שדה לא קיים במסמך, השתמש ב-null\n" +
-                "3. וודא שמספרי זהות הם בדיוק 9 ספרות\n" +
-                "4. תאריכים צריכים להיות בפורמט המבוקש בדיוק\n" +
-                "5. אל תוסיף שדות שלא מבוקשים\n";
+                "הנחיות קריטיות:\n" +
+                "1. החזר רק JSON תקין ללא כל טקסט נוסף, הסברים, או markdown\n" +
+                "2. אם שדה לא קיים או לא ברור במסמך, השתמש ב-null\n" +
+                "3. valuation_number - זה המספר שמופיע בפורמט יישוב/שנה/מספר (למשל: עפולה/25/10761)\n" +
+                "4. loan_number - זה מס' תיק (המספר הארוך, לא מס' הלוואה שהוא 1)\n" +
+                "5. identity_of_customer - שם הלווה מהמסמך השני (לא שמות הדיירים)\n" +
+                "6. appraisal_final_date - המועד הקצוב לשמאות מהמסמך השני\n" +
+                "7. תאריכים בפורמט DD/MM/YYYY עם אפסים מובילים (למשל: 11/09/2025)\n" +
+                "8. תאריכים בפורמט YYYY-MM-DD עם מקפים (למשל: 2025-09-11)\n" +
+                "9. מספרי זהות חייבים להיות בדיוק 9 ספרות\n" +
+                "10. שדות מספריים (lot_number, main_parcel, sub_parcel) - רק מספרים\n" +
+                "11. המסמך מכיל מספר עמודים - חפש מידע גם בעמוד השני\n";
     }
 
     /**
-     * שליחה ל-Gemini וחילוץ הנתונים
+     * המרת PDF Uri לבייטים
      */
-    private static void extractDataWithGemini(Bitmap bitmap, String prompt, BankDataExtractionCallback callback) {
+    private static byte[] readPdfBytes(Context context, Uri pdfUri) throws Exception {
+        try (InputStream inputStream = context.getContentResolver().openInputStream(pdfUri);
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+            if (inputStream == null) {
+                throw new Exception("לא ניתן לפתוח את הקובץ");
+            }
+
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+
+            return outputStream.toByteArray();
+        }
+    }
+
+    /**
+     * שליחה ל-Gemini וחילוץ הנתונים מה-PDF
+     */
+    private static void extractDataWithGemini(Context context, Uri pdfUri, String prompt, BankDataExtractionCallback callback) {
         try {
-            Log.d(TAG, "Sending image to Gemini for bank data extraction");
+            Log.d(TAG, "Reading PDF file bytes");
+
+            // קריאת הקובץ כבייטים
+            byte[] pdfBytes = readPdfBytes(context, pdfUri);
+
+            Log.d(TAG, "PDF file size: " + pdfBytes.length + " bytes");
+            Log.d(TAG, "Sending PDF file to Gemini for bank data extraction");
 
             // יצירת מודל Gemini
             GenerativeModelFutures generativeModel = GenerativeModelFutures.from(
-                    new GenerativeModel("gemini-1.5-pro", API_KEY)
+                    new GenerativeModel("gemini-2.0-flash-exp", API_KEY)
             );
 
-            // יצירת Content עם תמונה ו-prompt
+            // יצירת Content עם הבייטים של ה-PDF והפרומפט
             Content content = new Content.Builder()
-                    .addImage(bitmap)
+                    .addBlob("application/pdf", pdfBytes)
                     .addText(prompt)
                     .build();
 
@@ -214,33 +209,11 @@ public class GeminiBankExtractor {
     }
 
     /**
-     * ניקוי ערכים ב-BankDetails
+     * ניקוי ערכים ב-BankDetails - מבוטל זמנית לצורך דיבוג
      */
     private static void cleanBankDetailsValues(BankDetails bankDetails) {
-        // ניקוי רווחים מיותרים ו-null values
-        if (bankDetails.getBankName() != null) {
-            bankDetails.setBankName(bankDetails.getBankName().trim());
-        }
-        if (bankDetails.getBranchName() != null) {
-            bankDetails.setBranchName(bankDetails.getBranchName().trim());
-        }
-        if (bankDetails.getLoanerId() != null) {
-            // ודא שמספר הזהות מכיל רק ספרות
-            String cleanId = bankDetails.getLoanerId().replaceAll("[^0-9]", "");
-            bankDetails.setLoanerId(cleanId.length() == 9 ? cleanId : null);
-        }
-        if (bankDetails.getLoanNumber() != null) {
-            // ודא שמספר ההלוואה מכיל רק ספרות
-            bankDetails.setLoanNumber(bankDetails.getLoanNumber().replaceAll("[^0-9]", ""));
-        }
-        if (bankDetails.getLotNumber() != null) {
-            bankDetails.setLotNumber(bankDetails.getLotNumber().replaceAll("[^0-9]", ""));
-        }
-        if (bankDetails.getMainParcel() != null) {
-            bankDetails.setMainParcel(bankDetails.getMainParcel().replaceAll("[^0-9]", ""));
-        }
-        if (bankDetails.getSubParcel() != null) {
-            bankDetails.setSubParcel(bankDetails.getSubParcel().replaceAll("[^0-9]", ""));
-        }
+        // לא מבצעים שום ניקוי או ולידציה
+        // כל הנתונים עוברים כמו שהם מ-Gemini
+        Log.d(TAG, "Skipping validation - passing raw data from Gemini");
     }
 }
