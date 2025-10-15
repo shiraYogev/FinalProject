@@ -6,44 +6,83 @@ import android.content.Intent;
 import android.net.Uri;
 import android.widget.Toast;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 public class MapIntentUtils {
 
+    // ===========================================
+    // 1. Google Maps (מתודה קיימת, מעודכנת)
+    // ===========================================
     public static void openAddressInMaps(Context context, String address) {
-        if (address == null) address = "";
-        address = address.trim();
-        if (address.isEmpty()) {
-            Toast.makeText(context, "לא נמצאה כתובת לפרויקט", Toast.LENGTH_SHORT).show();
+        if (address == null || address.trim().isEmpty()) {
+            Toast.makeText(context, "כתובת ריקה, לא ניתן לנווט.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 1) Try Google Maps app (geo:)
         try {
-            Uri gmmIntentUri = Uri.parse("geo:0,0?q=" + Uri.encode(address));
-            Intent mapsApp = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-            mapsApp.setPackage("com.google.android.apps.maps");
-            mapsApp.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(mapsApp);
-            return;
-        } catch (Exception ignore) { }
+            // מקודד את הכתובת ל-URL
+            String mapQuery = URLEncoder.encode(address, StandardCharsets.UTF_8.name());
+            Uri gmmIntentUri = Uri.parse("geo:0,0?q=" + mapQuery);
+            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
 
-        // 2) Try any maps-capable app (geo:)
+            // מנסה לפתוח ישירות את אפליקציית Google Maps
+            mapIntent.setPackage("com.google.android.apps.maps");
+            mapIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+            if (mapIntent.resolveActivity(context.getPackageManager()) != null) {
+                context.startActivity(mapIntent);
+            } else {
+                Toast.makeText(context, "אפליקציית גוגל מפות אינה מותקנת.", Toast.LENGTH_SHORT).show();
+                // אם גוגל מפות לא מותקנת: ניתן לבצע כאן פולבק לדפדפן אם רוצים, אבל כרגע הדיאלוג מטפל בבחירה
+            }
+        } catch (Exception e) {
+            Toast.makeText(context, "שגיאה בפתיחת גוגל מפות.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    // ===========================================
+    // 2. Waze (מתודה חדשה)
+    // ===========================================
+    public static void openAddressInWaze(Context context, String address) {
+        if (address == null || address.trim().isEmpty()) {
+            Toast.makeText(context, "כתובת ריקה, לא ניתן לנווט.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         try {
-            Uri gmmIntentUri = Uri.parse("geo:0,0?q=" + Uri.encode(address));
-            Intent anyMap = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-            anyMap.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(anyMap);
-            return;
-        } catch (Exception ignore) { }
+            // Waze משתמש ב-URL scheme. הכתובת מוצפנת ב-URL
+            String wazeUri = "waze://?q=" + URLEncoder.encode(address, StandardCharsets.UTF_8.name()) + "&navigate=yes";
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(wazeUri));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-        // 3) Fallback to web (Google Maps web URL)
+            if (intent.resolveActivity(context.getPackageManager()) != null) {
+                context.startActivity(intent);
+            } else {
+                Toast.makeText(context, "אפליקציית Waze אינה מותקנת.", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(context, "שגיאה בפתיחת Waze.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    // ===========================================
+    // 3. Govmap (מתודה חדשה)
+    // ===========================================
+    public static void openAddressInGovmap(Context context, String address) {
+        if (address == null || address.trim().isEmpty()) {
+            Toast.makeText(context, "כתובת ריקה, לא ניתן לפתוח.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         try {
-            Uri web = Uri.parse("https://www.google.com/maps/search/?api=1&query=" + Uri.encode(address));
-            Intent webIntent = new Intent(Intent.ACTION_VIEW, web);
-            webIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(webIntent);
-            return;
-        } catch (Exception ignore) { }
-
-        Toast.makeText(context, "אין אפליקציה מתאימה לפתיחת מפה", Toast.LENGTH_SHORT).show();
+            // פתיחת מפת הממשלה (Govmap) בדפדפן
+            String govmapUrl = "https://www.govmap.gov.il/?q=" + URLEncoder.encode(address, StandardCharsets.UTF_8.name());
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(govmapUrl));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(context, "שגיאה בפתיחת Govmap.", Toast.LENGTH_LONG).show();
+        }
     }
 }

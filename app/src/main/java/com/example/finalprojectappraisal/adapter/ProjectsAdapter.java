@@ -102,9 +102,11 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         }
 
         // 🗺️ כפתור מפה
+        // 🗺️ כפתור מפה - עכשיו עם דיאלוג בחירה
         String address = (project != null) ? project.getFullAddress() : null;
         holder.btnMap.setEnabled(!TextUtils.isEmpty(address));
-        holder.btnMap.setOnClickListener(v -> MapIntentUtils.openAddressInMaps(context, address));
+        // במקום קריאה ישירה, נפנה למתודה חדשה
+        holder.btnMap.setOnClickListener(v -> showMapOptionsDialog(address));
 
         // סטטוס
         String status = project != null ? project.getProjectStatus() : null;
@@ -177,6 +179,44 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         holder.btnReport.setOnClickListener(v -> {
             if (listener != null && project != null) listener.onReport(project);
         });
+    }
+
+    /**
+     * מציג דיאלוג לבחירת אפליקציית מפה (Google Maps, Waze, Govmap)
+     * וקורא למתודה המתאימה ב-MapIntentUtils
+     */
+    private void showMapOptionsDialog(String address) {
+        if (TextUtils.isEmpty(address)) {
+            Toast.makeText(context, "כתובת לא זמינה לפתיחת מפה.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        final String[] options = new String[] {
+                "גוגל מפות (ניווט)",
+                "Waze (ניווט)",
+                "Govmap (מפה ממשלתית)"
+        };
+
+        new AlertDialog.Builder(context)
+                .setTitle("בחר אפליקציית מפה")
+                .setItems(options, (dialog, which) -> {
+                    switch (which) {
+                        case 0:
+                            // Google Maps - שימוש במתודה הקיימת
+                            MapIntentUtils.openAddressInMaps(context, address);
+                            break;
+                        case 1:
+                            // Waze - יש לוודא שהמתודה MapIntentUtils.openAddressInWaze קיימת
+                            MapIntentUtils.openAddressInWaze(context, address);
+                            break;
+                        case 2:
+                            // Govmap - יש לוודא שהמתודה MapIntentUtils.openAddressInGovmap קיימת
+                            MapIntentUtils.openAddressInGovmap(context, address);
+                            break;
+                    }
+                })
+                .setNegativeButton("ביטול", null)
+                .show();
     }
 
     /**
