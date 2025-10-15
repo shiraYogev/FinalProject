@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="project_statuses">
-        <item>טיוטה</item>
-        <item>בטיפול</item>
+        <item>הצעת מחיר</item>
+        <item>טרם ביקור</item>
+        <item>לאחר ביקור</item>
+        <item>בעבודה</item>
+        <item>בבדיקה שמאי חותם</item>
         <item>הושלם</item>
-        <item>הוקפא</item>
-        <item>בוטל</item>
     </string-array>
 </resources>
