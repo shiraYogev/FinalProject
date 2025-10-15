@@ -172,7 +172,7 @@ public class Project {
     public Project() {
         this.creationDate = System.currentTimeMillis(); // client time
         this.lastUpdateDate = null;                     // server will fill on write
-        this.projectStatus = "In Progress";
+        this.projectStatus = "הצעת מחיר";
         this.propertyImages = new ArrayList<>();
         this.coAppraiserIds = new ArrayList<>();
     }
