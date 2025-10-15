@@ -165,7 +165,7 @@
                     android:layout_marginBottom="4dp"
                     android:minWidth="64dp"
                     android:minHeight="48dp"
-                    android:text="שינוי סטטוס"
+                    android:text="סטטוס פרויקט"
                     android:textSize="13sp" />
 
                 <Button
