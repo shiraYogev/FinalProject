@@ -3,7 +3,7 @@ package com.example.finalprojectappraisal.classifer.gemini;
 import android.content.Context;
 import android.net.Uri;
 
-import com.example.finalprojectappraisal.database.ProjectRepository;
+import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Image;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;

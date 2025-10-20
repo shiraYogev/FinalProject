@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.adapter.ApartmentDetailsAdapter;
 import com.example.finalprojectappraisal.classifer.gemini.GeminiJsonParser;
-import com.example.finalprojectappraisal.database.ProjectRepository;
+import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Project;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.example.finalprojectappraisal.activity.newProject.property.common.utils.Choices;
