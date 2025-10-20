@@ -107,29 +107,6 @@ public class ProjectRepository {
                 .addOnFailureListener(e -> errorMessage.setValue(FirestoreConstants.ERROR_CREATING_PROJECT + ": " + e.getMessage()));
     }
 
-    public void createProjectWithAddress(@NonNull String fullAddress, @NonNull Project project, @Nullable OnCompleteListener<Void> listener) {
-        if (fullAddress == null || fullAddress.trim().isEmpty()) {
-            handleError("Full address cannot be null or empty", listener);
-            return;
-        }
-        if (project == null) {
-            handleError("Project cannot be null", listener);
-            return;
-        }
-
-        ProjectDataValidator.ValidationResult validation = ProjectDataValidator.validateProject(project);
-        if (!validation.isValid()) {
-            handleError("Validation failed: " + validation.getErrorsAsString(), listener);
-            return;
-        }
-
-        project.setProjectId(fullAddress);
-        db.collection(FirestoreConstants.COLLECTION_PROJECTS).document(fullAddress)
-                .set(project)
-                .addOnCompleteListener(listener)
-                .addOnFailureListener(e -> errorMessage.setValue(FirestoreConstants.ERROR_CREATING_PROJECT + ": " + e.getMessage()));
-    }
-
     // ========================= PROJECT RETRIEVAL =========================
 
     public void getProject(@NonNull String projectId, @Nullable OnCompleteListener<DocumentSnapshot> listener) {
