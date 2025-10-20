@@ -15,7 +15,7 @@ import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.utils.RepresentativePicker;
 import com.example.finalprojectappraisal.classifer.gemini.GeminiSummaryParser;
 import com.example.finalprojectappraisal.classifer.gemini.GeminiSummaryService;
-import com.example.finalprojectappraisal.database.ProjectRepository;
+import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Image;
 
 import java.util.ArrayList;

@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.adapter.PropertyDetailsAdapter;
-import com.example.finalprojectappraisal.database.ProjectRepository;
+import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Project;
 import com.example.finalprojectappraisal.activity.newProject.property.common.utils.Choices;
 

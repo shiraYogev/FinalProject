@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity;
-import com.example.finalprojectappraisal.database.ProjectRepository;
+import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Client;
 import com.example.finalprojectappraisal.model.Project;
 import com.google.firebase.auth.FirebaseAuth;

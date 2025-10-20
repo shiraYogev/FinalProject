@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import com.example.finalprojectappraisal.database.ProjectRepository;
+import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.database.constants.FirestoreConstants;
 
 public class UploadImagesActivity extends AppCompatActivity {

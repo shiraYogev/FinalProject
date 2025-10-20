@@ -10,13 +10,12 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.activity.activitiesAdmin.AdminListActivity;
-import com.example.finalprojectappraisal.database.ProjectRepository;
+import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Appraiser;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Tasks; // יש לוודא שה-import הזה קיים
 
 public class SettingsActivity extends AppCompatActivity {
 

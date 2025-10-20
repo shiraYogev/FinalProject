@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.admin.AdminAdapter;
-import com.example.finalprojectappraisal.database.ProjectRepository;
+import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Appraiser;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -21,7 +21,6 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 import android.app.AlertDialog;
-import java.util.stream.Collectors;
 
 // ייבוא קריטי עבור OnCompleteListener ו-Task:
 import com.google.android.gms.tasks.Task;

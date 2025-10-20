@@ -17,6 +17,7 @@ public final class FirestoreConstants {
     public static final String COLLECTION_PROJECTS = "projects";
     public static final String COLLECTION_CLIENTS = "clients";
     public static final String COLLECTION_APPRAISERS = "appraisers";
+    public static final String FIELD_BANK_DETAILS = "bankDetails";
 
     // =========================
     // Subcollection Names

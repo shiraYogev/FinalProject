@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.adapter.ProjectsReadOnlyAdapter;
-import com.example.finalprojectappraisal.database.ProjectRepository;
+import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Project;
 
 import java.util.ArrayList;

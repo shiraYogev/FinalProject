@@ -23,8 +23,7 @@ import com.example.finalprojectappraisal.activity.myProjects.filter.ProjectFilte
 import com.example.finalprojectappraisal.activity.myProjects.filter.ProjectFilterEngine;
 import com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity;
 import com.example.finalprojectappraisal.adapter.ProjectsAdapter;
-import com.example.finalprojectappraisal.database.ProjectRepository;
-import com.example.finalprojectappraisal.database.constants.FirestoreConstants;
+import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Project;
 import com.example.finalprojectappraisal.model.Appraiser;
 import com.example.finalprojectappraisal.utils.FilterChipUtils;
@@ -38,10 +37,8 @@ import com.google.firebase.auth.FirebaseUser;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import android.app.AlertDialog;
 

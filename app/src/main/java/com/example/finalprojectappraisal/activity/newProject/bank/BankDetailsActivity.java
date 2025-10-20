@@ -18,11 +18,10 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.activity.newProject.presenter.PresenterDetailsActivity; // נשאר כפי שהיה אצלך
-import com.example.finalprojectappraisal.database.ProjectRepository;
+import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.BankDetails;
 import com.example.finalprojectappraisal.classifer.gemini.GeminiBankExtractor;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.gson.Gson;
 
 public class BankDetailsActivity extends AppCompatActivity {
