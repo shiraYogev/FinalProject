@@ -64,7 +64,8 @@ public class GeminiPrompts {
      * חדר שינה: סורגים, מיזוג, דלתות פנים, ריצוף.
      */
     public static final String BEDROOM_PROMPT =
-            "זהה בחדר שינה: האם יש סורגים, האם יש מיזוג, סוג דלתות פנים, סוג ומידת ריצוף.\n" +
+            "זהה בחדר שינה: האם יש סורגים, האם יש מיזוג, סוג דלתות הפנים/המשקופים, סוג ומידת ריצוף.\n" +
+                    "אם עלה הדלת אינו נראה היטב, הסתמך על המשקוף (בדרך כלל עשוי מאותו חומר). החזר את חומר הדלתות/המשקופים בשדה יחיד.\n" +
                     "ענה אך ורק ב-JSON תקין. בלי טקסט נוסף ובלי Markdown.\n" +
                     "שמות השדות בדיוק: hasBars, hasAirConditioning, interiorDoorCondition, flooringType, flooringSize.\n" +
                     "hasBars ו-hasAirConditioning חייבים להיות true/false.\n" +
@@ -76,10 +77,11 @@ public class GeminiPrompts {
                     "{\n" +
                     "  \\\"hasBars\\\": false,\n" +
                     "  \\\"hasAirConditioning\\\": true,\n" +
-                    "  \\\"interiorDoorCondition\\\": \\\"דמוי עץ-פולימרי\\\",\n" +
+                    "  \\\"interiorDoorCondition\\\": \\\"עץ\\\",\n" +
                     "  \\\"flooringType\\\": \\\"פורצלן גרניט\\\",\n" +
                     "  \\\"flooringSize\\\": \\\"60X60\\\"\n" +
                     "}";
+
 
     /**
      * מטבח: סוג ארונות ומשטח עבודה.

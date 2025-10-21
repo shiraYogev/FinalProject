@@ -245,6 +245,7 @@ public class UploadImagesActivity extends AppCompatActivity {
                 appendIf(message, "חלונות", parsedDisplayKv.get("חלונות"));
                 appendIf(message, "סורגים", parsedDisplayKv.get("סורגים"));
                 appendIf(message, "מידת ריצוף", parsedDisplayKv.get("מידת ריצוף"));
+                appendIf(message, "דלתות פנים", parsedDisplayKv.get("דלתות פנים"));
                 break;
             default:
                 for (Map.Entry<String, String> e : parsedDisplayKv.entrySet()) {
