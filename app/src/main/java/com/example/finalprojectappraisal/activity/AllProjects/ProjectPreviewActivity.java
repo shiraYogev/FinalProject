@@ -38,7 +38,7 @@ public class ProjectPreviewActivity extends AppCompatActivity {
     private ProgressBar progressProject, progressImages;
     private RecyclerView rvImages, rvDetails;
 
-    private ImagesGridAdapter imagesAdapter;
+    private SectionedImagesAdapter imagesAdapter; // ⬅️ replaced ImagesGridAdapter
     private KeyValueAdapter detailsAdapter;
 
     private String projectId;
@@ -71,12 +71,21 @@ public class ProjectPreviewActivity extends AppCompatActivity {
         detailsAdapter = new KeyValueAdapter();
         rvDetails.setAdapter(detailsAdapter);
 
-        // Images grid
+        // Images grid: sectioned (headers span 3 columns, photos span 1)
         rvImages = findViewById(R.id.rvImages);
         rvImages.setNestedScrollingEnabled(false);
-        rvImages.setLayoutManager(new GridLayoutManager(this, 3));
-        imagesAdapter = new ImagesGridAdapter(new ArrayList<>());
+
+        GridLayoutManager glm = new GridLayoutManager(this, 3);
+        imagesAdapter = new SectionedImagesAdapter();
         rvImages.setAdapter(imagesAdapter);
+
+        glm.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override public int getSpanSize(int position) {
+                int vt = imagesAdapter.getItemViewType(position);
+                return (vt == SectionedImagesAdapter.VT_HEADER) ? 3 : 1;
+            }
+        });
+        rvImages.setLayoutManager(glm);
 
         bindObservers();
         vm.init(projectId);
@@ -95,14 +104,13 @@ public class ProjectPreviewActivity extends AppCompatActivity {
             txtUpdated.setText("עודכן: " + h.lastUpdated);
         });
 
-        vm.getDetails().observe(this, rows -> {
-            detailsAdapter.submit(rows);
-        });
+        vm.getDetails().observe(this, rows -> detailsAdapter.submit(rows));
 
         vm.getLoadingImages().observe(this, loading ->
                 progressImages.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
 
-        vm.getImages().observe(this, list -> {
+        // ⬇️ Use sectioned list (headers + photos)
+        vm.getSectionedImages().observe(this, list -> {
             if (list == null || list.isEmpty()) {
                 txtImagesEmpty.setText("אין תמונות להצגה");
                 txtImagesEmpty.setVisibility(View.VISIBLE);
@@ -163,40 +171,67 @@ public class ProjectPreviewActivity extends AppCompatActivity {
         }
     }
 
-    static class ImagesGridAdapter extends RecyclerView.Adapter<ImagesGridAdapter.H> {
-        private final List<Image> data = new ArrayList<>();
+    /**
+     * Sectioned images adapter: renders category headers (full row) and photos (grid cells).
+     * Requires:
+     * - res/layout/item_image_header.xml  (TextView with id @id/txtHeader)
+     * - res/layout/item_image_square.xml  (ImageView with id @id/image)
+     */
+    static class SectionedImagesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+        static final int VT_HEADER = 10;
+        static final int VT_PHOTO  = 11;
 
-        ImagesGridAdapter(List<Image> init) {
-            if (init != null) data.addAll(init);
-        }
+        private final List<ProjectPreviewViewModel.UiImageItem> data = new ArrayList<>();
 
-        void submit(List<Image> items) {
+        void submit(List<ProjectPreviewViewModel.UiImageItem> items) {
             data.clear();
             if (items != null) data.addAll(items);
             notifyDataSetChanged();
         }
 
-        @NonNull @Override public H onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View v = android.view.LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_image_square, parent, false);
-            return new H(v);
+        @Override public int getItemViewType(int position) {
+            ProjectPreviewViewModel.UiImageItem it = data.get(position);
+            return (it.type == ProjectPreviewViewModel.UiImageItem.TYPE_HEADER) ? VT_HEADER : VT_PHOTO;
         }
 
-        @Override public void onBindViewHolder(@NonNull H h, int pos) {
-            Image im = data.get(pos);
-            String url = (im != null) ? im.getUrl() : null;
-            if (url == null || url.trim().isEmpty()) {
-                h.img.setImageResource(android.R.drawable.ic_menu_report_image);
+        @NonNull @Override public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            if (viewType == VT_HEADER) {
+                View v = android.view.LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.item_image_header, parent, false);
+                return new HeaderVH(v);
             } else {
-                Glide.with(h.img.getContext()).load(url).into(h.img);
+                View v = android.view.LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.item_image_square, parent, false);
+                return new PhotoVH(v);
+            }
+        }
+
+        @Override public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+            ProjectPreviewViewModel.UiImageItem it = data.get(position);
+            if (holder instanceof HeaderVH) {
+                HeaderVH hvh = (HeaderVH) holder;
+                hvh.title.setText(it.title == null ? "—" : it.title);
+            } else if (holder instanceof PhotoVH) {
+                PhotoVH pvh = (PhotoVH) holder;
+                String url = (it.image != null) ? it.image.getUrl() : null;
+                if (url == null || url.trim().isEmpty()) {
+                    pvh.img.setImageResource(android.R.drawable.ic_menu_report_image);
+                } else {
+                    Glide.with(pvh.img.getContext()).load(url).into(pvh.img);
+                }
             }
         }
 
         @Override public int getItemCount() { return data.size(); }
 
-        static class H extends RecyclerView.ViewHolder {
+        static class HeaderVH extends RecyclerView.ViewHolder {
+            TextView title;
+            HeaderVH(@NonNull View v) { super(v); title = v.findViewById(R.id.txtHeader); }
+        }
+
+        static class PhotoVH extends RecyclerView.ViewHolder {
             android.widget.ImageView img;
-            H(@NonNull View v) { super(v); img = v.findViewById(R.id.image); }
+            PhotoVH(@NonNull View v) { super(v); img = v.findViewById(R.id.image); }
         }
     }
 }

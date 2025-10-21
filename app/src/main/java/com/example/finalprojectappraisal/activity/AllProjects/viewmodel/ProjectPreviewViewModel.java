@@ -8,7 +8,7 @@
  * Notes:
  * - All formatting and dot-notation extraction happen here (keeps Activity lean).
  * - Exposes LiveData for loading states, header model, details rows, image list,
- *   and admin permission flag.
+ *   sectioned images (headers + photos), and admin permission flag.
  */
 
 package com.example.finalprojectappraisal.activity.AllProjects.viewmodel;
@@ -32,6 +32,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class ProjectPreviewViewModel extends ViewModel {
 
@@ -47,6 +49,9 @@ public class ProjectPreviewViewModel extends ViewModel {
     private final MutableLiveData<List<Image>> images = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<List<KV>> details = new MutableLiveData<>(new ArrayList<>());
 
+    // NEW: sectioned (flat) list of images: headers + photos
+    private final MutableLiveData<List<UiImageItem>> sectionedImages = new MutableLiveData<>(new ArrayList<>());
+
     // Admin permission (set via checkPermissionsFor(userId) from Activity)
     private final MutableLiveData<Boolean> isAdmin = new MutableLiveData<>(false);
 
@@ -57,9 +62,10 @@ public class ProjectPreviewViewModel extends ViewModel {
     public LiveData<Boolean> getLoadingHeader() { return loadingHeader; }
     public LiveData<Boolean> getLoadingImages() { return loadingImages; }
     public LiveData<ProjectHeaderUi> getHeader() { return header; }
-    public LiveData<List<Image>> getImages() { return images; }
+    public LiveData<List<Image>> getImages() { return images; } // kept for backwards compatibility
     public LiveData<List<KV>> getDetails() { return details; }
     public LiveData<Boolean> getIsAdmin() { return isAdmin; }
+    public LiveData<List<UiImageItem>> getSectionedImages() { return sectionedImages; }
 
     /** Initialize loads once the projectId is known (Activity calls this). */
     public void init(@NonNull String projectId) {
@@ -163,8 +169,92 @@ public class ProjectPreviewViewModel extends ViewModel {
             loadingImages.setValue(false);
             List<Image> list = (task.isSuccessful() && task.getResult() != null)
                     ? task.getResult() : new ArrayList<>();
-            images.setValue(list);
+            images.setValue(list); // keep plain list
+            sectionedImages.setValue(buildSectionedImages(list)); // build headers + photos
         });
+    }
+
+    /** Build a flat list: [Header, Photo, Photo, Header, Photo, ...] by category. */
+    private List<UiImageItem> buildSectionedImages(@NonNull List<Image> all) {
+        List<UiImageItem> out = new ArrayList<>();
+        if (all.isEmpty()) return out;
+
+        // Desired category order (normalize to these keys)
+        List<String> desiredOrder = Arrays.asList(
+                "FRONT",        // חזית / בניין
+                "LIVING_ROOM",  // סלון
+                "KITCHEN",      // מטבח
+                "BATHROOM",     // חדר רחצה
+                "BEDROOM",      // חדרי שינה
+                "VIEW",         // נוף
+                "DOCUMENT",     // מסמכים (אופציונלי אם יש)
+                "OTHER"         // אחר
+        );
+
+        // Group by category with stable insertion order
+        Map<String, List<Image>> byCategory = new LinkedHashMap<>();
+        for (String key : desiredOrder) byCategory.put(key, new ArrayList<>());
+
+        // Distribute images to buckets
+        for (Image im : all) {
+            String key = safeCategory(im);
+            if (!byCategory.containsKey(key)) {
+                byCategory.put(key, new ArrayList<>()); // for any unexpected category
+            }
+            byCategory.get(key).add(im);
+        }
+
+        // Emit only non-empty buckets, in desired order first, then any extras
+        for (String key : desiredOrder) {
+            List<Image> bucket = byCategory.get(key);
+            if (bucket == null || bucket.isEmpty()) continue;
+            out.add(UiImageItem.header(heTitle(key)));
+            for (Image im : bucket) out.add(UiImageItem.photo(im));
+        }
+        for (Map.Entry<String, List<Image>> e : byCategory.entrySet()) {
+            String key = e.getKey();
+            if (desiredOrder.contains(key)) continue;
+            List<Image> bucket = e.getValue();
+            if (bucket == null || bucket.isEmpty()) continue;
+            out.add(UiImageItem.header(heTitle(key)));
+            for (Image im : bucket) out.add(UiImageItem.photo(im));
+        }
+
+        return out;
+    }
+
+    /** Normalize category from model to an uppercase key that matches desiredOrder. */
+    private String safeCategory(@Nullable Image im) {
+        if (im == null) return "OTHER";
+        try {
+            Object catObj = im.getCategory(); // Enum or String
+            if (catObj == null) return "OTHER";
+            String s = String.valueOf(catObj).trim();
+            if (s.isEmpty()) return "OTHER";
+            // Normalize to UPPER_SNAKE_CASE-like
+            s = s.toUpperCase(Locale.ROOT)
+                    .replace(' ', '_')
+                    .replace('-', '_')
+                    .replace('/', '_');
+            return s.isEmpty() ? "OTHER" : s;
+        } catch (Throwable t) {
+            return "OTHER";
+        }
+    }
+
+
+    /** Hebrew title per normalized category key. */
+    private String heTitle(String key) {
+        switch (key) {
+            case "FRONT":        return "חזית / בניין";
+            case "LIVING_ROOM":  return "סלון";
+            case "KITCHEN":      return "מטבח";
+            case "BATHROOM":     return "חדר רחצה";
+            case "BEDROOM":      return "חדרי שינה";
+            case "VIEW":         return "נוף";
+            case "DOCUMENT":     return "מסמכים";
+            default:             return "אחר";
+        }
     }
 
     // --- Helpers & UI models ---
@@ -204,11 +294,45 @@ public class ProjectPreviewViewModel extends ViewModel {
         public static KV row(String key, String value) { return new KV(false, key, value); }
     }
 
-    static class FieldSpec {
-        final String label;   // UI caption (Hebrew)
-        final String path;    // Firestore key (supports dot notation)
-        FieldSpec(String label, String path) { this.label = label; this.path = path; }
+    public static class UiImageItem {
+        public static final int TYPE_HEADER = 0;
+        public static final int TYPE_PHOTO  = 1;
+
+        public final int type;
+        @Nullable public final String title; // used if header
+        @Nullable public final Image image;  // used if photo
+
+        private UiImageItem(int type, @Nullable String title, @Nullable Image image) {
+            this.type = type;
+            this.title = title;
+            this.image = image;
+        }
+
+        public static UiImageItem header(@NonNull String title) { return new UiImageItem(TYPE_HEADER, title, null); }
+        public static UiImageItem photo(@NonNull Image image)   { return new UiImageItem(TYPE_PHOTO,  null,  image); }
     }
+
+    static class FieldSpec {
+        final String label;      // UI caption (Hebrew)
+        final String path;       // Original dotted path (for logs)
+        final String[] tokens;   // Safe tokens for FieldPath.of(...)
+
+        FieldSpec(String label, String path) {
+            this.label = label;
+            this.path  = path;
+            this.tokens = splitToTokens(path);
+        }
+
+        private static String[] splitToTokens(String dotted) {
+            if (dotted == null || dotted.trim().isEmpty()) return new String[0];
+            // Split only by dots. Special chars like () - / remain inside the token.
+            // Example: "property_details.apartment_number(municipal_form)"
+            // -> ["property_details","apartment_number(municipal_form)"]
+            return dotted.split("\\.");
+        }
+    }
+
+
     static class SectionSpec {
         final String title;
         final List<FieldSpec> fields;
@@ -268,7 +392,7 @@ public class ProjectPreviewViewModel extends ViewModel {
                     new FieldSpec("חומרי בנייה",          "property_details.construction_material"),
                     new FieldSpec("חיפוי חוץ",            "property_details.external_cladding"),
                     new FieldSpec("מס׳ קומות בבניין",     "property_details.number_of_floors"),
-                    new FieldSpec("יש מעלית",             "property_details.has_elevator")
+                    new FieldSpec("יש מעלית",             "has_elevator")
             )),
             new SectionSpec("פרטי דירה", Arrays.asList(
                     new FieldSpec("מס׳ דירה (טופס עירייה)",     "property_details.apartment_number(municipal_form)"),
@@ -277,18 +401,18 @@ public class ProjectPreviewViewModel extends ViewModel {
                     new FieldSpec("שטח רשום (מ\"ר)",             "property_details.registered_apartment_area"),
                     new FieldSpec("שטח ברוטו (מ\"ר)",            "property_details.gross_apartment_area"),
                     new FieldSpec("כיווני אוויר",                 "property_details.apartment_directions"),
-                    new FieldSpec("ריצוף",                        "property_details.apartment_flooring"),
-                    new FieldSpec("חלונות",                       "property_details.apartment_windows"),
-                    new FieldSpec("מטבח",                         "property_details.apartment_kitchen"),
-                    new FieldSpec("דלת כניסה",                    "property_details.apartment_main_entrance_door"),
-                    new FieldSpec("דלתות/משקופים פנימיים",        "property_details.apartment_interior_doors_and_frames"),
-                    new FieldSpec("אמבטיה/כלים סניטריים",         "property_details.apartment_bathroom_fixtures"),
+                    new FieldSpec("ריצוף",                        "apartment_flooring"),
+                    new FieldSpec("חלונות",                       "apartment_windows"),
+                    new FieldSpec("מטבח",                         "apartment_kitchen"),
+                    new FieldSpec("דלת כניסה",                    "apartment_main_entrance_door"),
+                    new FieldSpec("דלתות/משקופים פנימיים",        "apartment_interior_doors_and_frames"),
+                    new FieldSpec("אמבטיה/כלים סניטריים",         "apartment_bathroom_fixtures"),
                     new FieldSpec("כולל בדירה",                   "property_details.apartment_includes"),
-                    new FieldSpec("סורגים",                       "property_details.has_bars"),
-                    new FieldSpec("מיזוג אוויר",                  "property_details.apartment_air_conditioning"),
-                    new FieldSpec("חניה",                         "property_details.has_parking"),
-                    new FieldSpec("מחסן",                         "property_details.has_storage"),
-                    new FieldSpec("חימום מרכזי/קמין",             "property_details.central_heating_or_fireplace")
+                    new FieldSpec("סורגים",                       "has_bars"),
+                    new FieldSpec("מיזוג אוויר",                  "apartment_air_conditioning"),
+                    new FieldSpec("חניה",                         "has_parking"),
+                    new FieldSpec("מחסן",                         "has_storage"),
+                    new FieldSpec("חימום מרכזי/קמין",             "central_heating_or_fireplace")
             ))
     );
 }
