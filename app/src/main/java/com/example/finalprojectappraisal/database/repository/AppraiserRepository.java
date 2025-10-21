@@ -87,4 +87,18 @@ public class AppraiserRepository {
                     }
                 });
     }
+
+    public void getAppraiserById(String userId, @Nullable OnCompleteListener<Appraiser> listener) {
+        db.collection("appraisers").document(userId).get()
+                .addOnCompleteListener(task -> {
+                    Appraiser out = null;
+                    if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                        try { out = task.getResult().toObject(Appraiser.class); } catch (Exception ignore) {}
+                    }
+                    if (listener != null) listener.onComplete(Tasks.forResult(out));
+                })
+                .addOnFailureListener(e -> {
+                    if (listener != null) listener.onComplete(Tasks.forResult(null));
+                });
+    }
 }
