@@ -8,7 +8,7 @@
     android:layoutDirection="rtl"
     android:background="@drawable/modern_gradient_bg">
 
-    <!-- Status Bar Overlay (כמו בדף הבית) -->
+    <!-- Status Bar Overlay -->
     <View
         android:id="@+id/status_bar_overlay"
         android:layout_width="0dp"
@@ -48,7 +48,6 @@
                 android:contentDescription="@string/cd_all_projects"
                 app:tint="@color/accent_green" />
 
-            <!-- נשמר אותו id של הכותרת -->
             <TextView
                 android:id="@+id/title"
                 style="@style/Text.Title"
@@ -60,8 +59,8 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- תוכן: Recycler + Empty + Progress, באוברליי -->
-    <FrameLayout
+    <!-- ===== CONTENT AREA (ConstraintLayout במקום FrameLayout!) ===== -->
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/content_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -71,36 +70,112 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
+        <!-- Search + Filters row -->
+        <LinearLayout
+            android:id="@+id/filter_toolbar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <!-- TextInputLayout הופך את המגע ל-48dp ומונע אזהרת נגישות -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilSearch"
+                style="@style/Widget.Material3.TextInputLayout.FilledBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                app:startIconDrawable="@drawable/ic_search"
+                app:startIconTint="?attr/colorOnSurfaceVariant"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxBackgroundMode="filled">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/searchBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:minHeight="48dp"
+                    android:paddingVertical="12dp"
+                    android:hint="חיפוש בכתובת"
+                    android:imeOptions="actionSearch"
+                    android:singleLine="true"
+                    android:textSize="16sp"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFilters"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:minHeight="48dp"
+                android:layout_marginStart="8dp"
+                app:icon="@drawable/ic_dots_menu"
+                android:text="פילטרים" />
+        </LinearLayout>
+
+        <!-- Active filters chips -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipsActiveFilters"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:singleLine="false"
+            app:singleSelection="false"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            app:layout_constraintTop_toBottomOf="@id/filter_toolbar"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Projects list (מקבל את כל הגובה שנותר) -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvProjects"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="0dp"
-            android:clipToPadding="false" />
-
-        <!-- ריק -->
-        <TextView
-            android:id="@+id/txtEmpty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="אין פרויקטים להצגה"
-            android:textAlignment="center"
-            android:textSize="16sp"
-            android:textColor="@color/text_secondary_dark"
-            android:paddingTop="12dp"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:clipToPadding="false"
             android:paddingBottom="16dp"
-            android:visibility="gone"
-            android:layout_gravity="center" />
+            app:layout_constraintTop_toBottomOf="@id/chipsActiveFilters"
+            app:layout_constraintBottom_toTopOf="@+id/empty_container"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- טעינה -->
-        <ProgressBar
-            android:id="@+id/progress"
-            style="?android:attr/progressBarStyle"
-            android:layout_width="wrap_content"
+        <!-- Empty + progress stack בתחתית, לא חוסם את ה-Recycler כי הוא 0dp לגובה -->
+        <FrameLayout
+            android:id="@+id/empty_container"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:padding="8dp"
-            android:visibility="gone" />
-    </FrameLayout>
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <TextView
+                android:id="@+id/txtEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="אין פרויקטים להצגה"
+                android:textAlignment="center"
+                android:textSize="16sp"
+                android:textColor="@color/text_secondary_dark"
+                android:paddingTop="12dp"
+                android:paddingBottom="16dp"
+                android:visibility="gone" />
+
+            <ProgressBar
+                android:id="@+id/progress"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:padding="8dp"
+                android:visibility="gone" />
+        </FrameLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

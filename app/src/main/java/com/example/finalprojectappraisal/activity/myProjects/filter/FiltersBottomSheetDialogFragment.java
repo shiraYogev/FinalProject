@@ -1,8 +1,10 @@
+// file: app/src/main/java/com/example/finalprojectappraisal/activity/myProjects/filter/FiltersBottomSheetDialogFragment.java
 package com.example.finalprojectappraisal.activity.myProjects.filter;
 
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,9 +24,14 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Set;
 
 public class FiltersBottomSheetDialogFragment extends BottomSheetDialogFragment {
+
+    private static final String TAG = "FiltersBS";
 
     public interface OnFiltersAppliedListener {
         void onApply(ProjectFilter filter);
@@ -36,7 +43,7 @@ public class FiltersBottomSheetDialogFragment extends BottomSheetDialogFragment 
 
     public FiltersBottomSheetDialogFragment(@NonNull ProjectFilter seed,
                                             @NonNull OnFiltersAppliedListener listener) {
-        this.filter = seed == null ? new ProjectFilter() : seed;
+        this.filter = (seed == null) ? new ProjectFilter() : seed;
         this.listener = listener;
     }
 
@@ -45,10 +52,101 @@ public class FiltersBottomSheetDialogFragment extends BottomSheetDialogFragment 
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.bottom_sheet_filters, container, false);
 
-        // --- Status chips from resources (dynamic) ---
         setupStatusChips(v);
+        setupDateSection(v);
+        setupSortSection(v);
 
-        // --- Date field selection ---
+        Button btnApply = v.findViewById(R.id.btn_apply);
+        Button btnReset = v.findViewById(R.id.btn_reset);
+
+        btnApply.setOnClickListener(view -> {
+            // בונים מחדש מתוך ה-UI (ליתר ביטחון)
+            ChipGroup group = v.findViewById(R.id.chips_status);
+            Set<String> rebuilt = rebuildStatusesFromUi(group);
+            filter.getStatuses().clear();
+            filter.getStatuses().addAll(rebuilt);
+
+            Log.d(TAG, "APPLY: " + summarizeFilter(filter));
+            FilterPrefs.save(requireContext(), filter);
+            if (listener != null) listener.onApply(filter);
+            dismiss();
+        });
+
+        btnReset.setOnClickListener(view -> {
+            Log.d(TAG, "RESET (before): " + summarizeFilter(filter));
+            filter.clear();
+            Log.d(TAG, "RESET (after): " + summarizeFilter(filter));
+            FilterPrefs.save(requireContext(), filter);
+            if (listener != null) listener.onReset();
+            dismiss();
+        });
+
+        Log.d(TAG, "OPENED with: " + summarizeFilter(filter));
+        return v;
+    }
+
+    // ---------- Status chips ----------
+    private void setupStatusChips(View root) {
+        ChipGroup group = root.findViewById(R.id.chips_status);
+        if (group == null) return;
+
+        group.setSingleSelection(false);
+        group.setSelectionRequired(false);
+
+        String[] labels = getResources().getStringArray(R.array.project_statuses);
+        if (labels == null) labels = new String[0];
+        Log.d(TAG, "setupStatusChips: labels=" + Arrays.toString(labels));
+
+        group.removeAllViews();
+
+        for (String label : labels) {
+            final String code = StatusMapper.uiLabelToCode(label);
+
+            Chip chip = new Chip(requireContext(), null,
+                    com.google.android.material.R.style.Widget_MaterialComponents_Chip_Filter);
+            chip.setText(label);
+            chip.setCheckable(true);
+            chip.setClickable(true);
+            chip.setFocusable(true);
+            chip.setEnsureMinTouchTargetSize(true);
+
+            // מצב התחלתי
+            chip.setChecked(filter.getStatuses().contains(code));
+
+            // עדכון הסט בלבד כאן (בלי onClick שמבצע toggle כפול!)
+            chip.setOnCheckedChangeListener((button, isChecked) -> {
+                if (isChecked) filter.getStatuses().add(code);
+                else           filter.getStatuses().remove(code);
+                Log.d(TAG, "chip: \"" + label + "\" code=" + code + " -> " + isChecked
+                        + " | statuses=" + filter.getStatuses());
+            });
+
+            group.addView(chip);
+        }
+
+        Log.d(TAG, "setupStatusChips: initial statuses=" + filter.getStatuses());
+    }
+
+    private Set<String> rebuildStatusesFromUi(@Nullable ChipGroup group) {
+        Set<String> out = new HashSet<>();
+        if (group == null) return out;
+        for (int i = 0; i < group.getChildCount(); i++) {
+            View child = group.getChildAt(i);
+            if (child instanceof Chip) {
+                Chip c = (Chip) child;
+                if (c.isChecked()) {
+                    String label = String.valueOf(c.getText());
+                    String code = StatusMapper.uiLabelToCode(label);
+                    if (code != null && !code.trim().isEmpty()) out.add(code);
+                }
+            }
+        }
+        Log.d(TAG, "rebuildStatusesFromUi: " + out);
+        return out;
+    }
+
+    // ---------- Dates ----------
+    private void setupDateSection(View v) {
         RadioGroup dateFieldGroup = v.findViewById(R.id.radio_date_field);
         if (filter.getDateField() == ProjectFilter.DateField.CREATED) {
             dateFieldGroup.check(R.id.date_created);
@@ -56,80 +154,16 @@ public class FiltersBottomSheetDialogFragment extends BottomSheetDialogFragment 
             dateFieldGroup.check(R.id.date_last_update);
         }
         dateFieldGroup.setOnCheckedChangeListener((g, id) -> {
-            if (id == R.id.date_created) {
-                filter.setDateField(ProjectFilter.DateField.CREATED);
-            } else {
-                filter.setDateField(ProjectFilter.DateField.LAST_UPDATE);
-            }
+            if (id == R.id.date_created) filter.setDateField(ProjectFilter.DateField.CREATED);
+            else                         filter.setDateField(ProjectFilter.DateField.LAST_UPDATE);
         });
 
-        // --- Date range pickers ---
         TextView tvFrom = v.findViewById(R.id.tv_date_from);
         TextView tvTo   = v.findViewById(R.id.tv_date_to);
         bindDateLabels(tvFrom, tvTo);
 
         tvFrom.setOnClickListener(view -> pickDate(true, tvFrom));
         tvTo.setOnClickListener(view -> pickDate(false, tvTo));
-
-        // --- Sort field ---
-        RadioGroup sortGroup = v.findViewById(R.id.radio_sort);
-        switch (filter.getSortBy()) {
-            case CREATED:      sortGroup.check(R.id.sort_created); break;
-            case CITY:         sortGroup.check(R.id.sort_city);    break; // CITY = לפי כתובת
-            case LAST_UPDATE:
-            default:           sortGroup.check(R.id.sort_last_update);
-        }
-        sortGroup.setOnCheckedChangeListener((g, id) -> {
-            if (id == R.id.sort_created) filter.setSortBy(ProjectFilter.SortField.CREATED);
-            else if (id == R.id.sort_city) filter.setSortBy(ProjectFilter.SortField.CITY);
-            else filter.setSortBy(ProjectFilter.SortField.LAST_UPDATE);
-        });
-
-        // --- Sort direction (ASC/DESC) ---
-        SwitchMaterial swDesc = v.findViewById(R.id.switch_sort_desc);
-        swDesc.setChecked(filter.getSortDir() == ProjectFilter.SortDir.DESC);
-        swDesc.setOnCheckedChangeListener((compoundButton, checked) ->
-                filter.setSortDir(checked ? ProjectFilter.SortDir.DESC : ProjectFilter.SortDir.ASC)
-        );
-
-        // --- Buttons ---
-        Button btnApply = v.findViewById(R.id.btn_apply);
-        Button btnReset = v.findViewById(R.id.btn_reset);
-        btnApply.setOnClickListener(view -> {
-            FilterPrefs.save(requireContext(), filter);
-            if (listener != null) listener.onApply(filter);
-            dismiss();
-        });
-        btnReset.setOnClickListener(view -> {
-            filter.clear();
-            FilterPrefs.save(requireContext(), filter);
-            if (listener != null) listener.onReset();
-            dismiss();
-        });
-
-        return v;
-    }
-
-    /** יצירת צ'יפים מתוך @array/project_statuses + שמירה בקוד סטטוס (UPPERCASE) דרך StatusMapper */
-    private void setupStatusChips(View root) {
-        ChipGroup group = root.findViewById(R.id.chips_status);
-        String[] labels = getResources().getStringArray(R.array.project_statuses);
-        if (group == null || labels == null) return;
-
-        group.removeAllViews();
-
-        for (String label : labels) {
-            final String code = StatusMapper.uiLabelToCode(label); // למשל "בטיפול" -> "IN PROGRESS"
-            Chip chip = new Chip(requireContext(), null, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Filter);
-            chip.setText(label);
-            chip.setCheckable(true);
-            chip.setChecked(filter.getStatuses().contains(code));
-            chip.setOnCheckedChangeListener((button, isChecked) -> {
-                if (isChecked) filter.getStatuses().add(code);
-                else filter.getStatuses().remove(code);
-            });
-            group.addView(chip);
-        }
     }
 
     private void pickDate(boolean isFrom, TextView label) {
@@ -142,12 +176,8 @@ public class FiltersBottomSheetDialogFragment extends BottomSheetDialogFragment 
             Calendar c = Calendar.getInstance();
             c.set(year, month, dayOfMonth, 0, 0, 0);
             long epoch = c.getTimeInMillis();
-            if (isFrom) {
-                filter.setDateFromEpochMillis(epoch);
-            } else {
-                // סוף יום
-                filter.setDateToEpochMillis(epoch + 86_399_000L);
-            }
+            if (isFrom) filter.setDateFromEpochMillis(epoch);
+            else        filter.setDateToEpochMillis(epoch + 86_399_000L); // סוף יום
             label.setText(DateFormat.format("dd.MM.yyyy", c));
         }, y, m, d);
         dlg.show();
@@ -162,5 +192,39 @@ public class FiltersBottomSheetDialogFragment extends BottomSheetDialogFragment 
         }
     }
 
+    // ---------- Sort ----------
+    private void setupSortSection(View v) {
+        RadioGroup sortGroup = v.findViewById(R.id.radio_sort);
+        switch (filter.getSortBy()) {
+            case CREATED:      sortGroup.check(R.id.sort_created); break;
+            case CITY:         sortGroup.check(R.id.sort_city);    break;
+            case LAST_UPDATE:
+            default:           sortGroup.check(R.id.sort_last_update);
+        }
+        sortGroup.setOnCheckedChangeListener((g, id) -> {
+            if (id == R.id.sort_created) filter.setSortBy(ProjectFilter.SortField.CREATED);
+            else if (id == R.id.sort_city) filter.setSortBy(ProjectFilter.SortField.CITY);
+            else                            filter.setSortBy(ProjectFilter.SortField.LAST_UPDATE);
+        });
+
+        SwitchMaterial swDesc = v.findViewById(R.id.switch_sort_desc);
+        swDesc.setChecked(filter.getSortDir() == ProjectFilter.SortDir.DESC);
+        swDesc.setOnCheckedChangeListener((compoundButton, checked) ->
+                filter.setSortDir(checked ? ProjectFilter.SortDir.DESC : ProjectFilter.SortDir.ASC)
+        );
+    }
+
+    // ---------- Utils ----------
     private long safe(Long v) { return v == null ? 0L : v; }
+
+    private String summarizeFilter(ProjectFilter f) {
+        return "{q=" + f.getTextQuery()
+                + ", statuses=" + f.getStatuses()
+                + ", dateField=" + f.getDateField()
+                + ", from=" + f.getDateFromEpochMillis()
+                + ", to=" + f.getDateToEpochMillis()
+                + ", sortBy=" + f.getSortBy()
+                + ", sortDir=" + f.getSortDir()
+                + "}";
+    }
 }

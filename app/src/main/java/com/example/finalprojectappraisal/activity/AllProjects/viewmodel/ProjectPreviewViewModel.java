@@ -1,5 +1,30 @@
+// file: app/src/main/java/com/example/finalprojectappraisal/activity/AllProjects/viewmodel/ProjectPreviewViewModel.java
+package com.example.finalprojectappraisal.activity.AllProjects.viewmodel;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
+
+import android.text.format.DateFormat;
+
+import com.example.finalprojectappraisal.database.repository.ProjectRepository;
+import com.example.finalprojectappraisal.model.Appraiser;
+import com.example.finalprojectappraisal.model.Image;
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.DocumentSnapshot;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
- * Summary:
  * ViewModel for the Project Preview screen. Loads and formats project header,
  * details (by sections/fields), and images. Uses ProjectRepository as the single
  * DB access layer. Also exposes admin permission using AuthRepository (via the
@@ -10,31 +35,6 @@
  * - Exposes LiveData for loading states, header model, details rows, image list,
  *   sectioned images (headers + photos), and admin permission flag.
  */
-
-package com.example.finalprojectappraisal.activity.AllProjects.viewmodel;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MediatorLiveData;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
-
-import com.example.finalprojectappraisal.database.repository.ProjectRepository;
-import com.example.finalprojectappraisal.model.Appraiser;
-import com.example.finalprojectappraisal.model.Image;
-import com.example.finalprojectappraisal.model.Project;
-import com.google.firebase.firestore.DocumentSnapshot;
-
-import java.text.DateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 public class ProjectPreviewViewModel extends ViewModel {
 
     // Repositories (DB is always routed via ProjectRepository)
@@ -49,14 +49,14 @@ public class ProjectPreviewViewModel extends ViewModel {
     private final MutableLiveData<List<Image>> images = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<List<KV>> details = new MutableLiveData<>(new ArrayList<>());
 
-    // NEW: sectioned (flat) list of images: headers + photos
+    // Sectioned (flat) list of images: headers + photos
     private final MutableLiveData<List<UiImageItem>> sectionedImages = new MutableLiveData<>(new ArrayList<>());
 
     // Admin permission (set via checkPermissionsFor(userId) from Activity)
     private final MutableLiveData<Boolean> isAdmin = new MutableLiveData<>(false);
 
     // (Optional) hook to current project object if needed in the future
-    private final MediatorLiveData<Project> repoCurrentProject = new MediatorLiveData<>();
+    private final MediatorLiveData<com.example.finalprojectappraisal.model.Project> repoCurrentProject = new MediatorLiveData<>();
 
     // --- Expose LiveData to the UI ---
     public LiveData<Boolean> getLoadingHeader() { return loadingHeader; }
@@ -103,25 +103,26 @@ public class ProjectPreviewViewModel extends ViewModel {
         });
     }
 
-    private void bindHeader(DocumentSnapshot doc) {
-        Project p = doc.toObject(Project.class);
-        if (p == null) {
-            header.setValue(ProjectHeaderUi.error("Project not found"));
-            return;
-        }
+    /**
+     * Build header model *without* relying on toObject(Project.class) for date fields,
+     * to avoid "Long → Date" deserialization crash.
+     */
+    private void bindHeader(@NonNull DocumentSnapshot doc) {
+        // Basic strings
+        String address = orDash(doc.getString("fullAddress"));
+        String status  = orDash(doc.getString("projectStatus"));
 
-        String address = orDash(p.getFullAddress());
-        String status  = orDash(p.getProjectStatus());
-        String client  = (p.getClient() != null && p.getClient().getFullName() != null)
-                ? p.getClient().getFullName() : "—";
+        // Client name: try a few common paths
+        String clientName = safeStr(doc.getString("client.fullName"));
+        if (clientName.isEmpty()) clientName = safeStr(doc.getString("clientName"));
+        if (clientName.isEmpty()) clientName = safeStr(doc.getString("client_full_name"));
+        if (clientName.isEmpty()) clientName = "—";
 
-        Long ts = (p.getLastUpdateDate() != null) ? p.getLastUpdateDate().getTime() : null;
-        String last = (ts != null)
-                ? DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.getDefault())
-                .format(new Date(ts))
-                : "—";
+        // lastUpdateDate might be Long/Timestamp/Date/Double/null
+        long lastUpdatedMillis = extractMillis(doc.get("lastUpdateDate"));
+        String lastUpdatedTxt  = formatMillis(lastUpdatedMillis);
 
-        header.setValue(new ProjectHeaderUi(address, status, client, last, false, null));
+        header.setValue(new ProjectHeaderUi(address, status, clientName, lastUpdatedTxt, false, null));
     }
 
     // --- Details (sections & fields via dot-notation) ---
@@ -157,6 +158,20 @@ public class ProjectPreviewViewModel extends ViewModel {
             List<String> parts = new ArrayList<>();
             for (Object o : list) if (o != null) parts.add(String.valueOf(o));
             return parts.isEmpty() ? null : String.join(", ", parts);
+        }
+        // Dates/Timestamps: format nicely
+        if (val instanceof Timestamp) {
+            return formatMillis(((Timestamp) val).toDate().getTime());
+        }
+        if (val instanceof Date) {
+            return formatMillis(((Date) val).getTime());
+        }
+        if (val instanceof Number) {
+            // If numeric and looks like epoch millis (~13 digits), format as date
+            long n = ((Number) val).longValue();
+            if (n > 3_000_000_000L) { // heuristic: > ~1970-02 in millis
+                return formatMillis(n);
+            }
         }
         String s = String.valueOf(val).trim();
         return s.isEmpty() ? null : s;
@@ -242,7 +257,6 @@ public class ProjectPreviewViewModel extends ViewModel {
         }
     }
 
-
     /** Hebrew title per normalized category key. */
     private String heTitle(String key) {
         switch (key) {
@@ -258,10 +272,30 @@ public class ProjectPreviewViewModel extends ViewModel {
     }
 
     // --- Helpers & UI models ---
-    private static String orDash(String s) {
+    private static String orDash(@Nullable String s) {
         return (s == null || s.trim().isEmpty()) ? "—" : s;
     }
+    private static String safeStr(@Nullable String s) {
+        return (s == null) ? "" : s.trim();
+    }
 
+    /** Safely extract epochMillis from a Firestore field that may be Long/Timestamp/Date/Double/null. */
+    private long extractMillis(@Nullable Object value) {
+        if (value == null) return 0L;
+        if (value instanceof Long)      return (Long) value;
+        if (value instanceof Double)    return ((Double) value).longValue();
+        if (value instanceof Timestamp) return ((Timestamp) value).toDate().getTime();
+        if (value instanceof Date)      return ((Date) value).getTime();
+        return 0L;
+    }
+
+    /** Format millis to "dd.MM.yyyy HH:mm" or "—" if zero/invalid. */
+    private String formatMillis(long millis) {
+        if (millis <= 0L) return "—";
+        return DateFormat.format("dd.MM.yyyy HH:mm", new Date(millis)).toString();
+    }
+
+    // --- UI models ---
     public static class ProjectHeaderUi {
         public final String address;
         public final String status;
@@ -314,8 +348,8 @@ public class ProjectPreviewViewModel extends ViewModel {
 
     static class FieldSpec {
         final String label;      // UI caption (Hebrew)
-        final String path;       // Original dotted path (for logs)
-        final String[] tokens;   // Safe tokens for FieldPath.of(...)
+        final String path;       // Original dotted path
+        final String[] tokens;   // Reserved for FieldPath.of(...) if needed later
 
         FieldSpec(String label, String path) {
             this.label = label;
@@ -326,12 +360,9 @@ public class ProjectPreviewViewModel extends ViewModel {
         private static String[] splitToTokens(String dotted) {
             if (dotted == null || dotted.trim().isEmpty()) return new String[0];
             // Split only by dots. Special chars like () - / remain inside the token.
-            // Example: "property_details.apartment_number(municipal_form)"
-            // -> ["property_details","apartment_number(municipal_form)"]
             return dotted.split("\\.");
         }
     }
-
 
     static class SectionSpec {
         final String title;
@@ -339,7 +370,7 @@ public class ProjectPreviewViewModel extends ViewModel {
         SectionSpec(String title, List<FieldSpec> fields) { this.title = title; this.fields = fields; }
     }
 
-    // Sections copied from Activity to VM to keep UI thin
+    // Sections copied into VM to keep UI thin
     private static final List<SectionSpec> SECTIONS = Arrays.asList(
             new SectionSpec("פרטי בנק", Arrays.asList(
                     new FieldSpec("שם בנק",                  "bankDetails.bankName"),
