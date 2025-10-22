@@ -1,4 +1,3 @@
-// file: app/src/main/java/com/example/finalprojectappraisal/activity/myProjects/filter/FiltersBottomSheetDialogFragment.java
 package com.example.finalprojectappraisal.activity.myProjects.filter;
 
 import android.app.DatePickerDialog;
@@ -10,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.DatePicker;
+import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 
@@ -41,6 +41,9 @@ public class FiltersBottomSheetDialogFragment extends BottomSheetDialogFragment 
     private final ProjectFilter filter;
     private final OnFiltersAppliedListener listener;
 
+    // new inputs
+    private EditText etCity, etStreet, etHouse, etGush, etParcel;
+
     public FiltersBottomSheetDialogFragment(@NonNull ProjectFilter seed,
                                             @NonNull OnFiltersAppliedListener listener) {
         this.filter = (seed == null) ? new ProjectFilter() : seed;
@@ -52,15 +55,41 @@ public class FiltersBottomSheetDialogFragment extends BottomSheetDialogFragment 
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.bottom_sheet_filters, container, false);
 
+        // ---- Address inputs ----
+        etCity   = v.findViewById(R.id.et_city);
+        etStreet = v.findViewById(R.id.et_street);
+        etHouse  = v.findViewById(R.id.et_house);
+        etGush   = v.findViewById(R.id.et_gush);
+        etParcel = v.findViewById(R.id.et_parcel);
+
+        if (etCity   != null) etCity.setText(safe(filter.getCity()));
+        if (etStreet != null) etStreet.setText(safe(filter.getStreet()));
+        if (etHouse  != null) etHouse.setText(safe(filter.getHouseNumber()));
+        if (etGush   != null) etGush.setText(safe(filter.getGush()));
+        if (etParcel != null) etParcel.setText(safe(filter.getParcel()));
+
+        // --- Status chips ---
         setupStatusChips(v);
+
+        // --- Date field + date range ---
         setupDateSection(v);
+
+        // --- Sort section ---
         setupSortSection(v);
 
+        // --- Buttons ---
         Button btnApply = v.findViewById(R.id.btn_apply);
         Button btnReset = v.findViewById(R.id.btn_reset);
 
         btnApply.setOnClickListener(view -> {
-            // בונים מחדש מתוך ה-UI (ליתר ביטחון)
+            // read current text inputs into filter
+            filter.setCity(text(etCity));
+            filter.setStreet(text(etStreet));
+            filter.setHouseNumber(text(etHouse));
+            filter.setGush(text(etGush));
+            filter.setParcel(text(etParcel));
+
+            // rebuild statuses from UI (safety)
             ChipGroup group = v.findViewById(R.id.chips_status);
             Set<String> rebuilt = rebuildStatusesFromUi(group);
             filter.getStatuses().clear();
@@ -110,17 +139,14 @@ public class FiltersBottomSheetDialogFragment extends BottomSheetDialogFragment 
             chip.setFocusable(true);
             chip.setEnsureMinTouchTargetSize(true);
 
-            // מצב התחלתי
             chip.setChecked(filter.getStatuses().contains(code));
 
-            // עדכון הסט בלבד כאן (בלי onClick שמבצע toggle כפול!)
             chip.setOnCheckedChangeListener((button, isChecked) -> {
                 if (isChecked) filter.getStatuses().add(code);
                 else           filter.getStatuses().remove(code);
                 Log.d(TAG, "chip: \"" + label + "\" code=" + code + " -> " + isChecked
                         + " | statuses=" + filter.getStatuses());
             });
-
             group.addView(chip);
         }
 
@@ -177,7 +203,7 @@ public class FiltersBottomSheetDialogFragment extends BottomSheetDialogFragment 
             c.set(year, month, dayOfMonth, 0, 0, 0);
             long epoch = c.getTimeInMillis();
             if (isFrom) filter.setDateFromEpochMillis(epoch);
-            else        filter.setDateToEpochMillis(epoch + 86_399_000L); // סוף יום
+            else        filter.setDateToEpochMillis(epoch + 86_399_000L);
             label.setText(DateFormat.format("dd.MM.yyyy", c));
         }, y, m, d);
         dlg.show();
@@ -215,10 +241,19 @@ public class FiltersBottomSheetDialogFragment extends BottomSheetDialogFragment 
     }
 
     // ---------- Utils ----------
-    private long safe(Long v) { return v == null ? 0L : v; }
+    private String text(@Nullable EditText et) {
+        return et == null ? null : et.getText().toString().trim();
+    }
+    private String safe(@Nullable String s) { return s == null ? "" : s; }
+    private long safe(@Nullable Long v) { return v == null ? 0L : v; }
 
     private String summarizeFilter(ProjectFilter f) {
         return "{q=" + f.getTextQuery()
+                + ", city=" + f.getCity()
+                + ", street=" + f.getStreet()
+                + ", house=" + f.getHouseNumber()
+                + ", gush=" + f.getGush()
+                + ", parcel=" + f.getParcel()
                 + ", statuses=" + f.getStatuses()
                 + ", dateField=" + f.getDateField()
                 + ", from=" + f.getDateFromEpochMillis()
