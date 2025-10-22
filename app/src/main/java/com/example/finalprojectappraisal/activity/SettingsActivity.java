@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,6 +23,10 @@ public class SettingsActivity extends AppCompatActivity {
     private Button adminActionsButton;
     private FirebaseAuth mAuth;
 
+    //private TextView tvUserName;
+    private Button btnEditProfile, btnLogout;
+    //private Button btnContactUs;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,6 +36,8 @@ public class SettingsActivity extends AppCompatActivity {
         adminActionsButton = findViewById(R.id.btnAdminActions);
 
         checkIfAdmin();
+        initViews();
+        setupClickListeners();
     }
 
     private void checkIfAdmin() {
@@ -62,6 +69,29 @@ public class SettingsActivity extends AppCompatActivity {
                     adminActionsButton.setVisibility(View.GONE);
                 }
             }
+        });
+    }
+    private void initViews() {
+        //tvUserName = findViewById(R.id.tvUserName);
+        btnEditProfile = findViewById(R.id.btnEditProfile);
+        //btnContactUs = findViewById(R.id.btnContactUs);
+        btnLogout = findViewById(R.id.btnLogout);
+    }
+
+
+    private void setupClickListeners() {
+        btnEditProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(SettingsActivity.this, EditProfileActivity.class);
+            startActivity(intent);
+        });
+
+
+        btnLogout.setOnClickListener(v -> {
+            FirebaseAuth.getInstance().signOut();
+            Intent intent = new Intent(SettingsActivity.this, LoginActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
         });
     }
 }
