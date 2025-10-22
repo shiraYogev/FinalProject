@@ -43,6 +43,9 @@
     <string name="cd_notifications">התראות</string>
     <string name="cd_user_avatar">תמונת פרופיל</string>
 
+    <!-- 🔑 Google Maps/Places API Key -->
+    <string name="google_maps_key">AIzaSyCRuEKXzNr0VU00WHAXcYeDbaOEtFxeaBU</string>
+
 
 </resources>
 

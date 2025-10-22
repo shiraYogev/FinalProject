@@ -43,6 +43,7 @@
     </queries>
 
     <application
+
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:enableOnBackInvokedCallback="true"
@@ -114,6 +115,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 🔑 הוספת API Key כאן -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/google_maps_key" />
+
     </application>
 
 </manifest>
