@@ -191,12 +191,14 @@
 
                 <!-- כתובת -->
                 <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/fullAddressInputLayout"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="32dp"
-                    android:hint="כתובת מלאה"
-                    app:startIconTint="@color/text_secondary_dark"
+                    android:hint="כתובת מלאה (לחץ לבחירה אוטומטית)"
+                    app:startIconDrawable="@drawable/ic_location"
+                    app:startIconTint="@color/primary_blue"
                     app:boxStrokeColor="@color/primary_blue"
                     app:boxCornerRadiusTopStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
@@ -207,11 +209,14 @@
                         android:id="@+id/fullAddressEditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="textMultiLine"
-                        android:minLines="2"
-                        android:maxLines="3"
+                        android:inputType="textNoSuggestions"
+                        android:minLines="1"
+                        android:maxLines="1"
                         android:textSize="16sp"
-                        android:textColor="@color/text_primary_dark" />
+                        android:textColor="@color/text_primary_dark"
+                        android:focusable="false"
+                        android:clickable="true"
+                        android:cursorVisible="false" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- כפתורים -->

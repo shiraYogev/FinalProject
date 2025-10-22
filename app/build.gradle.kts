@@ -126,6 +126,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.9.4") // :contentReference[oaicite:4]{index=4}
 
 
+    // Google Places API
+    implementation ("com.google.android.libraries.places:places:3.3.0")
 
 }
 
