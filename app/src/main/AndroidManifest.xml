@@ -104,7 +104,6 @@
             android:exported="true" />
         <activity android:name=".activity.SettingsActivity" />
         <activity android:name=".activity.activitiesAdmin.AdminListActivity" />
-        <activity android:name=".activity.ProfileActivity" />
         <activity android:name=".activity.EditProfileActivity" />
         <activity
             android:name=".activity.MainActivity"

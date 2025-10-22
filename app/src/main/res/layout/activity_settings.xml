@@ -1,28 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@drawable/modern_gradient_bg"
+    android:layoutDirection="rtl"
+    android:padding="24dp">
 
     <TextView
+        android:id="@+id/settings_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="32dp"
         android:text="הגדרות"
-        android:textSize="24sp"
-        android:textStyle="bold" />
+        android:textColor="@color/text_primary_white"
+        android:textSize="28sp"
+        android:fontFamily="sans-serif"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="32dp"
+        app:layout_constraintStart_toStartOf="parent" />
 
-    <Button
-        android:id="@+id/btnAdminActions"
+    <com.google.android.material.card.MaterialCardView
+        style="@style/App.Card"
+        android:id="@+id/card_edit_profile"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="פעולות מנהלים"
-        android:backgroundTint="#F59E0B"
-        android:textColor="@color/white"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginTop="32dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintTop_toBottomOf="@id/settings_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-</LinearLayout>
+        <Button
+            android:id="@+id/btnEditProfile"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:text="עדכון פרטים אישיים"
+            android:textSize="18sp"
+            android:gravity="center|start"
+            android:paddingStart="24dp"
+            android:drawableTint="@color/dark_navy_primary"
+            android:drawablePadding="16dp"
+            android:textColor="@color/dark_navy_primary"
+            android:background="@android:color/transparent" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        style="@style/App.Card"
+        android:id="@+id/card_logout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:strokeColor="@color/accent_orange"
+        app:strokeWidth="1dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:layout_constraintTop_toBottomOf="@id/card_edit_profile"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <Button
+            android:id="@+id/btnLogout"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:text="התנתקות"
+            android:textSize="18sp"
+            android:gravity="center|start"
+            android:paddingStart="24dp"
+            android:drawableTint="@color/accent_orange"
+            android:drawablePadding="16dp"
+            android:textColor="@color/accent_orange"
+            android:background="@android:color/transparent" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        style="@style/App.Card"
+        android:id="@+id/card_admin_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintTop_toBottomOf="@id/card_logout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <Button
+            android:id="@+id/btnAdminActions"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:text="פעולות מנהלים"
+            android:textSize="18sp"
+            android:gravity="center|start"
+            android:paddingStart="24dp"
+            android:drawableTint="@color/dark_navy_primary"
+            android:drawablePadding="16dp"
+            android:textColor="@color/dark_navy_primary"
+            android:background="@android:color/transparent" />
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
