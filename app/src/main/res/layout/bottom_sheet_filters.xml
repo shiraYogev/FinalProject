@@ -1,186 +1,248 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/filters_root"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:layoutDirection="rtl">
-
-    <TextView
-        android:id="@+id/tv_title_filters"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="מסננים"
-        android:textStyle="bold"
-        android:textSize="18sp" />
-
-    <!-- Status -->
-    <TextView
-        android:id="@+id/tv_status_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="סטטוס"
-        android:layout_marginTop="12dp" />
-
-    <com.google.android.material.chip.ChipGroup
-        android:id="@+id/chips_status"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:singleLine="false"
-        app:singleSelection="false"
-        app:selectionRequired="false"
-        app:chipSpacingVertical="8dp"
-        app:chipSpacingHorizontal="8dp" />
-
-    <!-- Date field -->
-    <TextView
-        android:id="@+id/tv_date_field_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="סנן לפי"
-        android:layout_marginTop="12dp" />
-
-    <RadioGroup
-        android:id="@+id/radio_date_field"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <RadioButton
-            android:id="@+id/date_last_update"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="עדכון אחרון" />
-
-        <RadioButton
-            android:id="@+id/date_created"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="תאריך יצירה" />
-    </RadioGroup>
-
-    <!-- Date range -->
-    <TextView
-        android:id="@+id/tv_date_range_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="טווח תאריכים"
-        android:layout_marginTop="8dp" />
+    android:layout_height="wrap_content">
 
     <LinearLayout
-        android:id="@+id/row_date_range"
+        android:id="@+id/filters_root"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginTop="4dp">
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:layoutDirection="rtl">
 
         <TextView
-            android:id="@+id/tv_date_from"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:paddingHorizontal="12dp"
+            android:id="@+id/tv_title_filters"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="מסננים"
+            android:textStyle="bold"
+            android:textSize="18sp" />
+
+        <!-- Address group -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="חיפוש לפי כתובת"
+            android:layout_marginTop="12dp" />
+
+        <!-- free text (קיים כבר במסך הראשי – זה רק מזכיר שהחיפוש הוא בכתובת מלאה) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="(שורת החיפוש מחפשת בכתובת מלאה)" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp">
+
+            <EditText
+                android:id="@+id/et_city"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="עיר" />
+
+            <EditText
+                android:id="@+id/et_street"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="רחוב"
+                android:layout_marginTop="6dp" />
+
+            <EditText
+                android:id="@+id/et_house"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="מס׳ בית"
+                android:inputType="text"
+                android:layout_marginTop="6dp" />
+
+            <EditText
+                android:id="@+id/et_gush"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="גוש"
+                android:inputType="text"
+                android:layout_marginTop="6dp" />
+
+            <EditText
+                android:id="@+id/et_parcel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="חלקה"
+                android:inputType="text"
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+
+        <!-- Status -->
+        <TextView
+            android:id="@+id/tv_status_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="סטטוס"
+            android:layout_marginTop="12dp" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chips_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleLine="false"
+            app:singleSelection="false"
+            app:selectionRequired="false"
+            app:chipSpacingVertical="8dp"
+            app:chipSpacingHorizontal="8dp" />
+
+        <!-- Date field -->
+        <TextView
+            android:id="@+id/tv_date_field_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="סנן לפי"
+            android:layout_marginTop="12dp" />
+
+        <RadioGroup
+            android:id="@+id/radio_date_field"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/date_last_update"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="עדכון אחרון" />
+
+            <RadioButton
+                android:id="@+id/date_created"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="תאריך יצירה" />
+        </RadioGroup>
+
+        <!-- Date range -->
+        <TextView
+            android:id="@+id/tv_date_range_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="טווח תאריכים"
+            android:layout_marginTop="8dp" />
+
+        <LinearLayout
+            android:id="@+id/row_date_range"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:background="?attr/selectableItemBackground"
-            android:text="מתאריך" />
+            android:layout_marginTop="4dp">
 
+            <TextView
+                android:id="@+id/tv_date_from"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:paddingHorizontal="12dp"
+                android:gravity="center_vertical"
+                android:background="?attr/selectableItemBackground"
+                android:text="מתאריך" />
+
+            <TextView
+                android:id="@+id/tv_date_to"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:paddingHorizontal="12dp"
+                android:gravity="center_vertical"
+                android:background="?attr/selectableItemBackground"
+                android:text="עד תאריך" />
+        </LinearLayout>
+
+        <!-- Sort -->
         <TextView
-            android:id="@+id/tv_date_to"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:paddingHorizontal="12dp"
+            android:id="@+id/tv_sort_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="מיון לפי"
+            android:layout_marginTop="12dp" />
+
+        <RadioGroup
+            android:id="@+id/radio_sort"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/sort_last_update"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="עדכון אחרון" />
+
+            <RadioButton
+                android:id="@+id/sort_created"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="תאריך יצירה" />
+
+            <RadioButton
+                android:id="@+id/sort_city"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="כתובת (A→Z)" />
+        </RadioGroup>
+
+        <!-- Sort direction row -->
+        <LinearLayout
+            android:id="@+id/row_sort_dir"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:background="?attr/selectableItemBackground"
-            android:text="עד תאריך" />
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:id="@+id/tv_sort_desc_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="סדר יורד" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switch_sort_desc"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:minWidth="48dp"
+                android:minHeight="48dp"
+                android:padding="8dp"
+                app:useMaterialThemeColors="true" />
+        </LinearLayout>
+
+        <!-- Action buttons -->
+        <LinearLayout
+            android:id="@+id/row_actions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_marginTop="12dp">
+
+            <Button
+                android:id="@+id/btn_reset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="איפוס" />
+
+            <Button
+                android:id="@+id/btn_apply"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="הצג תוצאות"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
     </LinearLayout>
-
-    <!-- Sort -->
-    <TextView
-        android:id="@+id/tv_sort_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="מיון לפי"
-        android:layout_marginTop="12dp" />
-
-    <RadioGroup
-        android:id="@+id/radio_sort"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <RadioButton
-            android:id="@+id/sort_last_update"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="עדכון אחרון" />
-
-        <RadioButton
-            android:id="@+id/sort_created"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="תאריך יצירה" />
-
-        <RadioButton
-            android:id="@+id/sort_city"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="כתובת (A→Z)" />
-    </RadioGroup>
-
-    <!-- Sort direction row -->
-    <LinearLayout
-        android:id="@+id/row_sort_dir"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginTop="4dp">
-
-        <TextView
-            android:id="@+id/tv_sort_desc_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="סדר יורד" />
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/switch_sort_desc"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:minWidth="48dp"
-            android:minHeight="48dp"
-            android:padding="8dp"
-            app:useMaterialThemeColors="true" />
-    </LinearLayout>
-
-    <!-- Action buttons -->
-    <LinearLayout
-        android:id="@+id/row_actions"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="end"
-        android:layout_marginTop="12dp">
-
-        <Button
-            android:id="@+id/btn_reset"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="איפוס" />
-
-        <Button
-            android:id="@+id/btn_apply"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="הצג תוצאות"
-            android:layout_marginStart="8dp" />
-    </LinearLayout>
-
-</LinearLayout>
+</ScrollView>
