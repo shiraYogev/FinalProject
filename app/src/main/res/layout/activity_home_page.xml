@@ -93,13 +93,13 @@
             android:layout_height="52dp"
             app:cardCornerRadius="18dp"
             app:cardElevation="8dp"
-            app:cardBackgroundColor="@color/primary_gradient_start">
+            app:cardBackgroundColor="@color/white">
 
             <ImageView
                 android:id="@+id/user_avatar"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/ic_user"
+                android:src="@drawable/icon_smaily"
                 android:contentDescription="פרופיל"
                 android:scaleType="centerCrop"
                 android:background="?attr/selectableItemBackgroundBorderless" />
