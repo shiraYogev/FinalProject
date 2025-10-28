@@ -39,6 +39,8 @@ import java.util.stream.Collectors;
 public class MyProjectsActivity extends AppCompatActivity
         implements FiltersBottomSheetDialogFragment.OnFiltersAppliedListener {
 
+    private static final String TAG_PREF = "MyProjectsPrefilter";
+
     private MyProjectsViewModel vm;
 
     private ProjectsAdapter adapter;
@@ -52,6 +54,9 @@ public class MyProjectsActivity extends AppCompatActivity
     private ChipGroup chipGroupViewMode;
 
     private String currentUserId = null;
+
+    // EXTRA name that Home page sends
+    public static final String EXTRA_PREFILTER_STATUS = "prefilter_status";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,15 +72,17 @@ public class MyProjectsActivity extends AppCompatActivity
         chipsActiveFilters   = findViewById(R.id.chipsActiveFilters);
         chipGroupViewMode    = findViewById(R.id.chipGroupViewMode);
 
-        // טען פילטר אחרון ל־VM
+        // Load last filter into VM
         ProjectFilter saved = FilterPrefs.load(this);
         vm.setFilter(saved);
+        Log.d(TAG_PREF, "onCreate: loaded last FilterPrefs: " + new com.google.gson.Gson().toJson(saved));
 
-        // UID דרך שכבת האימות
+        // UID from AuthRepository
         currentUserId = AuthRepository.getInstance().getCurrentUserId();
-        vm.setUserId(currentUserId);    // יבדוק הרשאות ויטעין פרויקטים בהתאם
+        vm.setUserId(currentUserId); // will check permissions and fetch projects
+        Log.d(TAG_PREF, "onCreate: currentUserId=" + currentUserId);
 
-        // Adapter (הרשאות יעדכנו בהאזנה ל־isAdmin)
+        // Adapter
         adapter = new ProjectsAdapter(allProjects, new ProjectsAdapter.ProjectActionListener() {
             @Override public void onEdit(Project project) {
                 Intent intent = new Intent(MyProjectsActivity.this, UploadImagesActivity.class);
@@ -93,69 +100,85 @@ public class MyProjectsActivity extends AppCompatActivity
         recyclerView.setHasFixedSize(true);
 
         // Pull-to-refresh
-        swipeRefresh.setOnRefreshListener(vm::fetchProjects);
+        swipeRefresh.setOnRefreshListener(() -> {
+            Log.d(TAG_PREF, "SwipeRefresh: vm.fetchProjects()");
+            vm.fetchProjects();
+        });
 
-        // האזן לרשימת הפרויקטים מה-Repository → העבר ל-VM
+        // Repository projects → Activity holds full list → VM consumes
         ProjectRepository.getInstance().getAllProjects().observe(this, projects -> {
             allProjects.clear();
             if (projects != null) allProjects.addAll(projects);
             vm.setAllProjects(allProjects);
-            Log.d("UIUpdate", "Loaded " + allProjects.size() + " projects");
+            Log.d(TAG_PREF, "Repo getAllProjects observed: size=" + allProjects.size());
         });
 
-        // רשימת שמאים מה־VM (מגיעה דרך ה־Repository)
+        // Appraisers list
         vm.getAppraisers().observe(this, list -> {
             allAppraisers.clear();
             if (list != null) allAppraisers.addAll(list);
+            Log.d(TAG_PREF, "Appraisers observed: size=" + allAppraisers.size());
         });
         vm.loadAllAppraisers();
 
-        // פילטור סופי מה־VM → עדכון Adapter וצ'יפים
+        // Final filtered list from VM → Adapter + chips
         vm.getFiltered().observe(this, filtered -> {
+            Log.d(TAG_PREF, "getFiltered() size=" + (filtered == null ? 0 : filtered.size()));
             adapter.updateData(filtered);
             updateEmptyState();
             FilterChipsController.render(
                     this, chipsActiveFilters, searchBar, vm.getCurrentFilter(),
-                    () -> vm.setFilter(vm.getCurrentFilter()) // טריגר רענון
+                    () -> {
+                        Log.d(TAG_PREF, "ChipsController triggered vm.setFilter()");
+                        vm.setFilter(vm.getCurrentFilter());
+                    }
             );
         });
 
-        // הרשאות ADMIN → מצב תצוגה וכפתורים
+        // ADMIN perms → view mode
         vm.getIsAdmin().observe(this, isAdmin -> {
             boolean admin = isAdmin != null && isAdmin;
+            Log.d(TAG_PREF, "isAdmin=" + admin);
             adapter.updatePermissions(admin, currentUserId);
             chipGroupViewMode.setVisibility(admin ? View.VISIBLE : View.GONE);
             if (admin) setupViewModeChips(); else chipGroupViewMode.clearCheck();
         });
 
-        // מצב רענון ל־spinner
+        // Refreshing spinner state
         vm.getIsRefreshing().observe(this, refreshing -> {
             if (refreshing != null && refreshing) startRefreshing(); else stopRefreshing();
         });
 
-        // טקסט חיפוש → VM + שמירה ל־Prefs
+        // Search text → VM + save to prefs
         searchBar.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s,int st,int c,int a){}
             @Override public void onTextChanged(CharSequence s,int st,int b,int c){
                 vm.setTextQuery(s == null ? null : s.toString());
                 FilterPrefs.save(MyProjectsActivity.this, vm.getCurrentFilter());
+                Log.d(TAG_PREF, "Search changed → vm.setTextQuery + save FilterPrefs");
             }
             @Override public void afterTextChanged(Editable s){}
         });
 
-        // דיאלוג פילטרים
-        findViewById(R.id.btnFilters).setOnClickListener(v ->
-                new FiltersBottomSheetDialogFragment(vm.getCurrentFilter(), this)
-                        .show(getSupportFragmentManager(), "filters"));
+        // Filters bottom sheet
+        findViewById(R.id.btnFilters).setOnClickListener(v -> {
+            Log.d(TAG_PREF, "Open FiltersBottomSheetDialogFragment");
+            new FiltersBottomSheetDialogFragment(vm.getCurrentFilter(), this)
+                    .show(getSupportFragmentManager(), "filters");
+        });
 
-        // (אופציונלי) החלפת משתמש בזמן אמת
+        // User switching
         AuthRepository.getInstance().getUserIdLive().observe(this, uid -> {
             boolean changed = (uid == null && currentUserId != null) || (uid != null && !uid.equals(currentUserId));
             if (changed) {
+                Log.d(TAG_PREF, "UserId changed: " + currentUserId + " → " + uid);
                 currentUserId = uid;
-                vm.setUserId(uid); // יבדוק הרשאות ויטעין מחדש
+                vm.setUserId(uid);
             }
         });
+
+        // <<< NEW: apply prefilter from Intent (one-shot) >>>
+        applyPrefilterIfAny();
     }
 
     @Override
@@ -167,20 +190,58 @@ public class MyProjectsActivity extends AppCompatActivity
     // ===== FiltersBottomSheetDialogFragment callbacks =====
     @Override
     public void onApply(ProjectFilter filter) {
+        Log.d(TAG_PREF, "BottomSheet onApply: " + new com.google.gson.Gson().toJson(filter));
         vm.setFilter(filter);
         FilterPrefs.save(this, vm.getCurrentFilter());
     }
 
     @Override
     public void onReset() {
+        Log.d(TAG_PREF, "BottomSheet onReset -> new ProjectFilter()");
         vm.setFilter(new ProjectFilter());
         FilterPrefs.save(this, vm.getCurrentFilter());
     }
 
-    // ===== עזרי UI =====
+    // ===== Prefilter handling (NEW) =====
+    private void applyPrefilterIfAny() {
+        String preStatus = getIntent().getStringExtra(EXTRA_PREFILTER_STATUS);
+        Log.d(TAG_PREF, "applyPrefilterIfAny() got extra prefilter_status=" + preStatus);
+
+        if (preStatus == null || preStatus.trim().isEmpty()) {
+            Log.d(TAG_PREF, "No prefilter_status extra. Using existing FilterPrefs only.");
+            return;
+        }
+
+        try {
+            // Save only statuses list while preserving other fields
+            FilterPrefs.saveSingleStatus(this, preStatus);
+            Log.d(TAG_PREF, "Saved preStatus to FilterPrefs: " + preStatus);
+
+            // Load updated filter and apply to VM
+            ProjectFilter f = FilterPrefs.load(this);
+            Log.d(TAG_PREF, "Loaded FilterPrefs after save: " + new com.google.gson.Gson().toJson(f));
+
+            vm.setFilter(f);
+            Log.d(TAG_PREF, "vm.setFilter(f) called.");
+
+            // Ensure refresh (in case VM relies on a new fetch)
+            vm.fetchProjects();
+            Log.d(TAG_PREF, "vm.fetchProjects() called after setFilter.");
+
+        } catch (Throwable t) {
+            Log.e(TAG_PREF, "Error applying prefilter", t);
+        } finally {
+            // prevent re-applying on back/rotation
+            getIntent().removeExtra(EXTRA_PREFILTER_STATUS);
+        }
+    }
+
+    // ===== UI helpers =====
     private void setupViewModeChips() {
-        chipGroupViewMode.setOnCheckedChangeListener((group, checkedId) ->
-                vm.setViewingAll(checkedId == R.id.chipAllProjects));
+        chipGroupViewMode.setOnCheckedChangeListener((group, checkedId) -> {
+            Log.d(TAG_PREF, "ViewMode changed: checkedId=" + checkedId);
+            vm.setViewingAll(checkedId == R.id.chipAllProjects);
+        });
     }
 
     private void startRefreshing() {
@@ -196,7 +257,7 @@ public class MyProjectsActivity extends AppCompatActivity
         if (txtEmpty != null) txtEmpty.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
     }
 
-    // ===== מחיקה =====
+    // ===== Delete =====
     private void showDeleteConfirmationDialog(Project project) {
         new AlertDialog.Builder(this)
                 .setTitle("אישור מחיקת פרויקט")
@@ -206,7 +267,7 @@ public class MyProjectsActivity extends AppCompatActivity
                 .show();
     }
 
-    // ===== הקצאת שמאים =====
+    // ===== Assign co-appraisers =====
     private void showAssignAppraiserDialog(Project project) {
         if (project == null || allAppraisers.isEmpty()) {
             Toast.makeText(this, "לא ניתן להקצות שמאים כרגע. נסה שוב מאוחר יותר.", Toast.LENGTH_SHORT).show();
@@ -220,7 +281,7 @@ public class MyProjectsActivity extends AppCompatActivity
 
         for (int i = 0; i < allAppraiserIds.size(); i++) {
             if (project.getAppraiserId().equals(allAppraiserIds.get(i))) {
-                checked[i] = false; // יוצר הפרויקט לא שותף
+                checked[i] = false; // owner is not a "co"
             } else {
                 checked[i] = currentCo.contains(allAppraiserIds.get(i));
             }

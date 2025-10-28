@@ -2,45 +2,52 @@ package com.example.finalprojectappraisal.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
-import android.os.Handler;
-import android.os.Looper;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-// ❌ הסירי את הייבוא הישן של CardView
-// import androidx.cardview.widget.CardView;
-// ✅ ייבוא חדש:
-import com.google.android.material.card.MaterialCardView;
 
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.activity.AllProjects.AllProjectsViewActivity;
 import com.example.finalprojectappraisal.activity.myProjects.MyProjectsActivity;
 import com.example.finalprojectappraisal.activity.newProject.client.ClientDetailsActivity;
-import com.example.finalprojectappraisal.activity.AllProjects.AllProjectsViewActivity;
+import com.example.finalprojectappraisal.utils.FilterPrefs;
+import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.gson.Gson;
 
 public class HomePageActivity extends AppCompatActivity {
 
-    // ❌ לא צריך יותר כפתורי inner:
-    // private LinearLayout newProjectButton, myProjectsButton, allProjectsViewOnlyButton, settingsButton;
+    // ---- Tags for Logcat ----
+    private static final String TAG_HOME   = "HomePage";
+    private static final String TAG_NAV    = "Home→MyProjects";
+    private static final String TAG_STATUS = "HomeStatus";
 
+    // ---- Views (existing) ----
     private LinearLayout recentProjectsContainer, loadingState, recentProjectsList;
-
-    // ✅ כל הכרטיסים הם MaterialCardView עכשיו, כולל הראשי וה-"Recent"
     private MaterialCardView cardNewProject, cardMyProjects, cardAllProjectsViewOnly, cardSettings, mainCard, recentProjectsCard;
-
     private TextView userNameText, totalProjectsDisplay, greetingText, recentTitle, completedThisWeek;
     private ImageView notificationsButton, userAvatar;
     private ProgressBar progressBar;
 
+    // ---- NEW: By-Status section views ----
+    private MaterialCardView statusProjectsCard;
+    private LinearLayout statusProjectsContainer, statusLoadingState, statusProjectsList;
+    private TextView statusTitle;
+
+    // ---- Infra ----
     private Intent intent;
     private Handler handler;
     private FirebaseFirestore db;
@@ -54,8 +61,7 @@ public class HomePageActivity extends AppCompatActivity {
         handler = new Handler(Looper.getMainLooper());
 
         getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
-                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
         );
 
         initializeViews();
@@ -63,13 +69,11 @@ public class HomePageActivity extends AppCompatActivity {
         setupAnimations();
         loadUserData();
         loadRecentProjects();
+        loadProjectsByStatus(); // NEW
     }
 
     private void initializeViews() {
-        // ❌ אין יותר button_* ב-XML
-        // newProjectButton = findViewById(R.id.button_new_project); ...
-
-        // ✅ תפסי רק את הכרטיסים עצמם (MaterialCardView)
+        // Main cards
         cardNewProject = findViewById(R.id.card_new_project);
         cardMyProjects = findViewById(R.id.card_my_projects);
         cardAllProjectsViewOnly = findViewById(R.id.card_all_projects_view_only);
@@ -77,22 +81,31 @@ public class HomePageActivity extends AppCompatActivity {
         mainCard = findViewById(R.id.main_card);
         recentProjectsCard = findViewById(R.id.recent_projects_card);
 
+        // Texts
         userNameText = findViewById(R.id.user_name);
         totalProjectsDisplay = findViewById(R.id.total_projects_display);
         greetingText = findViewById(R.id.greeting_text);
         recentTitle = findViewById(R.id.recent_title);
         completedThisWeek = findViewById(R.id.completed_this_week);
 
+        // Recent section
         recentProjectsContainer = findViewById(R.id.recent_projects_container);
         loadingState = findViewById(R.id.loading_state);
         recentProjectsList = findViewById(R.id.recent_projects_list);
 
+        // Header icons
         notificationsButton = findViewById(R.id.btn_notifications);
         userAvatar = findViewById(R.id.user_avatar);
+
+        // ---- NEW: By-Status section ----
+        statusProjectsCard = findViewById(R.id.status_projects_card);
+        statusProjectsContainer = findViewById(R.id.status_projects_container);
+        statusLoadingState = findViewById(R.id.status_loading_state);
+        statusProjectsList = findViewById(R.id.status_projects_list);
+        statusTitle = findViewById(R.id.status_title);
     }
 
     private void setupClickListeners() {
-        // ✅ מאזינים ישירות לכרטיסים
         View.OnClickListener newProjectListener = v -> {
             addRippleEffect(v);
             intent = new Intent(HomePageActivity.this, ClientDetailsActivity.class);
@@ -127,18 +140,17 @@ public class HomePageActivity extends AppCompatActivity {
 
         notificationsButton.setOnClickListener(v -> {
             addRippleEffect(v);
-            // TODO: NotificationsActivity
+            // TODO: open notifications screen
         });
 
         userAvatar.setOnClickListener(v -> {
             addRippleEffect(v);
-            // מומלץ להשתמש באנימציה עקבית של Slide-in:
             overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
         });
     }
 
     private void setupAnimations() {
-        Animation slideUp = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
+        Animation anim = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
 
         Animation mainCardAnimation = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
         mainCardAnimation.setStartOffset(100);
@@ -163,6 +175,12 @@ public class HomePageActivity extends AppCompatActivity {
         Animation recentAnimation = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
         recentAnimation.setStartOffset(400);
         recentProjectsCard.startAnimation(recentAnimation);
+
+        if (statusProjectsCard != null) {
+            Animation statusAnim = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
+            statusAnim.setStartOffset(450);
+            statusProjectsCard.startAnimation(statusAnim);
+        }
     }
 
     private void setDynamicGreeting() {
@@ -183,6 +201,7 @@ public class HomePageActivity extends AppCompatActivity {
         if (currentUser == null) {
             totalProjectsDisplay.setText("0");
             completedThisWeek.setText("אין נתונים");
+            Log.d(TAG_HOME, "No user → stats=0");
             return;
         }
 
@@ -191,10 +210,11 @@ public class HomePageActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(query -> {
                     int totalProjects = query.size();
+                    Log.d(TAG_HOME, "Total projects for user=" + totalProjects);
                     animateCounterBanking(totalProjectsDisplay, 0, totalProjects);
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("HomePageActivity", "Error loading project count", e);
+                    Log.e(TAG_HOME, "Error loading project count", e);
                     totalProjectsDisplay.setText("0");
                 });
 
@@ -214,15 +234,16 @@ public class HomePageActivity extends AppCompatActivity {
 
         db.collection("projects")
                 .whereEqualTo("appraiserId", currentUser.getUid())
-                .whereEqualTo("status", "completed")
+                .whereEqualTo("projectStatus", "הושלם")
                 .whereGreaterThanOrEqualTo("completedDate", weekStart)
                 .get()
                 .addOnSuccessListener(query -> {
                     int completedCount = query.size();
+                    Log.d(TAG_HOME, "Completed this week=" + completedCount);
                     completedThisWeek.setText(completedCount + " הושלמו השבוע");
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("HomePageActivity", "Error loading weekly stats", e);
+                    Log.e(TAG_HOME, "Error loading weekly stats", e);
                     completedThisWeek.setText("נתונים לא זמינים");
                 });
     }
@@ -246,6 +267,7 @@ public class HomePageActivity extends AppCompatActivity {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
             userNameText.setText("משתמש לא מחובר");
+            Log.d(TAG_HOME, "No user → userNameText=משתמש לא מחובר");
             return;
         }
 
@@ -257,15 +279,17 @@ public class HomePageActivity extends AppCompatActivity {
                     if (doc.exists()) {
                         String fullName = doc.getString("fullName");
                         userNameText.setText(fullName != null ? fullName : "שמאי");
+                        Log.d(TAG_HOME, "Loaded appraiser name=" + fullName);
                     } else {
                         userNameText.setText("שמאי לא ידוע");
+                        Log.d(TAG_HOME, "Appraiser doc not exists → default name");
                     }
                     setDynamicGreeting();
                     loadProjectStats();
                 })
                 .addOnFailureListener(e -> {
                     userNameText.setText("שגיאה בטעינת שם");
-                    Log.e("HomePageActivity", "Error loading user data", e);
+                    Log.e(TAG_HOME, "Error loading user data", e);
                     setDynamicGreeting();
                     loadProjectStats();
                 });
@@ -290,25 +314,29 @@ public class HomePageActivity extends AppCompatActivity {
                     loadingState.setVisibility(View.GONE);
 
                     if (query.isEmpty()) {
+                        Log.d(TAG_HOME, "Recent projects: none");
                         showNoProjectsState();
                         return;
                     }
 
+                    Log.d(TAG_HOME, "Recent projects count=" + query.size());
                     recentProjectsList.setVisibility(View.VISIBLE);
                     recentProjectsList.removeAllViews();
 
-                    query.forEach(this::addRecentProjectItem);
+                    for (QueryDocumentSnapshot d : query) {
+                        addRecentProjectItem(d);
+                    }
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("HomePageActivity", "Error loading recent projects", e);
+                    Log.e(TAG_HOME, "Error loading recent projects", e);
                     loadingState.setVisibility(View.GONE);
                     showErrorState();
                 });
     }
 
-    private void addRecentProjectItem(com.google.firebase.firestore.QueryDocumentSnapshot document) {
+    private void addRecentProjectItem(QueryDocumentSnapshot document) {
         String projectName = document.getString("full_address");
-        String status = document.getString("status");
+        String status = document.getString("projectStatus"); // Hebrew in DB
         String clientName = document.getString("fullName");
 
         if (projectName == null) projectName = "כתובת לא זמינה";
@@ -323,7 +351,7 @@ public class HomePageActivity extends AppCompatActivity {
 
         projectNameText.setText(projectName);
         projectClientText.setText("לקוח: " + clientName);
-        projectStatusText.setText(getStatusText(status));
+        projectStatusText.setText(status);
 
         projectItem.setOnClickListener(v -> {
             Intent projectIntent = new Intent(this, MyProjectsActivity.class);
@@ -331,17 +359,8 @@ public class HomePageActivity extends AppCompatActivity {
             startActivity(projectIntent);
         });
 
+        Log.d(TAG_HOME, "Recent item: addr=" + projectName + ", status=" + status + ", client=" + clientName);
         recentProjectsList.addView(projectItem);
-    }
-
-    private String getStatusText(String status) {
-        switch (status) {
-            case "draft": return "טיוטה";
-            case "in_progress": return "בעבודה";
-            case "completed": return "הושלם";
-            case "submitted": return "נשלח";
-            default: return "לא ידוע";
-        }
     }
 
     private void showNoProjectsState() {
@@ -374,12 +393,156 @@ public class HomePageActivity extends AppCompatActivity {
         recentProjectsList.addView(errorText);
     }
 
+    // ========================= PROJECTS BY STATUS (NEW) =========================
+
+    /** Loads all projects for the current appraiser and shows one clickable row per status with a count badge. */
+    private void loadProjectsByStatus() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            showStatusNoData("משתמש לא מחובר");
+            return;
+        }
+
+        statusLoadingState.setVisibility(View.VISIBLE);
+        statusProjectsList.setVisibility(View.GONE);
+
+        db.collection("projects")
+                .whereEqualTo("appraiserId", currentUser.getUid())
+                .get()
+                .addOnSuccessListener(query -> {
+                    statusLoadingState.setVisibility(View.GONE);
+                    statusProjectsList.setVisibility(View.VISIBLE);
+                    statusProjectsList.removeAllViews();
+
+                    Log.d(TAG_STATUS, "Query returned " + query.size() + " projects for status bucketing");
+
+                    if (query.isEmpty()) {
+                        showStatusNoData("אין פרויקטים להצגה");
+                        return;
+                    }
+
+                    // Order is exactly the one you provided in arrays.xml
+                    String[] orderArr = getResources().getStringArray(R.array.project_statuses);
+                    java.util.List<String> order = java.util.Arrays.asList(orderArr);
+
+                    java.util.Map<String, Integer> counts = new java.util.LinkedHashMap<>();
+                    for (String s : order) counts.put(s, 0);
+
+                    for (DocumentSnapshot doc : query) {
+                        String heb = safe(doc.getString("projectStatus")); // already Hebrew
+                        if (counts.containsKey(heb)) {
+                            counts.put(heb, counts.get(heb) + 1);
+                        }
+                    }
+
+                    Log.d(TAG_STATUS, "Status counts: " + new Gson().toJson(counts));
+
+                    int shown = 0;
+                    for (String hebStatus : order) {
+                        int c = counts.get(hebStatus);
+                        if (c == 0) continue; // skip empty statuses
+                        addStatusRow(hebStatus, c);
+                        shown++;
+                    }
+
+                    if (shown == 0) showStatusNoData("אין פרויקטים להצגה");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG_STATUS, "Error loading projects by status", e);
+                    statusLoadingState.setVisibility(View.GONE);
+                    showStatusNoData("שגיאה בטעינת סטטוסים");
+                });
+    }
+
+    /** Creates a large, tappable card for a status with a numeric badge. */
+    private void addStatusRow(String hebrewStatus, int count) {
+        MaterialCardView card = new MaterialCardView(this);
+        card.setClickable(true);
+        card.setFocusable(true);
+        card.setUseCompatPadding(true);
+        card.setCardElevation(dp(2));
+        card.setStrokeColor(android.graphics.Color.TRANSPARENT);
+        card.setOnClickListener(v -> openMyProjectsWithStatus(hebrewStatus));
+
+        LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        cardLp.topMargin = dp(8);
+        cardLp.bottomMargin = dp(8);
+        card.setLayoutParams(cardLp);
+
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setPadding(dp(20), dp(18), dp(20), dp(18)); // generous touch target
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        card.addView(row);
+
+        TextView title = new TextView(this);
+        title.setText(hebrewStatus);
+        title.setTextSize(16f);
+        title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        title.setTextColor(getColor(R.color.text_primary_dark));
+        row.addView(title);
+
+        View spacer = new View(this);
+        LinearLayout.LayoutParams spLp = new LinearLayout.LayoutParams(0, 0, 1f);
+        spacer.setLayoutParams(spLp);
+        row.addView(spacer);
+
+        TextView badge = new TextView(this);
+        badge.setText(String.valueOf(count));
+        badge.setTextSize(14f);
+        badge.setTextColor(getColor(R.color.text_primary_dark));
+        badge.setPadding(dp(12), dp(6), dp(12), dp(6));
+        android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
+        g.setColor(getColor(R.color.glass_surface)); // subtle background
+        g.setCornerRadius(dp(20));
+        badge.setBackground(g);
+        row.addView(badge);
+
+        Log.d(TAG_STATUS, "Add status row: " + hebrewStatus + " (" + count + ")");
+        statusProjectsList.addView(card);
+    }
+
+    private void openMyProjectsWithStatus(String hebrewStatus) {
+        Log.d(TAG_NAV, "User tapped status: " + hebrewStatus);
+        try {
+            FilterPrefs.saveSingleStatus(this, hebrewStatus);
+            // Dump filter after save (useful to verify)
+            com.example.finalprojectappraisal.activity.myProjects.filter.ProjectFilter dump =
+                    FilterPrefs.load(this);
+            Log.d(TAG_NAV, "Saved FilterPrefs: " + new Gson().toJson(dump));
+        } catch (Throwable t) {
+            Log.e(TAG_NAV, "Failed saving FilterPrefs", t);
+        }
+
+        Intent i = new Intent(this, MyProjectsActivity.class);
+        i.putExtra(MyProjectsActivity.EXTRA_PREFILTER_STATUS, hebrewStatus);
+        Log.d(TAG_NAV, "Starting MyProjectsActivity with prefilter_status=" + hebrewStatus);
+        startActivity(i);
+        overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
+    }
+
+    private void showStatusNoData(String msg) {
+        statusProjectsList.setVisibility(View.VISIBLE);
+        statusProjectsList.removeAllViews();
+        TextView tv = new TextView(this);
+        tv.setText(msg);
+        tv.setTextColor(getColor(R.color.text_secondary_dark));
+        tv.setTextSize(14);
+        tv.setGravity(android.view.Gravity.CENTER);
+        tv.setPadding(0, dp(32), 0, dp(32));
+        statusProjectsList.addView(tv);
+    }
+
+    // ---- Lifecycle ----
     @Override
     protected void onResume() {
         super.onResume();
         loadProjectStats();
         setDynamicGreeting();
         loadRecentProjects();
+        loadProjectsByStatus(); // keep status card fresh
+        Log.d(TAG_HOME, "onResume → refreshed stats, recents, status");
     }
 
     @Override
@@ -387,4 +550,8 @@ public class HomePageActivity extends AppCompatActivity {
         super.onDestroy();
         if (handler != null) handler.removeCallbacksAndMessages(null);
     }
+
+    // ---- Utils ----
+    private String safe(String s) { return s == null ? "" : s; }
+    private int dp(int v) { return Math.round(v * getResources().getDisplayMetrics().density); }
 }

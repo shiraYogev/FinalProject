@@ -106,7 +106,7 @@
         </androidx.cardview.widget.CardView>
     </LinearLayout>
 
-    <!-- Main Stats Card (Material3) -->
+    <!-- Main Stats Card -->
     <com.google.android.material.card.MaterialCardView
         style="@style/App.Card"
         android:id="@+id/main_card"
@@ -138,7 +138,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text= "שמאות מקרקעין למקצוענים"
+                    android:text="שמאות מקרקעין למקצוענים"
                     android:textColor="@android:color/white"/>
 
                 <ImageView
@@ -398,11 +398,9 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="24dp"
         app:layout_constraintTop_toBottomOf="@id/recent_title"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:id="@+id/recent_projects_container"
@@ -438,6 +436,77 @@
             <!-- Placeholder for dynamic items -->
             <LinearLayout
                 android:id="@+id/recent_projects_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ===== NEW: By Status Title ===== -->
+    <TextView
+        android:id="@+id/status_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="פרויקטים לפי סטטוס"
+        android:textColor="@color/text_primary_dark"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="16dp"
+        android:fontFamily="sans-serif"
+        app:layout_constraintTop_toBottomOf="@id/recent_projects_card"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ===== NEW: By Status Card ===== -->
+    <com.google.android.material.card.MaterialCardView
+        style="@style/App.Card"
+        android:id="@+id/status_projects_card"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="24dp"
+        app:layout_constraintTop_toBottomOf="@id/status_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:id="@+id/status_projects_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- Loading -->
+            <LinearLayout
+                android:id="@+id/status_loading_state"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp">
+
+                <ProgressBar
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:indeterminateTint="@color/primary_blue"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="טוען לפי סטטוס..."
+                    android:textColor="@color/text_secondary_dark"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
+
+            <!-- Dynamic list of clickable status rows -->
+            <LinearLayout
+                android:id="@+id/status_projects_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
