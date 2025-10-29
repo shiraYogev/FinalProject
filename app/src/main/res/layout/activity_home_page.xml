@@ -8,510 +8,442 @@
     android:background="@drawable/modern_gradient_bg"
     android:layoutDirection="rtl">
 
-    <!-- Status Bar Overlay -->
-    <View
-        android:id="@+id/status_bar_overlay"
+    <!-- גלילה ראשית של כל התוכן -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/home_scroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@color/dark_navy_primary"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/user_section" />
-
-    <!-- User Section -->
-    <LinearLayout
-        android:id="@+id/user_section"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="24dp"
-        android:paddingTop="56dp"
+        android:fillViewport="true"
+        android:clipToPadding="false"
         android:paddingBottom="24dp"
+        android:scrollbars="vertical"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Notifications -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="@color/glass_surface">
-
-            <ImageView
-                android:id="@+id/btn_notifications"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_bell"
-                app:tint="@color/icon_primary"
-                android:contentDescription="התראות"
-                android:background="?attr/selectableItemBackgroundBorderless" />
-        </androidx.cardview.widget.CardView>
-
-        <!-- Spacer -->
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-
-        <!-- User Info -->
+        <!-- כל התוכן בפנים בטור אנכי -->
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="end"
-            android:layout_marginEnd="16dp">
-
-            <TextView
-                android:id="@+id/user_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="שירה כהן"
-                android:textColor="@color/text_primary_white"
-                android:textSize="20sp"
-                android:fontFamily="sans-serif"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/greeting_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="בוקר טוב"
-                android:textColor="@color/text_secondary_white"
-                android:textSize="14sp"
-                android:layout_marginTop="2dp"
-                android:fontFamily="sans-serif" />
-        </LinearLayout>
-
-        <!-- Avatar -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="52dp"
-            android:layout_height="52dp"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="8dp"
-            app:cardBackgroundColor="@color/white">
-
-            <ImageView
-                android:id="@+id/user_avatar"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/icon_smaily"
-                android:contentDescription="פרופיל"
-                android:scaleType="centerCrop"
-                android:background="?attr/selectableItemBackgroundBorderless" />
-        </androidx.cardview.widget.CardView>
-    </LinearLayout>
-
-    <!-- Main Stats Card -->
-    <com.google.android.material.card.MaterialCardView
-        style="@style/App.Card"
-        android:id="@+id/main_card"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/user_section"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:strokeColor="@android:color/transparent">
-
-        <LinearLayout
+            android:id="@+id/home_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_main_card_gradient"
-            android:padding="20dp">
+            android:orientation="vertical">
 
-            <!-- Header -->
+            <!-- User Section -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    style="@style/Text.Title"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="שמאות מקרקעין למקצוענים"
-                    android:textColor="@android:color/white"/>
-
-                <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:background="@drawable/bg_icon_chip"
-                    android:padding="6dp"
-                    android:src="@drawable/ic_building"
-                    android:contentDescription="@string/cd_main_card_icon"/>
-            </LinearLayout>
-
-            <!-- Subtitle -->
-            <TextView
-                style="@style/Text.Subtitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="סה&quot;כ פרויקטים פעילים"
-                android:textColor="#E6FFFFFF"/>
-
-            <!-- Big number -->
-            <TextView
-                style="@style/Text.Counter"
-                android:id="@+id/total_projects_display"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="12"
-                android:textColor="#9CC7FF"/>
-
-            <!-- Bottom status row -->
-            <LinearLayout
+                android:id="@+id/user_section"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginTop="2dp">
+                android:paddingHorizontal="24dp"
+                android:paddingTop="56dp"
+                android:paddingBottom="24dp">
 
-                <TextView
-                    android:id="@+id/completed_this_week"
-                    style="@style/Text.Subtitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="3 הושלמו השבוע"
-                    android:textColor="#C0FFFFFF" />
+                <!-- Notifications -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/glass_surface">
 
+                    <ImageView
+                        android:id="@+id/btn_notifications"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_bell"
+                        app:tint="@color/icon_primary"
+                        android:contentDescription="התראות"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
+                </androidx.cardview.widget.CardView>
+
+                <!-- Spacer -->
                 <View
                     android:layout_width="0dp"
                     android:layout_height="0dp"
-                    android:layout_weight="1"/>
+                    android:layout_weight="1" />
 
+                <!-- User Info -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <View
-                        android:layout_width="4dp"
-                        android:layout_height="4dp"
-                        android:background="@drawable/dot_indicator"
-                        android:layout_marginEnd="8dp" />
+                    android:orientation="vertical"
+                    android:gravity="end"
+                    android:layout_marginEnd="16dp">
 
                     <TextView
-                        style="@style/Text.Subtitle"
+                        android:id="@+id/user_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="מעודכן כעת"
-                        android:textColor="@color/accent_green_light"/>
+                        android:text="שירה כהן"
+                        android:textColor="@color/text_primary_white"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/greeting_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="בוקר טוב"
+                        android:textColor="@color/text_secondary_white"
+                        android:textSize="14sp"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif" />
                 </LinearLayout>
+
+                <!-- Avatar -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    app:cardCornerRadius="18dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="@color/white">
+
+                    <ImageView
+                        android:id="@+id/user_avatar"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/icon_smaily"
+                        android:contentDescription="פרופיל"
+                        android:scaleType="centerCrop"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
+                </androidx.cardview.widget.CardView>
             </LinearLayout>
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
 
-    <!-- Action Grid -->
-    <LinearLayout
-        android:id="@+id/action_grid"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="28dp"
-        app:layout_constraintTop_toBottomOf="@id/main_card"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <!-- Column 1 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginEnd="12dp">
-
-            <!-- New Project -->
+            <!-- Main Stats Card -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/App.Card"
-                android:id="@+id/card_new_project"
-                android:layout_width="match_parent"
-                android:layout_height="100dp"
-                android:layout_marginBottom="16dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:gravity="center">
-
-                    <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:src="@drawable/ic_add"
-                        android:contentDescription="@string/cd_new_project"
-                        app:tint="@color/primary_blue" />
-
-                    <TextView
-                        style="@style/Text.Subtitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="פרויקט חדש"
-                        android:textColor="@color/text_primary_dark"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- All Projects (view only) -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/App.Card"
-                android:id="@+id/card_all_projects_view_only"
-                android:layout_width="match_parent"
-                android:layout_height="100dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:gravity="center">
-
-                    <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:src="@drawable/ic_building"
-                        android:contentDescription="@string/cd_all_projects"
-                        app:tint="@color/accent_green" />
-
-                    <TextView
-                        style="@style/Text.Subtitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="כל הפרויקטים (צפייה)"
-                        android:textColor="@color/text_primary_dark"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-        </LinearLayout>
-
-        <!-- Column 2 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="12dp">
-
-            <!-- My Projects -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/App.Card"
-                android:id="@+id/card_my_projects"
-                android:layout_width="match_parent"
-                android:layout_height="100dp"
-                android:layout_marginBottom="16dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:gravity="center">
-
-                    <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:src="@drawable/ic_folder"
-                        android:contentDescription="@string/cd_my_projects"
-                        app:tint="@color/accent_purple" />
-
-                    <TextView
-                        style="@style/Text.Subtitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="הפרויקטים שלי"
-                        android:textColor="@color/text_primary_dark"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Settings -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/App.Card"
-                android:id="@+id/card_settings"
-                android:layout_width="match_parent"
-                android:layout_height="100dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:gravity="center">
-
-                    <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:src="@drawable/ic_settings"
-                        android:contentDescription="@string/cd_settings"
-                        app:tint="@color/accent_orange" />
-
-                    <TextView
-                        style="@style/Text.Subtitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="הגדרות"
-                        android:textColor="@color/text_primary_dark"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- Recent Projects Title -->
-    <TextView
-        android:id="@+id/recent_title"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="פרויקטים אחרונים"
-        android:textColor="@color/text_primary_dark"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="32dp"
-        android:fontFamily="sans-serif"
-        app:layout_constraintTop_toBottomOf="@id/action_grid"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Recent Projects Card -->
-    <com.google.android.material.card.MaterialCardView
-        style="@style/App.Card"
-        android:id="@+id/recent_projects_card"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/recent_title"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <LinearLayout
-            android:id="@+id/recent_projects_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp">
-
-            <!-- Loading -->
-            <LinearLayout
-                android:id="@+id/loading_state"
+                android:id="@+id/main_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="32dp">
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:layout_marginTop="16dp"
+                app:strokeColor="@android:color/transparent">
 
-                <ProgressBar
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:indeterminateTint="@color/primary_blue"
-                    android:layout_marginBottom="12dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="טוען פרויקטים אחרונים..."
-                    android:textColor="@color/text_secondary_dark"
-                    android:textSize="14sp"
-                    android:fontFamily="sans-serif-medium" />
-            </LinearLayout>
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_main_card_gradient"
+                    android:padding="20dp">
 
-            <!-- Placeholder for dynamic items -->
+                    <!-- Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            style="@style/Text.Title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="שמאות מקרקעין למקצוענים"
+                            android:textColor="@android:color/white"/>
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:background="@drawable/bg_icon_chip"
+                            android:padding="6dp"
+                            android:src="@drawable/ic_building"
+                            android:contentDescription="@string/cd_main_card_icon"/>
+                    </LinearLayout>
+
+                    <!-- Subtitle -->
+                    <TextView
+                        style="@style/Text.Subtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="סה&quot;כ פרויקטים פעילים"
+                        android:textColor="#E6FFFFFF"/>
+
+                    <!-- Big number -->
+                    <TextView
+                        style="@style/Text.Counter"
+                        android:id="@+id/total_projects_display"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="12"
+                        android:textColor="#9CC7FF"/>
+
+                    <!-- Bottom status row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="2dp">
+
+                        <TextView
+                            android:id="@+id/completed_this_week"
+                            style="@style/Text.Subtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="3 הושלמו השבוע"
+                            android:textColor="#C0FFFFFF" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"/>
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <View
+                                android:layout_width="4dp"
+                                android:layout_height="4dp"
+                                android:background="@drawable/dot_indicator"
+                                android:layout_marginEnd="8dp" />
+
+                            <TextView
+                                style="@style/Text.Subtitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="מעודכן כעת"
+                                android:textColor="@color/accent_green_light"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Action Grid -->
             <LinearLayout
-                android:id="@+id/recent_projects_list"
+                android:id="@+id/action_grid"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+                android:orientation="horizontal"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:layout_marginTop="28dp">
 
-    <!-- ===== NEW: By Status Title ===== -->
-    <TextView
-        android:id="@+id/status_title"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="פרויקטים לפי סטטוס"
-        android:textColor="@color/text_primary_dark"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="16dp"
-        android:fontFamily="sans-serif"
-        app:layout_constraintTop_toBottomOf="@id/recent_projects_card"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- ===== NEW: By Status Card ===== -->
-    <com.google.android.material.card.MaterialCardView
-        style="@style/App.Card"
-        android:id="@+id/status_projects_card"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="24dp"
-        app:layout_constraintTop_toBottomOf="@id/status_title"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent">
-
-        <LinearLayout
-            android:id="@+id/status_projects_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp">
-
-            <!-- Loading -->
-            <LinearLayout
-                android:id="@+id/status_loading_state"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="32dp">
-
-                <ProgressBar
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:indeterminateTint="@color/primary_blue"
-                    android:layout_marginBottom="12dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
+                <!-- Column 1 -->
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="טוען לפי סטטוס..."
-                    android:textColor="@color/text_secondary_dark"
-                    android:textSize="14sp"
-                    android:fontFamily="sans-serif-medium" />
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginEnd="12dp">
+
+                    <!-- New Project -->
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/App.Card"
+                        android:id="@+id/card_new_project"
+                        android:layout_width="match_parent"
+                        android:layout_height="100dp"
+                        android:layout_marginBottom="16dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <ImageView
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:src="@drawable/ic_add"
+                                android:contentDescription="@string/cd_new_project"
+                                app:tint="@color/primary_blue" />
+
+                            <TextView
+                                style="@style/Text.Subtitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="פרויקט חדש"
+                                android:textColor="@color/text_primary_dark"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- All Projects (view only) -->
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/App.Card"
+                        android:id="@+id/card_all_projects_view_only"
+                        android:layout_width="match_parent"
+                        android:layout_height="100dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <ImageView
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:src="@drawable/ic_building"
+                                android:contentDescription="@string/cd_all_projects"
+                                app:tint="@color/accent_green" />
+
+                            <TextView
+                                style="@style/Text.Subtitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="כל הפרויקטים (צפייה)"
+                                android:textColor="@color/text_primary_dark"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+                <!-- Column 2 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="12dp">
+
+                    <!-- My Projects -->
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/App.Card"
+                        android:id="@+id/card_my_projects"
+                        android:layout_width="match_parent"
+                        android:layout_height="100dp"
+                        android:layout_marginBottom="16dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <ImageView
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:src="@drawable/ic_folder"
+                                android:contentDescription="@string/cd_my_projects"
+                                app:tint="@color/accent_purple" />
+
+                            <TextView
+                                style="@style/Text.Subtitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="הפרויקטים שלי"
+                                android:textColor="@color/text_primary_dark"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Settings -->
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/App.Card"
+                        android:id="@+id/card_settings"
+                        android:layout_width="match_parent"
+                        android:layout_height="100dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <ImageView
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:src="@drawable/ic_settings"
+                                android:contentDescription="@string/cd_settings"
+                                app:tint="@color/accent_orange" />
+
+                            <TextView
+                                style="@style/Text.Subtitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="הגדרות"
+                                android:textColor="@color/text_primary_dark"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
             </LinearLayout>
 
-            <!-- Dynamic list of clickable status rows -->
-            <LinearLayout
-                android:id="@+id/status_projects_list"
+            <!-- ===== By Status Title (הכותרת מגיעה מיד אחרי הגריד) ===== -->
+            <TextView
+                android:id="@+id/status_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone" />
+                android:text="פרויקטים לפי סטטוס"
+                android:textColor="@color/text_primary_dark"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:layout_marginTop="32dp"
+                android:fontFamily="sans-serif"/>
+
+            <!-- ===== By Status Card ===== -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/App.Card"
+                android:id="@+id/status_projects_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="24dp">
+
+                <LinearLayout
+                    android:id="@+id/status_projects_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <!-- Loading -->
+                    <LinearLayout
+                        android:id="@+id/status_loading_state"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="32dp">
+
+                        <ProgressBar
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:indeterminateTint="@color/primary_blue"
+                            android:layout_marginBottom="12dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="טוען לפי סטטוס..."
+                            android:textColor="@color/text_secondary_dark"
+                            android:textSize="14sp"
+                            android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+
+                    <!-- Dynamic list of clickable status rows -->
+                    <LinearLayout
+                        android:id="@+id/status_projects_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
         </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

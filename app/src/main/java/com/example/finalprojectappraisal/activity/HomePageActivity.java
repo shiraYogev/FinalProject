@@ -10,7 +10,6 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,7 +24,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.gson.Gson;
 
 public class HomePageActivity extends AppCompatActivity {
@@ -35,14 +33,12 @@ public class HomePageActivity extends AppCompatActivity {
     private static final String TAG_NAV    = "Home→MyProjects";
     private static final String TAG_STATUS = "HomeStatus";
 
-    // ---- Views (existing) ----
-    private LinearLayout recentProjectsContainer, loadingState, recentProjectsList;
-    private MaterialCardView cardNewProject, cardMyProjects, cardAllProjectsViewOnly, cardSettings, mainCard, recentProjectsCard;
-    private TextView userNameText, totalProjectsDisplay, greetingText, recentTitle, completedThisWeek;
+    // ---- Views ----
+    private MaterialCardView cardNewProject, cardMyProjects, cardAllProjectsViewOnly, cardSettings, mainCard;
+    private TextView userNameText, totalProjectsDisplay, greetingText, completedThisWeek;
     private ImageView notificationsButton, userAvatar;
-    private ProgressBar progressBar;
 
-    // ---- NEW: By-Status section views ----
+    // ---- By-Status section views ----
     private MaterialCardView statusProjectsCard;
     private LinearLayout statusProjectsContainer, statusLoadingState, statusProjectsList;
     private TextView statusTitle;
@@ -68,8 +64,7 @@ public class HomePageActivity extends AppCompatActivity {
         setupClickListeners();
         setupAnimations();
         loadUserData();
-        loadRecentProjects();
-        loadProjectsByStatus(); // NEW
+        loadProjectsByStatus();
     }
 
     private void initializeViews() {
@@ -79,25 +74,18 @@ public class HomePageActivity extends AppCompatActivity {
         cardAllProjectsViewOnly = findViewById(R.id.card_all_projects_view_only);
         cardSettings = findViewById(R.id.card_settings);
         mainCard = findViewById(R.id.main_card);
-        recentProjectsCard = findViewById(R.id.recent_projects_card);
 
         // Texts
         userNameText = findViewById(R.id.user_name);
         totalProjectsDisplay = findViewById(R.id.total_projects_display);
         greetingText = findViewById(R.id.greeting_text);
-        recentTitle = findViewById(R.id.recent_title);
         completedThisWeek = findViewById(R.id.completed_this_week);
-
-        // Recent section
-        recentProjectsContainer = findViewById(R.id.recent_projects_container);
-        loadingState = findViewById(R.id.loading_state);
-        recentProjectsList = findViewById(R.id.recent_projects_list);
 
         // Header icons
         notificationsButton = findViewById(R.id.btn_notifications);
         userAvatar = findViewById(R.id.user_avatar);
 
-        // ---- NEW: By-Status section ----
+        // By-Status section
         statusProjectsCard = findViewById(R.id.status_projects_card);
         statusProjectsContainer = findViewById(R.id.status_projects_container);
         statusLoadingState = findViewById(R.id.status_loading_state);
@@ -150,8 +138,6 @@ public class HomePageActivity extends AppCompatActivity {
     }
 
     private void setupAnimations() {
-        Animation anim = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
-
         Animation mainCardAnimation = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
         mainCardAnimation.setStartOffset(100);
         mainCard.startAnimation(mainCardAnimation);
@@ -172,13 +158,9 @@ public class HomePageActivity extends AppCompatActivity {
         cardAnimation4.setStartOffset(350);
         cardSettings.startAnimation(cardAnimation4);
 
-        Animation recentAnimation = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
-        recentAnimation.setStartOffset(400);
-        recentProjectsCard.startAnimation(recentAnimation);
-
         if (statusProjectsCard != null) {
             Animation statusAnim = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
-            statusAnim.setStartOffset(450);
+            statusAnim.setStartOffset(400);
             statusProjectsCard.startAnimation(statusAnim);
         }
     }
@@ -260,7 +242,9 @@ public class HomePageActivity extends AppCompatActivity {
         Animation scaleAnimation = AnimationUtils.loadAnimation(this, R.anim.button_scale);
         view.startAnimation(scaleAnimation);
         view.setAlpha(0.7f);
-        handler.postDelayed(() -> view.setAlpha(1.0f), 150);
+        if (handler != null) {
+            handler.postDelayed(() -> view.setAlpha(1.0f), 150);
+        }
     }
 
     private void loadUserData() {
@@ -295,105 +279,7 @@ public class HomePageActivity extends AppCompatActivity {
                 });
     }
 
-    private void loadRecentProjects() {
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser == null) {
-            showNoProjectsState();
-            return;
-        }
-
-        loadingState.setVisibility(View.VISIBLE);
-        recentProjectsList.setVisibility(View.GONE);
-
-        db.collection("projects")
-                .whereEqualTo("appraiserId", currentUser.getUid())
-                .orderBy("createdDate", com.google.firebase.firestore.Query.Direction.DESCENDING)
-                .limit(3)
-                .get()
-                .addOnSuccessListener(query -> {
-                    loadingState.setVisibility(View.GONE);
-
-                    if (query.isEmpty()) {
-                        Log.d(TAG_HOME, "Recent projects: none");
-                        showNoProjectsState();
-                        return;
-                    }
-
-                    Log.d(TAG_HOME, "Recent projects count=" + query.size());
-                    recentProjectsList.setVisibility(View.VISIBLE);
-                    recentProjectsList.removeAllViews();
-
-                    for (QueryDocumentSnapshot d : query) {
-                        addRecentProjectItem(d);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG_HOME, "Error loading recent projects", e);
-                    loadingState.setVisibility(View.GONE);
-                    showErrorState();
-                });
-    }
-
-    private void addRecentProjectItem(QueryDocumentSnapshot document) {
-        String projectName = document.getString("full_address");
-        String status = document.getString("projectStatus"); // Hebrew in DB
-        String clientName = document.getString("fullName");
-
-        if (projectName == null) projectName = "כתובת לא זמינה";
-        if (status == null) status = "לא ידוע";
-        if (clientName == null) clientName = "לקוח לא ידוע";
-
-        View projectItem = getLayoutInflater().inflate(R.layout.item_recent_project, recentProjectsList, false);
-
-        TextView projectNameText = projectItem.findViewById(R.id.project_name);
-        TextView projectClientText = projectItem.findViewById(R.id.project_client);
-        TextView projectStatusText = projectItem.findViewById(R.id.project_status);
-
-        projectNameText.setText(projectName);
-        projectClientText.setText("לקוח: " + clientName);
-        projectStatusText.setText(status);
-
-        projectItem.setOnClickListener(v -> {
-            Intent projectIntent = new Intent(this, MyProjectsActivity.class);
-            projectIntent.putExtra("projectId", document.getId());
-            startActivity(projectIntent);
-        });
-
-        Log.d(TAG_HOME, "Recent item: addr=" + projectName + ", status=" + status + ", client=" + clientName);
-        recentProjectsList.addView(projectItem);
-    }
-
-    private void showNoProjectsState() {
-        loadingState.setVisibility(View.GONE);
-        recentProjectsList.setVisibility(View.VISIBLE);
-        recentProjectsList.removeAllViews();
-
-        TextView noProjectsText = new TextView(this);
-        noProjectsText.setText("אין פרויקטים אחרונים");
-        noProjectsText.setTextColor(getColor(R.color.text_secondary_dark));
-        noProjectsText.setTextSize(14);
-        noProjectsText.setGravity(android.view.Gravity.CENTER);
-        noProjectsText.setPadding(0, 32, 0, 32);
-
-        recentProjectsList.addView(noProjectsText);
-    }
-
-    private void showErrorState() {
-        loadingState.setVisibility(View.GONE);
-        recentProjectsList.setVisibility(View.VISIBLE);
-        recentProjectsList.removeAllViews();
-
-        TextView errorText = new TextView(this);
-        errorText.setText("שגיאה בטעינת הפרויקטים");
-        errorText.setTextColor(getColor(R.color.error_color));
-        errorText.setTextSize(14);
-        errorText.setGravity(android.view.Gravity.CENTER);
-        errorText.setPadding(0, 32, 0, 32);
-
-        recentProjectsList.addView(errorText);
-    }
-
-    // ========================= PROJECTS BY STATUS (NEW) =========================
+    // ========================= PROJECTS BY STATUS =========================
 
     /** Loads all projects for the current appraiser and shows one clickable row per status with a count badge. */
     private void loadProjectsByStatus() {
@@ -421,7 +307,7 @@ public class HomePageActivity extends AppCompatActivity {
                         return;
                     }
 
-                    // Order is exactly the one you provided in arrays.xml
+                    // Order is defined in arrays.xml
                     String[] orderArr = getResources().getStringArray(R.array.project_statuses);
                     java.util.List<String> order = java.util.Arrays.asList(orderArr);
 
@@ -494,7 +380,7 @@ public class HomePageActivity extends AppCompatActivity {
         badge.setTextColor(getColor(R.color.text_primary_dark));
         badge.setPadding(dp(12), dp(6), dp(12), dp(6));
         android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
-        g.setColor(getColor(R.color.glass_surface)); // subtle background
+        g.setColor(getColor(R.color.glass_surface));
         g.setCornerRadius(dp(20));
         badge.setBackground(g);
         row.addView(badge);
@@ -507,7 +393,6 @@ public class HomePageActivity extends AppCompatActivity {
         Log.d(TAG_NAV, "User tapped status: " + hebrewStatus);
         try {
             FilterPrefs.saveSingleStatus(this, hebrewStatus);
-            // Dump filter after save (useful to verify)
             com.example.finalprojectappraisal.activity.myProjects.filter.ProjectFilter dump =
                     FilterPrefs.load(this);
             Log.d(TAG_NAV, "Saved FilterPrefs: " + new Gson().toJson(dump));
@@ -523,16 +408,22 @@ public class HomePageActivity extends AppCompatActivity {
     }
 
     private void showStatusNoData(String msg) {
+        if (statusLoadingState != null) statusLoadingState.setVisibility(View.GONE);
+
+        if (statusProjectsList == null) return;
         statusProjectsList.setVisibility(View.VISIBLE);
         statusProjectsList.removeAllViews();
+
         TextView tv = new TextView(this);
         tv.setText(msg);
         tv.setTextColor(getColor(R.color.text_secondary_dark));
         tv.setTextSize(14);
-        tv.setGravity(android.view.Gravity.CENTER);
+        tv.setGravity(android.view.Gravity.CENTER); // אין צורך ב-import
         tv.setPadding(0, dp(32), 0, dp(32));
+
         statusProjectsList.addView(tv);
     }
+
 
     // ---- Lifecycle ----
     @Override
@@ -540,9 +431,8 @@ public class HomePageActivity extends AppCompatActivity {
         super.onResume();
         loadProjectStats();
         setDynamicGreeting();
-        loadRecentProjects();
         loadProjectsByStatus(); // keep status card fresh
-        Log.d(TAG_HOME, "onResume → refreshed stats, recents, status");
+        Log.d(TAG_HOME, "onResume → refreshed stats, status");
     }
 
     @Override
