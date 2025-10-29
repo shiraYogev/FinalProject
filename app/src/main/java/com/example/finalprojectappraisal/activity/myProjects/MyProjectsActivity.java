@@ -22,6 +22,7 @@ import com.example.finalprojectappraisal.activity.myProjects.filter.ProjectFilte
 import com.example.finalprojectappraisal.activity.myProjects.filter.ui.FilterChipsController;
 import com.example.finalprojectappraisal.activity.myProjects.viewmodel.MyProjectsViewModel;
 import com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity;
+import com.example.finalprojectappraisal.activity.AllProjects.ProjectPreviewActivity; // <<< NEW
 import com.example.finalprojectappraisal.adapter.ProjectsAdapter;
 import com.example.finalprojectappraisal.database.auth.AuthRepository;
 import com.example.finalprojectappraisal.database.repository.ProjectRepository;
@@ -40,6 +41,7 @@ public class MyProjectsActivity extends AppCompatActivity
         implements FiltersBottomSheetDialogFragment.OnFiltersAppliedListener {
 
     private static final String TAG_PREF = "MyProjectsPrefilter";
+    private static final String TAG_REPORT = "MyProjectsReport"; // <<< NEW
 
     private MyProjectsViewModel vm;
 
@@ -90,7 +92,24 @@ public class MyProjectsActivity extends AppCompatActivity
                 startActivity(intent);
             }
             @Override public void onImages(Project project) { /* TODO */ }
-            @Override public void onReport(Project project) { /* TODO */ }
+
+            @Override public void onReport(Project project) { // <<< NEW
+                if (project == null || project.getProjectId() == null || project.getProjectId().trim().isEmpty()) {
+                    Log.e(TAG_REPORT, "onReport: missing projectId");
+                    Toast.makeText(MyProjectsActivity.this, "חסר מזהה פרויקט לתצוגת דוח", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                String pid = project.getProjectId();
+                Log.d(TAG_REPORT, "User tapped report for projectId=" + pid);
+
+                Intent intent = new Intent(MyProjectsActivity.this, ProjectPreviewActivity.class);
+                // שולחים כמה מפתחות נפוצים כדי להתאים ללוגיקה קיימת:
+                intent.putExtra("projectId", pid);         // מקובל אצלך במסכים אחרים
+                intent.putExtra("EXTRA_PROJECT_ID", pid);  // אם הActivity משתמש בקבוע הזה
+                intent.putExtra("PROJECT_ID", pid);        // גיבוי נוסף
+                startActivity(intent);
+            }
+
             @Override public void onDelete(Project project) { showDeleteConfirmationDialog(project); }
             @Override public void onAssignAppraiser(Project project) { showAssignAppraiserDialog(project); }
         }, this, /*isAdmin*/ false, currentUserId);
