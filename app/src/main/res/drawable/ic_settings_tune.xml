@@ -1,0 +1,25 @@
+<!-- res/drawable/ic_settings_tune.xml -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <!-- קו עליון משני הצדדים -->
+    <path android:fillColor="#FF000000" android:pathData="M4,7H7.5"/>
+    <path android:fillColor="#FF000000" android:pathData="M10.5,7H20"/>
+    <!-- כפתור עגול עליון -->
+    <path android:fillColor="#FF000000"
+        android:pathData="M9,7 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0 -3,0"/>
+
+    <!-- קו אמצעי -->
+    <path android:fillColor="#FF000000" android:pathData="M4,12H12.5"/>
+    <path android:fillColor="#FF000000" android:pathData="M15.5,12H20"/>
+    <!-- כפתור אמצעי -->
+    <path android:fillColor="#FF000000"
+        android:pathData="M14,12 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0 -3,0"/>
+
+    <!-- קו תחתון -->
+    <path android:fillColor="#FF000000" android:pathData="M4,17H9.5"/>
+    <path android:fillColor="#FF000000" android:pathData="M12.5,17H20"/>
+    <!-- כפתור תחתון -->
+    <path android:fillColor="#FF000000"
+        android:pathData="M11,17 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0 -3,0"/>
+</vector>

@@ -1,69 +1,87 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- בסיס -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
+    <!-- ===== Booking-like Brand Palette ===== -->
+    <!-- Primary (כותרות/רכיבים עיקריים) -->
+    <color name="brand_navy">#003580</color>
+    <!-- Accent / Link Blue (כפתורים משניים, קישורים, אייקונים) -->
+    <color name="brand_accent">#006CE4</color>
+    <!-- בהירים לאייקון-רקע/Chips -->
+    <color name="brand_accent_10">#E7F1FF</color>
+    <color name="brand_accent_20">#D3E6FF</color>
+
+    <!-- רקעים/משטחים -->
+    <color name="brand_bg">#F5F7FA</color>
+    <color name="brand_surface">#FFFFFF</color>
+
+    <!-- טקסטים -->
+    <color name="text_primary">#0A0A0A</color>
+    <color name="text_secondary">#4F4F4F</color>
+    <color name="text_hint">#9E9E9E</color>
+
+    <!-- ===== מיפוי תאימות לשמות קיימים אצלך ===== -->
     <!-- צבעים ראשיים לאפליקציה -->
-    <color name="colorPrimary">#2196F3</color>
-    <color name="colorPrimaryDark">#1976D2</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="colorPrimary">@color/brand_navy</color>
+    <color name="colorPrimaryDark">@color/brand_navy</color>
+    <color name="colorAccent">@color/brand_accent</color>
 
     <!-- צבעים נוספים -->
-    <color name="colorBackground">#F5F5F5</color>
-    <color name="colorSurface">#FFFFFF</color>
-    <color name="colorError">#FF4444</color>
+    <color name="colorBackground">@color/brand_bg</color>
+    <color name="colorSurface">@color/brand_surface</color>
+    <color name="colorError">#D93025</color>  <!-- אדום קצת נקי יותר -->
     <color name="colorSuccess">#4CAF50</color>
 
-    <!-- צבעי טקסט -->
-    <color name="textColorPrimary">#212121</color>
-    <color name="textColorSecondary">#757575</color>
-    <color name="textColorHint">#BDBDBD</color>
+    <!-- צבעי טקסט קיימים (מצביעים לפלטת טקסט החדשה) -->
+    <color name="textColorPrimary">@color/text_primary</color>
+    <color name="textColorSecondary">@color/text_secondary</color>
+    <color name="textColorHint">@color/text_hint</color>
 
-    <!-- צבעי מסגרות וגבולות -->
+    <!-- מסגרות/מפרידים -->
     <color name="borderColor">#E0E0E0</color>
     <color name="dividerColor">#EEEEEE</color>
 
-    <color name="primary_color">#2196F3</color>
-    <color name="primary_text">#212121</color>
-    <color name="secondary_text">#757575</color>
-    <color name="background_light">#FAFAFA</color>
+    <!-- שמות כפולים קיימים -->
+    <color name="primary_color">@color/brand_navy</color>
+    <color name="primary_text">@color/text_primary</color>
+    <color name="secondary_text">@color/text_secondary</color>
+    <color name="background_light">@color/brand_bg</color>
 
+    <!-- הודעת מידע (מותאם לכחול החדש) -->
+    <color name="info_background">@color/brand_accent_10</color>
+    <color name="info_color">@color/brand_accent</color>
+    <color name="info_text">@color/brand_navy</color>
 
-    <!-- צבעים להודעת המידע -->
-    <color name="info_background">#E3F2FD</color>
-    <color name="info_color">#1976D2</color>
-    <color name="info_text">#0D47A1</color>
-
-    <!-- צבעים נוספים לעיצוב -->
-    <color name="card_background">#FFFFFF</color>
-    <color name="divider_color">#E0E0E0</color>
-    <color name="text_hint">#757575</color>
-    <color name="text_secondary">#424242</color>
+    <!-- נוספים לעיצוב -->
+    <color name="card_background">@color/brand_surface</color>
+    <color name="divider_color">@color/borderColor</color>
     <color name="green_color">#4CAF50</color>
     <color name="red_color">#F44336</color>
-    <color name="blue_color">#2196F3</color>
+    <color name="blue_color">@color/brand_accent</color>
 
-    <!-- Primary Dark Navy Colors -->
+    <!-- Dark Navy ישנים (משאירים לתאימות אם בשימוש במסכים אחרים) -->
     <color name="dark_navy_primary">#0F172A</color>
     <color name="dark_navy_secondary">#1E293B</color>
     <color name="dark_navy_tertiary">#334155</color>
 
-    <!-- Glass Surface Colors -->
+    <!-- Glass Surface -->
     <color name="glass_surface">#1A334155</color>
     <color name="glass_surface_strong">#33334155</color>
 
-    <!-- Card Background Colors -->
+    <!-- Card Background Variants -->
     <color name="card_surface_primary">#1A1E293B</color>
-    <color name="card_surface_secondary">#FFFFFF</color>
+    <color name="card_surface_secondary">@color/brand_surface</color>
 
-    <!-- Primary Blue Shades -->
-    <color name="primary_blue">#3B82F6</color>
-    <color name="primary_blue_dark">#1D4ED8</color>
-    <color name="primary_blue_light">#60A5FA</color>
-    <color name="primary_blue_20">#203B82F6</color>
+    <!-- Primary Blue Shades (ממופים לפאלטה החדשה) -->
+    <color name="primary_blue">@color/brand_accent</color>
+    <color name="primary_blue_dark">@color/brand_navy</color>
+    <color name="primary_blue_light">@color/brand_accent_20</color>
+    <color name="primary_blue_20">@color/brand_accent_20</color>
 
-    <!-- Accent Colors -->
-    <color name="accent_blue_light">#60A5FA</color>
+    <!-- Accent Colors (נשמרים אם משתמשת) -->
+    <color name="accent_blue_light">@color/brand_accent_20</color>
     <color name="accent_purple">#8B5CF6</color>
     <color name="accent_purple_20">#208B5CF6</color>
     <color name="accent_green">#10B981</color>
@@ -72,33 +90,35 @@
     <color name="accent_orange">#F59E0B</color>
     <color name="accent_orange_20">#20F59E0B</color>
 
-    <!-- Gradient Colors -->
-    <color name="primary_gradient_start">#3B82F6</color>
-    <color name="primary_gradient_end">#1D4ED8</color>
+    <!-- Gradient (מחודשים לליבה החדשה) -->
+    <color name="primary_gradient_start">@color/brand_accent</color>
+    <color name="primary_gradient_end">@color/brand_navy</color>
 
-    <!-- Text Colors -->
+    <!-- טקסטים לבנים/כהים (קיימים) -->
     <color name="text_primary_white">#FFFFFF</color>
     <color name="text_secondary_white">#B8C5FF</color>
     <color name="text_primary_dark">#1F2937</color>
     <color name="text_secondary_dark">#6B7280</color>
 
-    <!-- Icon Colors -->
+    <!-- אייקונים -->
     <color name="icon_primary">#FFFFFF</color>
     <color name="icon_secondary">#B8C5FF</color>
 
-    <!-- Background Overlays -->
+    <!-- Overlays -->
     <color name="icon_bg_white_20">#33FFFFFF</color>
     <color name="overlay_dark">#80000000</color>
 
-    <!-- Status Colors -->
+    <!-- Status -->
     <color name="success_green">#10B981</color>
     <color name="warning_orange">#F59E0B</color>
     <color name="error_red">#EF4444</color>
 
-    <color name="primary_blue_10">#1A007AFF</color>
+    <!-- ישן: ממופה לכחול הבהיר החדש -->
+    <color name="primary_blue_10">@color/brand_accent_10</color>
     <color name="divider_light">#F0F0F0</color>
     <color name="error_color">#FF3B30</color>
 
+    <!-- רקעים כהים קיימים (תאימות) -->
     <color name="surface_deep">#0F172A</color>
     <color name="surface_card">#162238</color>
     <color name="glass_surface_light">#F0FFFFFF</color>

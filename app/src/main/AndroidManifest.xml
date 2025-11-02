@@ -18,32 +18,26 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.READ_MEDIA_DOCUMENTS" /> <!-- ✅ NEW: declare visibility for maps packages/intents (Android 11+) -->
-    <queries>
+    <uses-permission android:name="android.permission.READ_MEDIA_DOCUMENTS" />
 
-        <!-- Prefer Google Maps app if installed -->
+    <!-- ✅ נראות לאפליקציות מפות / סכימות ניווט (Android 11+) -->
+    <queries>
         <package android:name="com.google.android.apps.maps" />
-        <!-- Allow resolving geo: scheme -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
-
             <data android:scheme="geo" />
         </intent>
-        <!-- Allow resolving web fallback (https / http) -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
-
             <data android:scheme="https" />
         </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
-
             <data android:scheme="http" />
         </intent>
     </queries>
 
     <application
-
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:enableOnBackInvokedCallback="true"
@@ -54,6 +48,29 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FinalProjectAppraisal"
         tools:targetApi="tiramisu">
+
+        <!-- ⛳️ זה ה-Launcher החדש -->
+        <activity
+            android:name=".ui.splash.SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.FinalProjectAppraisal.Splash">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- מסך הבית (היעד אחרי הספלש) -->
+        <activity
+            android:name=".activity.HomePageActivity"
+            android:exported="true" />
+
+        <!-- ❌ להסיר Intent-Filter מ-MainActivity כדי שלא יעלה ראשון -->
+        <activity
+            android:name=".activity.MainActivity"
+            android:exported="false" />
+
+        <!-- שאר האקטיביטיז (ללא MAIN/LAUNCHER) -->
         <activity
             android:name=".activity.newProject.presenter.PresenterDetailsActivity"
             android:exported="false" />
@@ -88,9 +105,6 @@
             android:name=".activity.myProjects.MyProjectsActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.HomePageActivity"
-            android:exported="true" />
-        <activity
             android:name=".activity.SignUpActivity"
             android:exported="true" />
         <activity
@@ -105,21 +119,10 @@
         <activity android:name=".activity.SettingsActivity" />
         <activity android:name=".activity.activitiesAdmin.AdminListActivity" />
         <activity android:name=".activity.EditProfileActivity" />
-        <activity
-            android:name=".activity.MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
-        <!-- 🔑 הוספת API Key כאן -->
+        <!-- 🔑 Google Maps/Places API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
-
     </application>
-
 </manifest>

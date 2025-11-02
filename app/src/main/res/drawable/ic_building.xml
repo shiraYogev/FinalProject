@@ -1,0 +1,14 @@
+<!-- res/drawable/ic_building_mono.xml -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <!-- fillType=evenOdd יוצר חלונות שקופים שלא נצבעים -->
+    <path android:fillColor="#FF000000" android:fillType="evenOdd"
+        android:pathData="
+            M6,4H18V20H6z
+            M11,14H13V20H11z
+            M8,7H10V9H8z
+            M12,7H14V9H12z
+            M8,11H10V13H8z
+            M12,11H14V13H12z"/>
+</vector>

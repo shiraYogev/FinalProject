@@ -32,13 +32,16 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // העברת ה-Key ל-BuildConfig
+        // Expose key to BuildConfig
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
-    }
 
+        // ✅ Enable VectorDrawableCompat for all API levels
+        vectorDrawables {
+            useSupportLibrary = true
+        }
+    }
 
     buildTypes {
         release {

@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FinalProject-Appraisal</string>
     <string name="client_id">Client ID</string>
@@ -8,8 +9,9 @@
     <string name="web_client_id">193264017428-53mt34rg7qisqrgp8emogvbk89va0q5e.apps.googleusercontent.com</string>
     <string name="full_address">כתובת מלאה</string>
 
-    ///
-
+    <!-- ===========================================
+         Camera / Upload / Classifiers
+         =========================================== -->
     <string name="take_photo">צלם תמונה</string>
     <string name="select_from_gallery">בחר מגלריה</string>
     <string name="classify_door">סווג דלת</string>
@@ -21,7 +23,7 @@
     <string name="no_image_selected">לא נבחרה תמונה</string>
     <string name="permission_denied">הרשאות נדרשות לשימוש באפליקציה</string>
 
-    <!-- New strings for kitchen cabinet detector -->
+    <!-- Kitchen cabinet detector -->
     <string name="kitchen_cabinet_detector">בודק ארונות מטבח</string>
     <string name="kitchen_image">תמונת מטבח</string>
     <string name="from_gallery">בחר מגלריה</string>
@@ -29,25 +31,23 @@
     <string name="result_placeholder">תוצאות הזיהוי יופיעו כאן</string>
 
     <string name="client_id_firebase">193264017428-24qch0o58m7nk06lt77e3inueh241bi5.apps.googleusercontent.com</string>
-
     <string name="edit">עריכה</string>
 
-    <!-- תוכן לנגישות / contentDescription -->
+    <!-- ===========================================
+         Accessibility / contentDescription
+         =========================================== -->
+    <string name="cd_notifications">התראות</string>
+    <string name="cd_menu">תפריט</string>
+    <string name="cd_profile">פרופיל</string>
+    <string name="cd_success">הצלחה</string>
+
     <string name="cd_main_card_icon">אייקון סטטיסטיקות ראשי</string>
     <string name="cd_new_project">צור פרויקט חדש</string>
     <string name="cd_all_projects">פתח כל הפרויקטים (צפייה)</string>
     <string name="cd_my_projects">פתח הפרויקטים שלי</string>
     <string name="cd_settings">פתח הגדרות</string>
-
-    <!-- אופציונלי: אם תרצי להשתמש גם לאייקונים אחרים בעמוד -->
-    <string name="cd_notifications">התראות</string>
     <string name="cd_user_avatar">תמונת פרופיל</string>
 
-    <!-- 🔑 Google Maps/Places API Key -->
+    <!-- Google Maps/Places API Key -->
     <string name="google_maps_key">AIzaSyCRuEKXzNr0VU00WHAXcYeDbaOEtFxeaBU</string>
-
-
 </resources>
-
-
-

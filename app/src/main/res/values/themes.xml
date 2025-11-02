@@ -1,9 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+
+    <!-- בסיס האפליקציה -->
     <style name="Base.Theme.FinalProjectAppraisal" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- אפשר להשאיר ברירת מחדל של Material3, או להגדיר צבעים משלך -->
+        <item name="colorPrimary">@color/primary_blue</item>
+        <item name="colorSecondary">@color/primary_blue_light</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
+    <!-- ערכת הנושא הראשית של האפליקציה -->
     <style name="Theme.FinalProjectAppraisal" parent="Base.Theme.FinalProjectAppraisal" />
+
+    <!-- Splash (מכשירים מתחת ל-Android 12 מקבלים רקע כחול דרך windowBackground) -->
+    <style name="Theme.FinalProjectAppraisal.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/primary_blue</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+
 </resources>
