@@ -8,7 +8,6 @@
     </style>
 
     <!-- סטייל לכרטיסים (MaterialCardView) -->
-    <!-- שימי לב: parent הוא Widget.Material3.CardView.Elevated -->
     <style name="App.Card" parent="Widget.Material3.CardView.Elevated">
         <item name="shapeAppearance">@style/App.Shape.M</item>
         <item name="cardBackgroundColor">?attr/colorSurface</item>
@@ -18,7 +17,7 @@
         <item name="rippleColor">?attr/colorSecondaryContainer</item>
     </style>
 
-    <!-- טיפוגרפיה לדוגמה -->
+    <!-- טיפוגרפיה כללית (שלך) -->
     <style name="Text.Title" parent="TextAppearance.Material3.TitleLarge">
         <item name="fontFamily">sans-serif</item>
         <item name="android:textStyle">bold</item>
@@ -32,6 +31,54 @@
     <style name="Text.Counter" parent="TextAppearance.Material3.DisplaySmall">
         <item name="fontFamily">sans-serif</item>
         <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- טיפוגרפיה ספציפית לכרטיסים -->
+    <style name="FP.Title" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="FP.Meta" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- צורות עזר -->
+    <style name="Shape.Rounded16">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <style name="Shape.Rounded12">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <!-- בסיסים "חסיני שגיאה" לשמות ישנים/כלליים -->
+    <style name="Shape">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <style name="ShapeAppearanceOverlay">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <style name="ShapeAppearanceOverlay.FP">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <!-- צורות מוגדרות לשימוש ב-MaterialCardView / ShapeableImageView -->
+    <style name="ShapeAppearanceOverlay.FP.Rounded16">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <style name="ShapeAppearanceOverlay.FP.Rounded12">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
     </style>
 
 </resources>

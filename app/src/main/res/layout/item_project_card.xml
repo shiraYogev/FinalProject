@@ -1,185 +1,264 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardRoot"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    card_view:cardCornerRadius="12dp"
-    card_view:cardElevation="4dp"
-    android:layout_margin="8dp"
-    android:background="#FFF">
+    android:layoutDirection="rtl"
+    android:layout_marginHorizontal="@dimen/space_16"
+    android:layout_marginVertical="@dimen/space_8"
+    app:cardBackgroundColor="@color/fp_surface"
+    app:cardUseCompatPadding="true"
+    app:cardElevation="1dp"
+    app:strokeColor="@color/fp_outline"
+    app:strokeWidth="1dp"
+    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.FP.Rounded16">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cardContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layoutDirection="rtl"
-        android:padding="10dp">
+        android:padding="@dimen/space_16"
+        tools:ignore="ExtraText">
 
-        <ImageView
+        <!-- תמונת חזית -->
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/imageThumb"
-            android:layout_width="90dp"
-            android:layout_height="90dp"
+            android:layout_width="@dimen/thumb_size"
+            android:layout_height="@dimen/thumb_size"
             android:scaleType="centerCrop"
-            android:background="#CCC"
-            android:contentDescription="תמונת הנכס"
-            android:layout_gravity="center_vertical" />
+            android:contentDescription="@string/cd_my_projects"
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.FP.Rounded12"
+            app:strokeColor="@android:color/transparent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:srcCompat="@android:drawable/ic_menu_gallery" />
 
+        <!-- עוד -->
         <ImageButton
             android:id="@+id/btnMore"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_gravity="top|start"
-            android:layout_marginStart="4dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:contentDescription="עוד אפשרויות"
-            android:src="@android:drawable/ic_menu_more"
-            card_view:tint="#666" />
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cd_my_projects"
+            app:srcCompat="@android:drawable/ic_menu_more"
+            app:tint="?attr/colorOnSurface"
+            app:layout_constraintTop_toTopOf="@id/imageThumb"
+            app:layout_constraintBottom_toBottomOf="@id/imageThumb"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-        <LinearLayout
-            android:layout_width="266dp"
+        <!-- כותרת -->
+        <TextView
+            android:id="@+id/txtAddress"
+            style="@style/FP.Title"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="right"
-            android:orientation="vertical"
-            android:paddingStart="12dp">
+            android:layout_marginStart="@dimen/space_12"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toEndOf="@id/imageThumb"
+            app:layout_constraintEnd_toStartOf="@id/btnMore"
+            tools:text="רח' דיזנגוף 123, תל אביב" />
 
-            <TextView
-                android:id="@+id/txtAddress"
+        <!-- סטטוס כ-pill -->
+        <TextView
+            android:id="@+id/txtStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="28dp"
+            android:layout_marginTop="@dimen/space_8"
+            android:paddingHorizontal="@dimen/space_12"
+            android:gravity="center_vertical"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:background="@drawable/bg_status_pill"
+            app:layout_constraintTop_toBottomOf="@id/txtAddress"
+            app:layout_constraintStart_toStartOf="@id/txtAddress"
+            tools:text="הצעת מחיר" />
+
+        <!-- מטא: לקוח -->
+        <TextView
+            android:id="@+id/txtClient"
+            style="@style/FP.Meta"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:layout_constraintTop_toBottomOf="@id/txtStatus"
+            app:layout_constraintStart_toStartOf="@id/txtStatus"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="Shira Yogev" />
+
+        <!-- מטא: תאריך -->
+        <TextView
+            android:id="@+id/txtDate"
+            style="@style/FP.Meta"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/txtClient"
+            app:layout_constraintStart_toStartOf="@id/txtClient"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="עודכן: 09/11/2025" />
+
+        <!-- הערה -->
+        <TextView
+            android:id="@+id/txtNote"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_12"
+            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+            android:textColor="?attr/colorOnSurface"
+            android:maxLines="3"
+            android:ellipsize="end"
+            app:layout_constraintTop_toBottomOf="@id/txtDate"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="הערת פרויקט תופיע כאן..." />
+
+        <!-- פעולות ראשיות -->
+        <LinearLayout
+            android:id="@+id/actionsRow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_12"
+            android:gravity="end"
+            android:orientation="horizontal"
+            app:layout_constraintTop_toBottomOf="@id/txtNote"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnMap"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="כתובת"
-                android:textColor="#333"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:layout_height="@dimen/button_height"
+                android:minHeight="@dimen/button_height"
+                android:text="מפה"
+                app:icon="@android:drawable/ic_menu_mylocation"
+                app:iconPadding="8dp"
+                app:iconSize="20dp"
+                app:iconGravity="textStart"
+                app:cornerRadius="@dimen/corner_12" />
 
-            <TextView
-                android:id="@+id/txtNote"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddNote"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingTop="2dp"
-                android:paddingBottom="2dp"
-                android:text="הערה אופציונלית"
-                android:textColor="#666"
-                android:textSize="13sp" />
+                android:layout_height="@dimen/button_height"
+                android:minHeight="@dimen/button_height"
+                android:layout_marginStart="@dimen/space_8"
+                android:text="הערה"
+                app:icon="@android:drawable/ic_menu_edit"
+                app:iconPadding="8dp"
+                app:iconSize="20dp"
+                app:iconGravity="textStart"
+                app:cornerRadius="@dimen/corner_12" />
 
-            <TextView
-                android:id="@+id/txtStatus"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnReport"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="סטטוס"
-                android:textColor="#388E3C"
-                android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/txtClient"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="שם לקוח"
-                android:textColor="#666"
-                android:textSize="13sp" />
-
-            <TextView
-                android:id="@+id/txtDate"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingBottom="4dp"
-                android:text="תאריך עדכון"
-                android:textColor="#999"
-                android:textSize="12sp" />
-
-            <com.google.android.flexbox.FlexboxLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:alignItems="center"
-                app:flexWrap="wrap"
-                app:justifyContent="flex_end">
-
-                <Button
-                    android:id="@+id/btnAssignAppraiser"
-                    android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_marginBottom="4dp"
-                    android:drawableStart="@android:drawable/ic_menu_add"
-                    android:minWidth="64dp"
-                    android:minHeight="48dp"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:text="הוסף שמאי"
-                    android:textSize="13sp"
-                    android:visibility="gone"
-                    tools:visibility="visible" />
-
-                <Button
-                    android:id="@+id/btnMap"
-                    android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_marginBottom="4dp"
-                    android:minWidth="64dp"
-                    android:minHeight="48dp"
-                    android:text="מפה"
-                    android:textSize="13sp" />
-
-                <Button
-                    android:id="@+id/btnEdit"
-                    android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_marginBottom="4dp"
-                    android:minWidth="64dp"
-                    android:minHeight="48dp"
-                    android:text="ערוך"
-                    android:textSize="13sp" />
-
-                <!-- היה btnImages — עכשיו btnAddNote -->
-                <Button
-                    android:id="@+id/btnAddNote"
-                    android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_marginBottom="4dp"
-                    android:minWidth="64dp"
-                    android:minHeight="48dp"
-                    android:text="הוסף הערה"
-                    android:textSize="13sp" />
-
-                <Button
-                    android:id="@+id/btnReport"
-                    android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_marginBottom="4dp"
-                    android:minWidth="64dp"
-                    android:minHeight="48dp"
-                    android:text="דו&quot;ח"
-                    android:textSize="13sp" />
-
-                <Button
-                    android:id="@+id/btnChangeStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_marginBottom="4dp"
-                    android:minWidth="64dp"
-                    android:minHeight="48dp"
-                    android:text="סטטוס פרויקט"
-                    android:textSize="13sp" />
-
-                <Button
-                    android:id="@+id/btnDelete"
-                    android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:layout_marginBottom="4dp"
-                    android:minWidth="64dp"
-                    android:minHeight="48dp"
-                    android:text="מחיקה"
-                    android:textColor="#B71C1C"
-                    android:textSize="13sp" />
-            </com.google.android.flexbox.FlexboxLayout>
+                android:layout_height="@dimen/button_height"
+                android:minHeight="@dimen/button_height"
+                android:layout_marginStart="@dimen/space_8"
+                android:text="דו&quot;ח"
+                app:icon="@android:drawable/ic_menu_info_details"
+                app:iconPadding="8dp"
+                app:iconSize="20dp"
+                app:iconGravity="textStart"
+                app:cornerRadius="@dimen/corner_12" />
         </LinearLayout>
-    </LinearLayout>
-</androidx.cardview.widget.CardView>
+
+        <!-- פעולות ניהוליות — כפתורים לבנים כמו הראשיים -->
+        <LinearLayout
+            android:id="@+id/editRow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:gravity="end"
+            android:orientation="horizontal"
+            app:layout_constraintTop_toBottomOf="@id/actionsRow"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEdit"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_height"
+                android:minHeight="@dimen/button_height"
+                android:text="עריכה"
+                android:textColor="?attr/colorOnSurface"
+                app:backgroundTint="@color/fp_surface"
+                app:strokeColor="@color/fp_outline"
+                app:iconTint="?attr/colorOnSurface"
+                app:icon="@android:drawable/ic_menu_edit"
+                app:iconPadding="8dp"
+                app:iconSize="20dp"
+                app:iconGravity="textStart"
+                app:cornerRadius="@dimen/corner_12" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnChangeStatus"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_height"
+                android:minHeight="@dimen/button_height"
+                android:layout_marginStart="@dimen/space_8"
+                android:text="סטטוס"
+                android:textColor="?attr/colorOnSurface"
+                app:backgroundTint="@color/fp_surface"
+                app:strokeColor="@color/fp_outline"
+                app:iconTint="?attr/colorOnSurface"
+                app:icon="@android:drawable/ic_menu_agenda"
+                app:iconPadding="8dp"
+                app:iconSize="20dp"
+                app:iconGravity="textStart"
+                app:cornerRadius="@dimen/corner_12" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAssignAppraiser"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_height"
+                android:minHeight="@dimen/button_height"
+                android:layout_marginStart="@dimen/space_8"
+                android:text="הקצה שמאי"
+                android:textColor="?attr/colorOnSurface"
+                app:backgroundTint="@color/fp_surface"
+                app:strokeColor="@color/fp_outline"
+                app:iconTint="?attr/colorOnSurface"
+                app:icon="@android:drawable/ic_menu_add"
+                app:iconPadding="8dp"
+                app:iconSize="20dp"
+                app:iconGravity="textStart"
+                app:cornerRadius="@dimen/corner_12" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDelete"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_height"
+                android:minHeight="@dimen/button_height"
+                android:layout_marginStart="@dimen/space_8"
+                android:text="מחיקה"
+                app:icon="@android:drawable/ic_menu_delete"
+                app:iconPadding="8dp"
+                app:iconSize="20dp"
+                app:iconGravity="textStart"
+                app:cornerRadius="@dimen/corner_12" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="@dimen/space_4"
+            app:layout_constraintTop_toBottomOf="@id/editRow"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

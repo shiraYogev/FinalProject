@@ -91,8 +91,13 @@
     <color name="accent_orange_20">#20F59E0B</color>
 
     <!-- Gradient (מחודשים לליבה החדשה) -->
-    <color name="primary_gradient_start">@color/brand_accent</color>
-    <color name="primary_gradient_end">@color/brand_navy</color>
+    <!-- כחול בסיס + כחול מעט כהה ממנו (~10%) -->
+    <color name="fp_primary">#3949AB</color>        <!-- היה מעט בהיר יותר -->
+    <color name="fp_primary_dark">#3142A3</color>   <!-- ~10% כהה יותר -->
+
+    <!-- הטוקנים שהגרדיאנט משתמש בהם -->
+    <color name="primary_gradient_start">@color/fp_primary_dark</color>
+    <color name="primary_gradient_end">@color/fp_primary</color>
 
     <!-- טקסטים לבנים/כהים (קיימים) -->
     <color name="text_primary_white">#FFFFFF</color>
@@ -124,4 +129,28 @@
     <color name="glass_surface_light">#F0FFFFFF</color>
 
     <color name="input_background_soft">#F2F2F2</color>
+
+    <!-- סטטוסים (רקע + טקסט) -->
+    <color name="status_quote_bg">#E8EAF6</color>
+    <color name="status_quote_fg">#3F51B5</color>
+
+    <color name="status_pre_visit_bg">#FFF3E0</color>
+    <color name="status_pre_visit_fg">#FB8C00</color>
+
+    <color name="status_post_visit_bg">#E3F2FD</color>
+    <color name="status_post_visit_fg">#1E88E5</color>
+
+    <color name="status_in_progress_bg">#EDE7F6</color>
+    <color name="status_in_progress_fg">#5E35B1</color>
+
+    <color name="status_reviewer_bg">#FBE9E7</color>
+    <color name="status_reviewer_fg">#D84315</color>
+
+    <color name="status_done_bg">#E8F5E9</color>
+    <color name="status_done_fg">#2E7D32</color>
+
+
+    <color name="fp_surface">#FFFFFF</color>
+    <color name="fp_outline">#D9DCE3</color>
+
 </resources>

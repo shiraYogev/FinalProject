@@ -41,6 +41,9 @@
     <string name="cd_profile">פרופיל</string>
     <string name="cd_success">הצלחה</string>
 
+    <string name="hint_search">חיפוש לפי כתובת, לקוח או מספר פרויקט</string>
+    <string name="cd_filter">מסננים</string>
+
     <string name="cd_main_card_icon">אייקון סטטיסטיקות ראשי</string>
     <string name="cd_new_project">צור פרויקט חדש</string>
     <string name="cd_all_projects">פתח כל הפרויקטים (צפייה)</string>

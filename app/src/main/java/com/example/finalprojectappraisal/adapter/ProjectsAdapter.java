@@ -19,6 +19,11 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.res.ColorStateList;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+
+
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.database.constants.FirestoreConstants;
 import com.example.finalprojectappraisal.database.repository.ProjectRepository;
@@ -120,7 +125,7 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
 
         // סטטוס
         String status = project != null ? project.getProjectStatus() : null;
-        holder.txtStatus.setText(!TextUtils.isEmpty(status) ? status : "סטטוס לא ידוע");
+        applyStatusStyle(holder.txtStatus, status);
 
         // שם לקוח
         String clientName = (project != null && project.getClient() != null)
@@ -440,6 +445,41 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", new Locale("he", "IL"));
         return sdf.format(new Date(epochMillis));
     }
+
+    private void applyStatusStyle(TextView tv, String statusRaw) {
+        // ודאי שיש רקע (shape) אחד בסיסי
+        if (tv.getBackground() == null) {
+            tv.setBackgroundResource(R.drawable.bg_status_pill);
+        }
+
+        String s = (statusRaw == null) ? "" : statusRaw.trim();
+        int bgRes, fgRes; String label = s;
+
+        // עדכני את המחרוזות כך שיתאימו בדיוק למה שנשמר ב-DB
+        switch (s) {
+            case "הצעת מחיר":
+                bgRes = R.color.status_quote_bg;       fgRes = R.color.status_quote_fg;       break;
+            case "טרם ביקור":
+                bgRes = R.color.status_pre_visit_bg;   fgRes = R.color.status_pre_visit_fg;   break;
+            case "לאחר ביקור":
+                bgRes = R.color.status_post_visit_bg;  fgRes = R.color.status_post_visit_fg;  break;
+            case "בעבודה":
+                bgRes = R.color.status_in_progress_bg; fgRes = R.color.status_in_progress_fg; break;
+            case "בבדיקה שמאי חותם":
+                bgRes = R.color.status_reviewer_bg;    fgRes = R.color.status_reviewer_fg;    break;
+            case "הושלם":
+                bgRes = R.color.status_done_bg;        fgRes = R.color.status_done_fg;        break;
+            default:
+                bgRes = R.color.status_quote_bg;       fgRes = R.color.status_quote_fg;       label = "סטטוס";
+        }
+
+        int bg = ContextCompat.getColor(tv.getContext(), bgRes);
+        int fg = ContextCompat.getColor(tv.getContext(), fgRes);
+        ViewCompat.setBackgroundTintList(tv, ColorStateList.valueOf(bg));
+        tv.setTextColor(fg);
+        tv.setText(label);
+    }
+
 
     // ===== ViewHolder =====
     static class ProjectViewHolder extends RecyclerView.ViewHolder {

@@ -1,0 +1,8 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24" android:tint="?attr/colorOnSurface">
+    <!--  Document with folded corner (even-odd hole) and clean text lines  -->
+    <path android:fillColor="#000000" android:fillType="evenOdd" android:pathData=" M6,2 H14 L18,6 V20 C18,21.1 17.1,22 16,22 H6 C4.9,22 4,21.1 4,20 V4 C4,2.9 4.9,2 6,2 Z M14,2 L14,6 L18,6 Z"/>
+    <!--  Text lines  -->
+    <path android:fillColor="#000000" android:pathData="M8,10.75 H16 V12 H8 Z"/>
+    <path android:fillColor="#000000" android:pathData="M8,13.75 H16 V15 H8 Z"/>
+    <path android:fillColor="#000000" android:pathData="M8,16.75 H13.5 V18 H8 Z"/>
+</vector>

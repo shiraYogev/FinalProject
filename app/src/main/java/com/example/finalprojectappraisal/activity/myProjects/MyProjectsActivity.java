@@ -139,6 +139,11 @@ public class MyProjectsActivity extends AppCompatActivity
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
         recyclerView.setHasFixedSize(true);
+        recyclerView.addItemDecoration(new androidx.recyclerview.widget.DividerItemDecoration(
+                this, androidx.recyclerview.widget.DividerItemDecoration.VERTICAL));
+        recyclerView.setClipToPadding(false);
+        recyclerView.setPadding(0, 8, 0, 8);
+
 
         // Pull-to-refresh
         swipeRefresh.setOnRefreshListener(() -> {
