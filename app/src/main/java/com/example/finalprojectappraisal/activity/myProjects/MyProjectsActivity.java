@@ -10,6 +10,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -17,12 +18,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.activity.AllProjects.ProjectPreviewActivity;
 import com.example.finalprojectappraisal.activity.myProjects.filter.FiltersBottomSheetDialogFragment;
 import com.example.finalprojectappraisal.activity.myProjects.filter.ProjectFilter;
 import com.example.finalprojectappraisal.activity.myProjects.filter.ui.FilterChipsController;
+import com.example.finalprojectappraisal.activity.myProjects.note.AddNoteBottomSheetDialogFragment;
 import com.example.finalprojectappraisal.activity.myProjects.viewmodel.MyProjectsViewModel;
-import com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity;
-import com.example.finalprojectappraisal.activity.AllProjects.ProjectPreviewActivity; // <<< NEW
 import com.example.finalprojectappraisal.adapter.ProjectsAdapter;
 import com.example.finalprojectappraisal.database.auth.AuthRepository;
 import com.example.finalprojectappraisal.database.repository.ProjectRepository;
@@ -38,10 +39,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class MyProjectsActivity extends AppCompatActivity
-        implements FiltersBottomSheetDialogFragment.OnFiltersAppliedListener {
+        implements FiltersBottomSheetDialogFragment.OnFiltersAppliedListener,
+        AddNoteBottomSheetDialogFragment.OnNoteSavedListener {
 
     private static final String TAG_PREF = "MyProjectsPrefilter";
-    private static final String TAG_REPORT = "MyProjectsReport"; // <<< NEW
+    private static final String TAG_REPORT = "MyProjectsReport";
+    private static final String TAG_ACT = "MyProjectsActivity";
 
     private MyProjectsViewModel vm;
 
@@ -77,23 +80,42 @@ public class MyProjectsActivity extends AppCompatActivity
         // Load last filter into VM
         ProjectFilter saved = FilterPrefs.load(this);
         vm.setFilter(saved);
-        Log.d(TAG_PREF, "onCreate: loaded last FilterPrefs: " + new com.google.gson.Gson().toJson(saved));
+        Log.d(TAG_PREF, "onCreate: loaded FilterPrefs: " + new com.google.gson.Gson().toJson(saved));
+
+        // Clear stale textQuery (prevents empty results if something stuck from previous session)
+        if (saved != null && saved.getTextQuery() != null && !saved.getTextQuery().isEmpty()) {
+            Log.d(TAG_PREF, "Clearing stale textQuery from prefs: '" + saved.getTextQuery() + "'");
+            searchBar.setText(""); // triggers TextWatcher and saves back to prefs
+        }
 
         // UID from AuthRepository
         currentUserId = AuthRepository.getInstance().getCurrentUserId();
+        Log.d(TAG_ACT, "onCreate: currentUserId=" + currentUserId);
+        if (currentUserId == null || currentUserId.trim().isEmpty()) {
+            Toast.makeText(this, "⚠️ אינך מחוברת — ייתכן שיופיעו 0 פרויקטים", Toast.LENGTH_LONG).show();
+        }
         vm.setUserId(currentUserId); // will check permissions and fetch projects
-        Log.d(TAG_PREF, "onCreate: currentUserId=" + currentUserId);
 
         // Adapter
         adapter = new ProjectsAdapter(allProjects, new ProjectsAdapter.ProjectActionListener() {
             @Override public void onEdit(Project project) {
-                Intent intent = new Intent(MyProjectsActivity.this, UploadImagesActivity.class);
+                Intent intent = new Intent(MyProjectsActivity.this,
+                        com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity.class);
                 intent.putExtra("projectId", project.getProjectId());
                 startActivity(intent);
             }
-            @Override public void onImages(Project project) { /* TODO */ }
 
-            @Override public void onReport(Project project) { // <<< NEW
+            @Override public void onAddNote(Project project) {
+                if (project == null || project.getProjectId() == null || project.getProjectId().trim().isEmpty()) {
+                    Toast.makeText(MyProjectsActivity.this, "חסר מזהה פרויקט", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                AddNoteBottomSheetDialogFragment
+                        .newInstance(project.getProjectId(), project.getNote())
+                        .show(getSupportFragmentManager(), "add_note");
+            }
+
+            @Override public void onReport(Project project) {
                 if (project == null || project.getProjectId() == null || project.getProjectId().trim().isEmpty()) {
                     Log.e(TAG_REPORT, "onReport: missing projectId");
                     Toast.makeText(MyProjectsActivity.this, "חסר מזהה פרויקט לתצוגת דוח", Toast.LENGTH_SHORT).show();
@@ -120,29 +142,34 @@ public class MyProjectsActivity extends AppCompatActivity
 
         // Pull-to-refresh
         swipeRefresh.setOnRefreshListener(() -> {
-            Log.d(TAG_PREF, "SwipeRefresh: vm.fetchProjects()");
+            Log.d(TAG_ACT, "SwipeRefresh: vm.fetchProjects()");
             vm.fetchProjects();
         });
 
         // Repository projects → Activity holds full list → VM consumes
         ProjectRepository.getInstance().getAllProjects().observe(this, projects -> {
+            int size = (projects == null ? 0 : projects.size());
+            Log.d("MyProjectsRepo", "LiveData getAllProjects observed: size=" + size
+                    + (size > 0 ? (", firstPid=" + (projects.get(0) != null ? projects.get(0).getProjectId() : "null")) : ""));
             allProjects.clear();
             if (projects != null) allProjects.addAll(projects);
             vm.setAllProjects(allProjects);
-            Log.d(TAG_PREF, "Repo getAllProjects observed: size=" + allProjects.size());
         });
 
         // Appraisers list
         vm.getAppraisers().observe(this, list -> {
             allAppraisers.clear();
             if (list != null) allAppraisers.addAll(list);
-            Log.d(TAG_PREF, "Appraisers observed: size=" + allAppraisers.size());
+            Log.d(TAG_ACT, "Appraisers observed: size=" + (list == null ? 0 : list.size()));
         });
         vm.loadAllAppraisers();
 
         // Final filtered list from VM → Adapter + chips
         vm.getFiltered().observe(this, filtered -> {
-            Log.d(TAG_PREF, "getFiltered() size=" + (filtered == null ? 0 : filtered.size()));
+            Log.d(TAG_PREF, "getFiltered() size=" + (filtered == null ? 0 : filtered.size())
+                    + " | viewingAll=" + vm.getIsViewingAll().getValue()
+                    + " | isAdmin=" + vm.getIsAdmin().getValue()
+                    + " | filter=" + new com.google.gson.Gson().toJson(vm.getCurrentFilter()));
             adapter.updateData(filtered);
             updateEmptyState();
             FilterChipsController.render(
@@ -157,7 +184,7 @@ public class MyProjectsActivity extends AppCompatActivity
         // ADMIN perms → view mode
         vm.getIsAdmin().observe(this, isAdmin -> {
             boolean admin = isAdmin != null && isAdmin;
-            Log.d(TAG_PREF, "isAdmin=" + admin);
+            Log.d(TAG_ACT, "isAdmin=" + admin);
             adapter.updatePermissions(admin, currentUserId);
             chipGroupViewMode.setVisibility(admin ? View.VISIBLE : View.GONE);
             if (admin) setupViewModeChips(); else chipGroupViewMode.clearCheck();
@@ -174,7 +201,7 @@ public class MyProjectsActivity extends AppCompatActivity
             @Override public void onTextChanged(CharSequence s,int st,int b,int c){
                 vm.setTextQuery(s == null ? null : s.toString());
                 FilterPrefs.save(MyProjectsActivity.this, vm.getCurrentFilter());
-                Log.d(TAG_PREF, "Search changed → vm.setTextQuery + save FilterPrefs");
+                Log.d(TAG_PREF, "Search changed → vm.setTextQuery + save FilterPrefs: '" + s + "'");
             }
             @Override public void afterTextChanged(Editable s){}
         });
@@ -189,8 +216,8 @@ public class MyProjectsActivity extends AppCompatActivity
         // User switching
         AuthRepository.getInstance().getUserIdLive().observe(this, uid -> {
             boolean changed = (uid == null && currentUserId != null) || (uid != null && !uid.equals(currentUserId));
+            Log.d(TAG_ACT, "Auth user changed? " + changed + " | old=" + currentUserId + " new=" + uid);
             if (changed) {
-                Log.d(TAG_PREF, "UserId changed: " + currentUserId + " → " + uid);
                 currentUserId = uid;
                 vm.setUserId(uid);
             }
@@ -198,6 +225,13 @@ public class MyProjectsActivity extends AppCompatActivity
 
         // <<< NEW: apply prefilter from Intent (one-shot) >>>
         applyPrefilterIfAny();
+
+        // ============================================
+        // בעיטה יזומה אחרי שכל ה-observers מחוברים
+        // ============================================
+        Log.d(TAG_ACT, "KICK: viewingAll=true + fetchProjects()");
+        vm.setViewingAll(true);   // מציג זמנית "כל הפרויקטים" כדי לעקוף שיוכים מחמירים
+        vm.fetchProjects();       // מפעיל טעינה מיידית
     }
 
     @Override
@@ -219,6 +253,14 @@ public class MyProjectsActivity extends AppCompatActivity
         Log.d(TAG_PREF, "BottomSheet onReset -> new ProjectFilter()");
         vm.setFilter(new ProjectFilter());
         FilterPrefs.save(this, vm.getCurrentFilter());
+    }
+
+    // ===== OnNoteSavedListener callback (מ־BottomSheet) =====
+    @Override
+    public void onNoteSaved(@NonNull String projectId, @NonNull String newNote) {
+        Log.d(TAG_ACT, "onNoteSaved: pid=" + projectId + " len=" + newNote.length());
+        // לריענון מיידי (לרוב גם ה-listener של Firestore יעדכן לבד)
+        if (vm != null) vm.fetchProjects();
     }
 
     // ===== Prefilter handling (NEW) =====

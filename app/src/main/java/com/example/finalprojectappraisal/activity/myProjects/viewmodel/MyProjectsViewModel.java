@@ -13,18 +13,19 @@ import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Appraiser;
 import com.example.finalprojectappraisal.model.Project;
 import com.example.finalprojectappraisal.utils.TextNormalizer;
-import com.google.android.gms.tasks.Tasks;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/** "מוח המסך": מצב, סינון, הרשאות, טעינות ופעולות. */
+/** "מוח המסך": מצב, סינון, הרשאות, טעינות ופעולות — עם לוגים. */
 public class MyProjectsViewModel extends ViewModel {
+
+    private static final String TAG_VM = "MyProjectsVM";
 
     // ==== State ====
     private final MutableLiveData<String> userId = new MutableLiveData<>(null);
     private final MutableLiveData<Boolean> isAdmin = new MutableLiveData<>(false);
-    private final MutableLiveData<Boolean> isViewingAll = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> isViewingAll = new MutableLiveData<>(true);
     private final MutableLiveData<Boolean> isRefreshing = new MutableLiveData<>(false);
 
     private final MutableLiveData<List<Project>> allProjects = new MutableLiveData<>(new ArrayList<>());
@@ -32,11 +33,10 @@ public class MyProjectsViewModel extends ViewModel {
     private final MediatorLiveData<List<Project>> filtered = new MediatorLiveData<>();
 
     private final MutableLiveData<List<Appraiser>> appraisers = new MutableLiveData<>(new ArrayList<>());
-
-    // one-shot messages (אפשר להחליף ב-SingleLiveEvent אם יש לך)
     private final MutableLiveData<String> toastMsg = new MutableLiveData<>(null);
 
     public MyProjectsViewModel() {
+        android.util.Log.d(TAG_VM, "ctor()");
         filtered.addSource(allProjects, list -> recompute());
         filtered.addSource(filter, f -> recompute());
     }
@@ -50,28 +50,42 @@ public class MyProjectsViewModel extends ViewModel {
     public LiveData<String> getToastMsg() { return toastMsg; }
 
     // ==== Filter ops ====
-    public void setFilter(ProjectFilter f) { filter.setValue(f != null ? f : new ProjectFilter()); }
-    public ProjectFilter getCurrentFilter() { return filter.getValue() != null ? filter.getValue() : new ProjectFilter(); }
+    public void setFilter(ProjectFilter f) {
+        filter.setValue(f != null ? f : new ProjectFilter());
+        android.util.Log.d(TAG_VM, "setFilter: " + new com.google.gson.Gson().toJson(getCurrentFilter()));
+    }
+
+    public ProjectFilter getCurrentFilter() {
+        return filter.getValue() != null ? filter.getValue() : new ProjectFilter();
+    }
+
     public void setTextQuery(@Nullable String q) {
         ProjectFilter f = getCurrentFilter();
         f.setTextQuery(TextNormalizer.normalizeOrNull(q));
         filter.setValue(f);
+        android.util.Log.d(TAG_VM, "setTextQuery: '" + q + "' → normalized='" + f.getTextQuery() + "'");
     }
 
     public void setAllProjects(List<Project> list) {
-        allProjects.setValue(list != null ? list : new ArrayList<>());
+        List<Project> safe = (list != null ? list : new ArrayList<>());
+        allProjects.setValue(safe);
+        android.util.Log.d(TAG_VM, "setAllProjects: size=" + safe.size()
+                + (safe.size() > 0 ? (", firstPid=" + (safe.get(0) != null ? safe.get(0).getProjectId() : "null")) : ""));
     }
 
     // ==== Screen mode / user ====
     public void setViewingAll(boolean value) {
-        if (value == (isViewingAll.getValue() != null && isViewingAll.getValue())) return;
+        boolean cur = isViewingAll.getValue() != null && isViewingAll.getValue();
+        if (value == cur) return;
         isViewingAll.setValue(value);
-        fetchProjects(); // שינוי מצב → טען מחדש
+        android.util.Log.d(TAG_VM, "setViewingAll: " + value + " → fetchProjects()");
+        fetchProjects();
     }
 
     public void setUserId(@Nullable String uid) {
         userId.setValue(uid);
-        checkPermissions(); // מעדכן isAdmin ואז קורא fetchProjects()
+        android.util.Log.d(TAG_VM, "setUserId: " + uid + " → checkPermissions()");
+        checkPermissions();
     }
 
     // ==== Loads ====
@@ -79,6 +93,7 @@ public class MyProjectsViewModel extends ViewModel {
         String uid = userId.getValue();
         if (uid == null || uid.trim().isEmpty()) {
             isAdmin.setValue(false);
+            android.util.Log.w(TAG_VM, "checkPermissions: uid is null/empty → isAdmin=false; fetchProjects()");
             fetchProjects();
             return;
         }
@@ -89,45 +104,55 @@ public class MyProjectsViewModel extends ViewModel {
                 admin = (p == Appraiser.AccessPermission.ADMIN || p == Appraiser.AccessPermission.SUPER_ADMIN);
             }
             isAdmin.setValue(admin);
+            android.util.Log.d(TAG_VM, "checkPermissions.onComplete: isAdmin=" + admin + " → fetchProjects()");
             fetchProjects();
         });
     }
 
     public void fetchProjects() {
         String uid = userId.getValue();
+        Boolean viewAll = isViewingAll.getValue() != null && isViewingAll.getValue();
+        android.util.Log.d(TAG_VM, "fetchProjects(): uid=" + uid + ", viewingAll=" + viewAll);
+
         isRefreshing.setValue(true);
         if (uid == null || uid.trim().isEmpty()) {
-            // אין משתמש – ננקה רשימה
             ProjectRepository.getInstance().stopListening();
             allProjects.setValue(new ArrayList<>());
             isRefreshing.setValue(false);
+            android.util.Log.w(TAG_VM, "fetchProjects(): uid empty → set empty list");
             return;
         }
-        Boolean viewAll = isViewingAll.getValue() != null && isViewingAll.getValue();
         if (viewAll) {
+            android.util.Log.d(TAG_VM, "fetchProjects(): loadAllProjectsWithListener()");
             ProjectRepository.getInstance().loadAllProjectsWithListener();
         } else {
+            android.util.Log.d(TAG_VM, "fetchProjects(): loadActiveProjectsForAppraiser(uid)");
             ProjectRepository.getInstance().loadActiveProjectsForAppraiser(uid);
         }
-        // ProjectRepository יעדכן את ה-LiveData שלו; את שלנו נעדכן דרך ה-Activity observer שקיים
         isRefreshing.setValue(false);
     }
 
     public void loadAllAppraisers() {
+        android.util.Log.d(TAG_VM, "loadAllAppraisers()");
         ProjectRepository.getInstance().getAllAppraisers(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
                 appraisers.setValue(task.getResult());
+                android.util.Log.d(TAG_VM, "loadAllAppraisers.onComplete: size=" + task.getResult().size());
             } else {
                 toast("שגיאה בטעינת השמאים במערכת");
+                android.util.Log.e(TAG_VM, "loadAllAppraisers.onComplete: FAILED", task.getException());
             }
         });
     }
 
     // ==== Actions ====
     public void deleteProject(@NonNull String projectId) {
+        android.util.Log.d(TAG_VM, "deleteProject: pid=" + projectId);
         isRefreshing.setValue(true);
         ProjectRepository.getInstance().deleteProject(projectId, task -> {
-            if (task.isSuccessful()) {
+            boolean ok = task.isSuccessful();
+            android.util.Log.d(TAG_VM, "deleteProject.onComplete: ok=" + ok);
+            if (ok) {
                 toast("הפרויקט נמחק בהצלחה");
                 fetchProjects();
             } else {
@@ -138,9 +163,12 @@ public class MyProjectsViewModel extends ViewModel {
     }
 
     public void updateCoAppraisers(@NonNull String projectId, @NonNull List<String> selectedCoAppraiserIds) {
+        android.util.Log.d(TAG_VM, "updateCoAppraisers: pid=" + projectId + " selected=" + selectedCoAppraiserIds);
         ProjectRepository.getInstance().updateProjectAndAppraiserAssignments(
                 projectId, selectedCoAppraiserIds, task -> {
-                    if (task.isSuccessful()) {
+                    boolean ok = task.isSuccessful();
+                    android.util.Log.d(TAG_VM, "updateCoAppraisers.onComplete: ok=" + ok);
+                    if (ok) {
                         toast("שמאים שותפים עודכנו בהצלחה ✅");
                         fetchProjects();
                     } else {
@@ -155,6 +183,11 @@ public class MyProjectsViewModel extends ViewModel {
         List<Project> base = allProjects.getValue();
         ProjectFilter f = getCurrentFilter();
         if (base == null) base = new ArrayList<>();
-        filtered.setValue(ProjectFilterEngine.apply(base, f));
+        List<Project> out = ProjectFilterEngine.apply(base, f);
+        filtered.setValue(out);
+
+        android.util.Log.d(TAG_VM, "recompute: base=" + base.size()
+                + ", filtered=" + (out == null ? 0 : out.size())
+                + ", filter=" + new com.google.gson.Gson().toJson(f));
     }
 }

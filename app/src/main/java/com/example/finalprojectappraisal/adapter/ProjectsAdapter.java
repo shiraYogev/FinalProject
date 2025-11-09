@@ -3,6 +3,8 @@ package com.example.finalprojectappraisal.adapter;
 import android.content.Context;
 import android.content.Intent;
 import android.text.TextUtils;
+import android.util.Log;
+import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,67 +20,71 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.finalprojectappraisal.R;
-import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.database.constants.FirestoreConstants;
+import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Project;
 import com.example.finalprojectappraisal.utils.MapIntentUtils;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+
+// Glide - ודאי שיש תלות ב-gradle (ראו בסוף)
+import com.bumptech.glide.Glide;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-// import com.bumptech.glide.Glide; // אם תרצי טעינת תמונות ממוזערות
 
 public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.ProjectViewHolder> {
 
+    private static final String TAG_AD = "MyProjectsAdapter";
+
     public interface ProjectActionListener {
         void onEdit(Project project);
-        void onImages(Project project);
+        void onAddNote(Project project);   // ברור יותר מ-onImages
         void onReport(Project project);
         void onDelete(Project project);
         void onAssignAppraiser(Project project);
-
     }
 
     private final Context context;
     private final ProjectActionListener listener;
 
-    // מחזיקים עותק פרטי כדי למנוע שינויים חיצוניים ברשימה
     private final List<Project> projects = new ArrayList<>();
-
-    // הוספה חדשה: הרשאות משתמש
     private boolean isAdmin = false;
     private String currentUserId = null;
 
-    // Constructor המקורי (נשאר לתאימות לאחור)
+    // מטמון URL של תמונת חזית לכל פרויקט
+    private static final LruCache<String, String> frontImageCache = new LruCache<>(100);
+
     public ProjectsAdapter(List<Project> initial, ProjectActionListener listener, Context context) {
         this(initial, listener, context, false, null);
     }
 
-    // Constructor חדש עם הרשאות
     public ProjectsAdapter(List<Project> initial, ProjectActionListener listener, Context context,
                            boolean isAdmin, String currentUserId) {
         this.listener = listener;
         this.context = context;
         this.isAdmin = isAdmin;
         this.currentUserId = currentUserId;
-        setHasStableIds(true); // מאפשר אנימציות טובות וסקרול חלק
-        if (initial != null) {
-            this.projects.addAll(initial);
-        }
+        setHasStableIds(true);
+        if (initial != null) this.projects.addAll(initial);
+        Log.d(TAG_AD, "ctor: initSize=" + this.projects.size());
     }
 
-    // מתודה לעדכון הרשאות (כדי לא ליצור adapter חדש בכל עדכון)
     public void updatePermissions(boolean isAdmin, String currentUserId) {
         this.isAdmin = isAdmin;
         this.currentUserId = currentUserId;
+        Log.d(TAG_AD, "updatePermissions: isAdmin=" + isAdmin + " currentUserId=" + currentUserId);
         notifyDataSetChanged();
     }
 
     @NonNull
     @Override
     public ProjectViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        Log.d(TAG_AD, "onCreateViewHolder");
         View view = LayoutInflater.from(context).inflate(R.layout.item_project_card, parent, false);
         return new ProjectViewHolder(view);
     }
@@ -86,11 +92,16 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
     @Override
     public void onBindViewHolder(@NonNull ProjectViewHolder holder, int position) {
         Project project = projects.get(position);
+        String pid = (project != null ? project.getProjectId() : null);
+        Log.d(TAG_AD, "onBindViewHolder pos=" + position + " pid=" + pid);
+
+        // Placeholder ברירת מחדל לתמונה (עד שנטען)
+        holder.imageThumb.setImageResource(android.R.drawable.ic_menu_gallery);
 
         // כתובת
         holder.txtAddress.setText(safeOrDash(project != null ? project.getFullAddress() : null));
 
-        // הערה (הסתרה אם ריק)
+        // הערה (הצג/הסתר לפי תוכן)
         String note = project != null ? project.getNote() : null;
         if (TextUtils.isEmpty(note)) {
             holder.txtNote.setVisibility(View.GONE);
@@ -99,12 +110,13 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             holder.txtNote.setText(note);
         }
 
-        // 🗺️ כפתור מפה
-        // 🗺️ כפתור מפה - עכשיו עם דיאלוג בחירה
+        // כפתור מפה
         String address = (project != null) ? project.getFullAddress() : null;
         holder.btnMap.setEnabled(!TextUtils.isEmpty(address));
-        // במקום קריאה ישירה, נפנה למתודה חדשה
-        holder.btnMap.setOnClickListener(v -> showMapOptionsDialog(address));
+        holder.btnMap.setOnClickListener(v -> {
+            Log.d(TAG_AD, "click: btnMap pid=" + pid + " addr=" + address);
+            showMapOptionsDialog(address);
+        });
 
         // סטטוס
         String status = project != null ? project.getProjectStatus() : null;
@@ -120,126 +132,102 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         long lastUpdate = (project != null) ? project.getLastUpdateDateMillis() : 0L;
         holder.txtDate.setText(lastUpdate > 0 ? "עודכן: " + formatDate(lastUpdate) : "");
 
-        // **הוספה חדשה: הצגת מי הוא בעל הפרויקט (למנהלים)**
+        // אינדיקציה למנהלים
         if (isAdmin && project != null && project.getAppraiserId() != null) {
-            // אפשר להוסיף אינדיקטור או TextView נוסף
-            // לדוגמה, שינוי צבע רקע או הוספת טקסט
             if (!project.getAppraiserId().equals(currentUserId)) {
-                // זה פרויקט של מישהו אחר - אפשר להוסיף סימון
                 holder.txtClient.append(" (פרויקט של שמאי אחר)");
             }
         }
 
-        // **הוספה חדשה: קביעת הרשאות לכפתורים**
+        // הרשאות לעריכה
         boolean canEdit = determineEditPermission(project);
+        Log.d(TAG_AD, "onBindViewHolder pid=" + pid + " canEdit=" + canEdit + " isAdmin=" + isAdmin);
 
-        // 🆕 כפתור "הקצה שמאי" גלוי רק למנהלים
+        // הקצה שמאי — רק למנהלים
         if (isAdmin && project != null) {
             holder.btnAssignAppraiser.setVisibility(View.VISIBLE);
             holder.btnAssignAppraiser.setOnClickListener(v -> {
+                Log.d(TAG_AD, "click: assignAppraiser pid=" + pid);
                 if (listener != null) listener.onAssignAppraiser(project);
             });
         } else {
             holder.btnAssignAppraiser.setVisibility(View.GONE);
         }
 
-
-        // כפתורי עריכה ומחיקה - רק למי שמורשה
+        // נראות כפתורי עריכה/מחיקה
         holder.btnEdit.setVisibility(canEdit ? View.VISIBLE : View.GONE);
         holder.btnDelete.setVisibility(canEdit ? View.VISIBLE : View.GONE);
         holder.btnChangeStatus.setVisibility(canEdit ? View.VISIBLE : View.GONE);
         holder.btnMore.setVisibility(canEdit ? View.VISIBLE : View.GONE);
 
-        // כפתורי צפייה - גלויים לכולם
-        holder.btnImages.setVisibility(View.VISIBLE);
+        // כפתורי צפייה/פעולות כלליות
+        holder.btnAddNote.setVisibility(View.VISIBLE);
         holder.btnReport.setVisibility(View.VISIBLE);
         holder.btnMap.setVisibility(View.VISIBLE);
 
-        // כפתורי פעולה (רק אם יש הרשאה)
         if (canEdit) {
-            holder.btnEdit.setOnClickListener(v -> showEditMenu(v, project));
-            holder.btnMore.setOnClickListener(v -> showEditMenu(v, project));
-
+            holder.btnEdit.setOnClickListener(v -> {
+                Log.d(TAG_AD, "click: edit menu pid=" + pid);
+                showEditMenu(v, project);
+            });
+            holder.btnMore.setOnClickListener(v -> {
+                Log.d(TAG_AD, "click: more menu pid=" + pid);
+                showEditMenu(v, project);
+            });
             holder.btnChangeStatus.setOnClickListener(v -> {
+                Log.d(TAG_AD, "click: changeStatus pid=" + pid);
                 if (project == null) return;
                 showStatusDialog(project, holder);
             });
-
             holder.btnDelete.setOnClickListener(v -> {
+                Log.d(TAG_AD, "click: delete pid=" + pid);
                 if (listener != null && project != null) listener.onDelete(project);
             });
         }
 
-        // כפתורי צפייה (תמיד פעילים)
-        holder.btnImages.setOnClickListener(v -> {
-            if (listener != null && project != null) listener.onImages(project);
+        // הוסף הערה
+        holder.btnAddNote.setOnClickListener(v -> {
+            Log.d(TAG_AD, "click: addNote pid=" + pid);
+            if (listener != null && project != null) listener.onAddNote(project);
         });
+
+        // דו"ח
         holder.btnReport.setOnClickListener(v -> {
+            Log.d(TAG_AD, "click: report pid=" + pid);
             if (listener != null && project != null) listener.onReport(project);
         });
+
+        // טעינת תמונת חזית (front_image) אם קיימת
+        loadFrontImage(project, holder.imageThumb);
     }
 
-    /**
-     * מציג דיאלוג לבחירת אפליקציית מפה (Google Maps, Waze, Govmap)
-     * וקורא למתודה המתאימה ב-MapIntentUtils
-     */
+    /** דיאלוג בחירת אפליקציית מפה */
     private void showMapOptionsDialog(String address) {
         if (TextUtils.isEmpty(address)) {
             Toast.makeText(context, "כתובת לא זמינה לפתיחת מפה.", Toast.LENGTH_SHORT).show();
             return;
         }
-
-        final String[] options = new String[] {
-                "גוגל מפות (ניווט)",
-                "Waze (ניווט)",
-                "Govmap (מפה ממשלתית)"
-        };
-
+        final String[] options = new String[] { "גוגל מפות (ניווט)", "Waze (ניווט)", "Govmap (ממשלתי)" };
         new AlertDialog.Builder(context)
                 .setTitle("בחר אפליקציית מפה")
                 .setItems(options, (dialog, which) -> {
-                    switch (which) {
-                        case 0:
-                            // Google Maps - שימוש במתודה הקיימת
-                            MapIntentUtils.openAddressInMaps(context, address);
-                            break;
-                        case 1:
-                            // Waze - יש לוודא שהמתודה MapIntentUtils.openAddressInWaze קיימת
-                            MapIntentUtils.openAddressInWaze(context, address);
-                            break;
-                        case 2:
-                            // Govmap - יש לוודא שהמתודה MapIntentUtils.openAddressInGovmap קיימת
-                            MapIntentUtils.openAddressInGovmap(context, address);
-                            break;
-                    }
+                    if (which == 0) MapIntentUtils.openAddressInMaps(context, address);
+                    else if (which == 1) MapIntentUtils.openAddressInWaze(context, address);
+                    else MapIntentUtils.openAddressInGovmap(context, address);
                 })
                 .setNegativeButton("ביטול", null)
                 .show();
     }
 
-    /**
-     * קובע האם למשתמש הנוכחי יש הרשאה לערוך את הפרויקט
-     */
+    /** הרשאת עריכה למשתמש הנוכחי */
     private boolean determineEditPermission(Project project) {
-        if (project == null || currentUserId == null) {
-            return false;
-        }
-
-        if (isAdmin) {
-            // מנהלים יכולים לערוך את כל הפרויקטים
-            return true;
-        } else {
-            // משתמש רגיל יכול לערוך אם הוא השמאי הראשי או שמאי שותף
-            return project.isAppraiserAssigned(currentUserId);
-        }
+        if (project == null || currentUserId == null) return false;
+        if (isAdmin) return true;
+        return project.isAppraiserAssigned(currentUserId);
     }
 
-    @Override
-    public int getItemCount() {
-        return projects.size();
-    }
+    @Override public int getItemCount() { return projects.size(); }
 
-    // === Stable IDs כדי לעזור ל-RecyclerView לזהות פריטים ===
     @Override
     public long getItemId(int position) {
         Project p = projects.get(position);
@@ -247,16 +235,17 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         return (id != null) ? id.hashCode() : RecyclerView.NO_ID;
     }
 
-    // === עדכון רשימה עם DiffUtil (במקום notifyDataSetChanged) ===
+    /** עדכון נתונים עם DiffUtil */
     public void updateData(List<Project> newProjects) {
         List<Project> next = (newProjects != null) ? new ArrayList<>(newProjects) : new ArrayList<>();
+        Log.d(TAG_AD, "updateData: old=" + this.projects.size() + " new=" + next.size());
         DiffUtil.DiffResult diff = DiffUtil.calculateDiff(new ProjectDiff(this.projects, next), true);
         this.projects.clear();
         this.projects.addAll(next);
         diff.dispatchUpdatesTo(this);
     }
 
-    // ===== שינוי סטטוס עם שמירה ל-DB בשדה projectStatus =====
+    /** שינוי סטטוס + שמירה ל-DB */
     private void showStatusDialog(Project project, ProjectViewHolder holder) {
         if (project == null || TextUtils.isEmpty(project.getProjectId())) return;
 
@@ -266,7 +255,6 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             return;
         }
 
-        // סימון ברירת מחדל לפי הערך הנוכחי
         String current = project.getProjectStatus() == null ? "" : project.getProjectStatus();
         int checked = -1;
         for (int i = 0; i < statuses.length; i++) {
@@ -280,14 +268,16 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
                 .setNegativeButton("ביטול", null)
                 .setPositiveButton("שמירה", (dialog, which) -> {
                     String newStatus = statuses[selected[0]];
+                    Log.d(TAG_AD, "saveStatus pid=" + project.getProjectId() + " → " + newStatus);
 
-                    // נשמור ל-DB: projectStatus + lastUpdateDate מהשרת
                     java.util.Map<String, Object> fields = new java.util.HashMap<>();
                     fields.put(FirestoreConstants.FIELD_PROJECT_STATUS, newStatus);
-                    fields.put("lastUpdateDate", com.google.firebase.firestore.FieldValue.serverTimestamp());
+                    fields.put(FirestoreConstants.FIELD_LAST_UPDATE_DATE,
+                            com.google.firebase.firestore.FieldValue.serverTimestamp());
 
                     ProjectRepository.getInstance()
                             .updateMultipleFields(project.getProjectId(), fields, task -> {
+                                Log.d(TAG_AD, "saveStatus.onComplete ok=" + task.isSuccessful());
                                 if (task.isSuccessful()) {
                                     project.setProjectStatus(newStatus);
                                     holder.txtStatus.setText(newStatus);
@@ -300,7 +290,7 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
                 .show();
     }
 
-    // ===== תפריט עריכה לכל פרויקט =====
+    /** תפריט עריכה */
     private void showEditMenu(View anchor, Project project) {
         if (project == null) return;
 
@@ -315,9 +305,6 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             if (id == R.id.action_edit_client) {
                 intent = new Intent(context,
                         com.example.finalprojectappraisal.activity.newProject.client.ClientDetailsActivity.class);
-                intent.putExtra("projectId", projectId);
-                context.startActivity(intent);
-                return true;
 
             } else if (id == R.id.action_edit_apartment) {
                 intent = new Intent(context,
@@ -347,11 +334,107 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         menu.show();
     }
 
+    // ===== טעינת תמונת חזית =====
+
+    /** טוען תמונת חזית (front_image) אם קיימת ב-Firestore; עם מטמון והגנות ל-Recycling */
+    private void loadFrontImage(Project project, ImageView target) {
+        if (project == null || TextUtils.isEmpty(project.getProjectId()) || target == null) {
+            if (target != null) target.setImageResource(android.R.drawable.ic_menu_gallery);
+            return;
+        }
+        final String pid = project.getProjectId();
+
+        // הגנה מפני Recycling: נסמן את ה-ImageView בפרויקט הנוכחי
+        target.setTag(pid);
+
+        // 1) אם כבר יש בקאש — נטען מיד
+        String cachedUrl = frontImageCache.get(pid);
+        if (!TextUtils.isEmpty(cachedUrl)) {
+            if (pid.equals(target.getTag())) {
+                Glide.with(context).load(cachedUrl)
+                        .placeholder(android.R.drawable.ic_menu_gallery)
+                        .into(target);
+            }
+            return;
+        }
+
+        // 2) נשלוף את המסמך images/main ונקרא את front_image
+        FirebaseFirestore.getInstance()
+                .collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .document(pid)
+                .collection(FirestoreConstants.SUBCOLLECTION_IMAGES)
+                .document(FirestoreConstants.IMAGES_DOC_MAIN)
+                .get()
+                .addOnSuccessListener(doc -> handleFrontImageDoc(doc, pid, target))
+                .addOnFailureListener(e -> {
+                    if (pid.equals(target.getTag())) {
+                        target.setImageResource(android.R.drawable.ic_menu_gallery);
+                    }
+                });
+    }
+
+    /** טיפול במסמך images/main שהוחזר: המרה ל-URL וטעינה */
+    private void handleFrontImageDoc(DocumentSnapshot doc, String pid, ImageView target) {
+        if (doc == null || !doc.exists()) {
+            if (pid.equals(target.getTag())) {
+                target.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
+            return;
+        }
+        String pathOrUrl = doc.getString(FirestoreConstants.FIELD_FRONT_IMAGE);
+
+        if (TextUtils.isEmpty(pathOrUrl)) {
+            if (pid.equals(target.getTag())) {
+                target.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
+            return;
+        }
+
+        // אם זה כבר URL (http/https) — נטען מייד
+        if (pathOrUrl.startsWith("http")) {
+            frontImageCache.put(pid, pathOrUrl);
+            if (pid.equals(target.getTag())) {
+                Glide.with(context).load(pathOrUrl)
+                        .placeholder(android.R.drawable.ic_menu_gallery)
+                        .into(target);
+            }
+            return;
+        }
+
+        // אם זה נתיב לאחסון (gs:// או נתיב יחסי) — נמיר ל-Download URL
+        try {
+            FirebaseStorage.getInstance().getReference(pathOrUrl)
+                    .getDownloadUrl()
+                    .addOnSuccessListener(uri -> {
+                        String url = (uri != null) ? uri.toString() : null;
+                        if (!TextUtils.isEmpty(url)) {
+                            frontImageCache.put(pid, url);
+                            if (pid.equals(target.getTag())) {
+                                Glide.with(context).load(url)
+                                        .placeholder(android.R.drawable.ic_menu_gallery)
+                                        .into(target);
+                            }
+                        } else {
+                            if (pid.equals(target.getTag())) {
+                                target.setImageResource(android.R.drawable.ic_menu_gallery);
+                            }
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        if (pid.equals(target.getTag())) {
+                            target.setImageResource(android.R.drawable.ic_menu_gallery);
+                        }
+                    });
+        } catch (Exception ex) {
+            if (pid.equals(target.getTag())) {
+                target.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
+        }
+    }
+
     // ===== Utils =====
 
-    private String safeOrDash(String s) {
-        return TextUtils.isEmpty(s) ? "—" : s;
-    }
+    private String safeOrDash(String s) { return TextUtils.isEmpty(s) ? "—" : s; }
 
     private String formatDate(long epochMillis) {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", new Locale("he", "IL"));
@@ -362,9 +445,8 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
     static class ProjectViewHolder extends RecyclerView.ViewHolder {
         ImageView imageThumb;
         TextView txtAddress, txtNote, txtStatus, txtClient, txtDate;
-        Button btnEdit, btnImages, btnReport, btnDelete, btnChangeStatus, btnMap, btnAssignAppraiser;
+        Button btnEdit, btnAddNote, btnReport, btnDelete, btnChangeStatus, btnMap, btnAssignAppraiser;
         View btnMore;
-
         public ProjectViewHolder(@NonNull View itemView) {
             super(itemView);
             imageThumb = itemView.findViewById(R.id.imageThumb);
@@ -374,26 +456,24 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             txtClient  = itemView.findViewById(R.id.txtClient);
             txtDate    = itemView.findViewById(R.id.txtDate);
             btnEdit    = itemView.findViewById(R.id.btnEdit);
-            btnImages  = itemView.findViewById(R.id.btnImages);
+            btnAddNote = itemView.findViewById(R.id.btnAddNote); // ודאי שה-XML מעודכן
             btnReport  = itemView.findViewById(R.id.btnReport);
             btnDelete  = itemView.findViewById(R.id.btnDelete);
             btnMore    = itemView.findViewById(R.id.btnMore);
             btnChangeStatus = itemView.findViewById(R.id.btnChangeStatus);
             btnMap     = itemView.findViewById(R.id.btnMap);
-            btnAssignAppraiser = itemView.findViewById(R.id.btnAssignAppraiser); // ** 🆕 אתחול הכפתור החדש **
-            // txtAppraisers = itemView.findViewById(R.id.txtAppraisers); // אם הוספת אותו
+            btnAssignAppraiser = itemView.findViewById(R.id.btnAssignAppraiser);
         }
     }
 
-    // ===== DiffUtil Callback =====
-    /** מומלץ להשאיר כ-inner class כאן בתוך האדפטר. אם תרצי – אפשר להוציא לקובץ נפרד. */
+    // ===== DiffUtil Callback (אתחול בטוח) =====
     private static class ProjectDiff extends DiffUtil.Callback {
-        private final List<Project> oldList;
-        private final List<Project> newList;
+        private final List<Project> oldList = new ArrayList<>();
+        private final List<Project> newList = new ArrayList<>();
 
         ProjectDiff(List<Project> oldList, List<Project> newList) {
-            this.oldList = (oldList != null) ? oldList : new ArrayList<>();
-            this.newList = (newList != null) ? newList : new ArrayList<>();
+            if (oldList != null) this.oldList.addAll(oldList);
+            if (newList != null) this.newList.addAll(newList);
         }
 
         @Override public int getOldListSize() { return oldList.size(); }
@@ -411,7 +491,6 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             Project o = oldList.get(oldItemPosition);
             Project n = newList.get(newItemPosition);
 
-            // השוואה לפי שדות שמוצגים בכרטיס
             if (!eq(o.getFullAddress(), n.getFullAddress())) return false;
 
             String oc = (o.getClient() != null) ? o.getClient().getFullName() : null;
@@ -419,23 +498,24 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             if (!eq(oc, nc)) return false;
 
             if (!eq(o.getProjectStatus(), n.getProjectStatus())) return false;
-
             if (o.getLastUpdateDateMillis() != n.getLastUpdateDateMillis()) return false;
-
             if (!eq(o.getNote(), n.getNote())) return false;
 
-            // ** 🆕 הוסף השוואה לשמאים שותפים **
-            if (!o.getCoAppraiserIds().equals(n.getCoAppraiserIds())) return false;
+            List<String> ocos = o.getCoAppraiserIds();
+            List<String> ncos = n.getCoAppraiserIds();
+            if (ocos != null && ncos != null) {
+                if (!ocos.equals(ncos)) return false;
+            } else if (ocos != ncos) {
+                return false;
+            }
 
-
-            // אם יש עוד שדות שמופיעים ב-ViewHolder – אפשר להוסיף כאן
             return true;
         }
 
         private static boolean eq(String a, String b) {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
-            return a.equals(b); // אם תרצי ללא רישיות: a.equalsIgnoreCase(b)
+            return a.equals(b);
         }
     }
 }

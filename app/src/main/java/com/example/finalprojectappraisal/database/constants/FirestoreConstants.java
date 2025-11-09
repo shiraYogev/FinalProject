@@ -6,10 +6,7 @@ package com.example.finalprojectappraisal.database.constants;
  */
 public final class FirestoreConstants {
 
-    // Private constructor to prevent instantiation
-    private FirestoreConstants() {
-        throw new AssertionError("Cannot instantiate constants class");
-    }
+    private FirestoreConstants() { throw new AssertionError("Cannot instantiate constants class"); }
 
     // =========================
     // Collection Names
@@ -22,13 +19,11 @@ public final class FirestoreConstants {
     // =========================
     // Subcollection Names
     // =========================
-    // ADD: images subcollection under each project
     public static final String SUBCOLLECTION_IMAGES = "images";
 
     // =========================
     // Fixed document IDs inside subcollections
     // =========================
-    // ADD: single document aggregating image paths
     public static final String IMAGES_DOC_MAIN = "main";
 
     // =========================
@@ -46,6 +41,8 @@ public final class FirestoreConstants {
     public static final String FIELD_CO_APPRAISER_IDS = "coAppraiserIds";
     public static final String FIELD_LAST_UPDATE_DATE = "lastUpdateDate";
 
+    // >>> NEW: note field <<<
+    public static final String FIELD_NOTE = "note";
 
     // =========================
     // Field Names - Apartment
@@ -73,10 +70,8 @@ public final class FirestoreConstants {
     public static final String FIELD_HAS_CENTRAL_HEATING = "hasCentralHeating";
 
     // =========================
-    // Field Names - Image Paths (projects/{projectId}/images/main)
+    // Field Names - Image Paths
     // =========================
-    // ADD: required image path fields
-    // ADD: field key for the array on the Project document
     public static final String FIELD_PROPERTY_IMAGES = "propertyImages";
     public static final String KEY_PROPIMG_NAME = "name";
     public static final String KEY_PROPIMG_PATH = "path";
@@ -106,9 +101,8 @@ public final class FirestoreConstants {
     public static final String STATUS_CANCELLED = "cancelled";
 
     // =========================
-// Field Names - Appraiser (עבור ה-AppraiserRepository או לשליפת הרשאות)
-// =========================
+    // Field Names - Appraiser
+    // =========================
     public static final String FIELD_APPRAISER_ACCESS_PERMISSIONS = "accessPermissions";
-    public static final String FIELD_APPRAISER_ASSIGNED_PROJECTS = "activeProjects"; // <-- זו השורה החדשה!
-
+    public static final String FIELD_APPRAISER_ASSIGNED_PROJECTS = "activeProjects";
 }

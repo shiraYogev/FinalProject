@@ -14,6 +14,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.*;
+import com.google.firebase.storage.FirebaseStorage;
 
 import java.util.*;
 
@@ -43,6 +44,99 @@ class ProjectDataService {
             return;
         }
         db.collection(FirestoreConstants.COLLECTION_PROJECTS).document(projectId).delete().addOnCompleteListener(l);
+    }
+
+    /** מחיקה עמוקה: תמונות ב-Storage + מסמכי images/* + הסרת שיוכים משמאים + מחיקת מסמך הפרויקט */
+    void deleteProjectDeepAndCleanupAssignments(@NonNull String projectId,
+                                                @Nullable OnCompleteListener<Void> listener) {
+        final String TAG = "ProjectDataService";
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+
+        Log.d(TAG, "deleteProjectDeepAndCleanupAssignments: start pid=" + projectId);
+
+        // 1) אסוף נתיבי קבצים מתת-האוסף images/*
+        db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .document(projectId)
+                .collection(FirestoreConstants.SUBCOLLECTION_IMAGES)
+                .get()
+                .addOnCompleteListener(taskImgs -> {
+                    List<Task<?>> storageDeletes = new ArrayList<>();
+
+                    if (taskImgs.isSuccessful() && taskImgs.getResult() != null) {
+                        for (DocumentSnapshot doc : taskImgs.getResult()) {
+                            Map<String, Object> data = doc.getData();
+                            if (data == null) continue;
+                            for (Object v : data.values()) {
+                                if (v instanceof String) {
+                                    String pathOrUrl = (String) v;
+                                    // מוחקים רק רפרנסים של Storage (לא https)
+                                    if (!pathOrUrl.startsWith("http")) {
+                                        try {
+                                            storageDeletes.add(storage.getReference(pathOrUrl).delete());
+                                        } catch (Exception ignore) {
+                                            Log.w(TAG, "storage ref invalid: " + pathOrUrl);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Log.w(TAG, "images subcollection list failed (continue anyway)", taskImgs.getException());
+                    }
+
+                    // 2) אחרי נסיון מחיקת קבצי Storage → מחק את מסמכי images/*
+                    Tasks.whenAllComplete(storageDeletes).addOnCompleteListener(t1 -> {
+                        db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                                .document(projectId)
+                                .collection(FirestoreConstants.SUBCOLLECTION_IMAGES)
+                                .get()
+                                .addOnCompleteListener(taskGetSub -> {
+                                    List<Task<?>> docDeletes = new ArrayList<>();
+                                    if (taskGetSub.isSuccessful() && taskGetSub.getResult() != null) {
+                                        for (DocumentSnapshot d : taskGetSub.getResult()) {
+                                            docDeletes.add(d.getReference().delete());
+                                        }
+                                    } else {
+                                        Log.w(TAG, "fetch images docs for delete failed (continue)", taskGetSub.getException());
+                                    }
+
+                                    Tasks.whenAllComplete(docDeletes).addOnCompleteListener(t2 -> {
+                                        // 3) הסרת projectId מ-activeProjects של כל השמאים שמכילים אותו
+                                        db.collection(FirestoreConstants.COLLECTION_APPRAISERS)
+                                                .whereArrayContains(FirestoreConstants.FIELD_APPRAISER_ASSIGNED_PROJECTS, projectId)
+                                                .get()
+                                                .addOnCompleteListener(taskApps -> {
+                                                    List<Task<?>> appUpdates = new ArrayList<>();
+                                                    if (taskApps.isSuccessful() && taskApps.getResult() != null) {
+                                                        for (DocumentSnapshot appDoc : taskApps.getResult()) {
+                                                            appUpdates.add(
+                                                                    appDoc.getReference().update(
+                                                                            FirestoreConstants.FIELD_APPRAISER_ASSIGNED_PROJECTS,
+                                                                            FieldValue.arrayRemove(projectId)
+                                                                    )
+                                                            );
+                                                        }
+                                                    } else {
+                                                        Log.w(TAG, "appraisers cleanup query failed (continue)", taskApps.getException());
+                                                    }
+
+                                                    Tasks.whenAllComplete(appUpdates).addOnCompleteListener(t3 -> {
+                                                        // 4) מחיקת מסמך הפרויקט עצמו
+                                                        db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                                                                .document(projectId)
+                                                                .delete()
+                                                                .addOnCompleteListener(delTask -> {
+                                                                    Log.d(TAG, "project doc delete done ok=" + delTask.isSuccessful());
+                                                                    if (listener != null) {
+                                                                        listener.onComplete((Task<Void>) delTask);
+                                                                    }
+                                                                });
+                                                    });
+                                                });
+                                    });
+                                });
+                    });
+                });
     }
 
     void projectExists(@NonNull String projectId, @Nullable OnCompleteListener<Boolean> l) {

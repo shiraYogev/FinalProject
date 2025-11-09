@@ -135,15 +135,16 @@
                     android:text="ערוך"
                     android:textSize="13sp" />
 
+                <!-- היה btnImages — עכשיו btnAddNote -->
                 <Button
-                    android:id="@+id/btnImages"
+                    android:id="@+id/btnAddNote"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
                     android:layout_marginEnd="4dp"
                     android:layout_marginBottom="4dp"
                     android:minWidth="64dp"
                     android:minHeight="48dp"
-                    android:text="תמונות"
+                    android:text="הוסף הערה"
                     android:textSize="13sp" />
 
                 <Button

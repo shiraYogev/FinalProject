@@ -1,6 +1,7 @@
 package com.example.finalprojectappraisal.database.repository;
 
 import android.net.Uri;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -12,7 +13,6 @@ import com.example.finalprojectappraisal.database.updater.ProjectUpdateManager;
 import com.example.finalprojectappraisal.database.validator.ProjectDataValidator;
 import com.example.finalprojectappraisal.model.Appraiser;
 import com.example.finalprojectappraisal.model.BankDetails;
-import com.example.finalprojectappraisal.model.Client;
 import com.example.finalprojectappraisal.model.Image;
 import com.example.finalprojectappraisal.model.Project;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -20,7 +20,9 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue; // <<< NEW
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Transaction;
 
 import java.util.*;
 
@@ -32,6 +34,8 @@ public class ProjectRepository {
         return instance;
     }
 
+    private static final String TAG_REPO = "MyProjectsRepo";
+
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     // Services
@@ -40,7 +44,7 @@ public class ProjectRepository {
     private final ProjectLiveListeners liveListeners;
     private final AppraiserRepository appraiserRepo;
 
-    // Updater (קיים אצלך)
+    // Updater
     private final ProjectUpdateManager updateManager;
 
     // State
@@ -58,7 +62,6 @@ public class ProjectRepository {
         this.appraiserRepo = AppraiserRepository.getInstance();
         this.updateManager = new ProjectUpdateManager(db, errorMessage);
         this.assignmentService = new ProjectAssignmentService(db, errorMessage);
-
     }
 
     // ===== Creation =====
@@ -106,7 +109,7 @@ public class ProjectRepository {
     }
 
     public void loadActiveProjectsForAppraiser(@NonNull String userId) {
-        lastUsedUserIdForListening = userId;
+        Log.d(TAG_REPO, "loadActiveProjectsForAppraiser uid=" + userId);
         stopListening();
         dataService.loadActiveProjectsForAppraiser(userId, allProjects);
     }
@@ -115,20 +118,24 @@ public class ProjectRepository {
         dataService.loadProjectsByStatus(status, listener);
     }
 
-
     // ===== Live listeners =====
-    public void loadAllProjectsWithListener() { stopListening(); liveListeners.listenAll(); }
-    public void stopListening() { liveListeners.stop(); }
+    public void loadAllProjectsWithListener() {
+        Log.d(TAG_REPO, "loadAllProjectsWithListener()");
+        stopListening();
+        liveListeners.listenAll();
+    }
 
     // ===== Updates via UpdateManager =====
-    public void saveClientDetails(@NonNull String projectId, @NonNull Client client, @Nullable OnCompleteListener<Void> l) {
+    public void saveClientDetails(@NonNull String projectId, @NonNull com.example.finalprojectappraisal.model.Client client, @Nullable OnCompleteListener<Void> l) {
         var v = ProjectDataValidator.validateClient(client);
         if (!v.isValid()) { emitErr("Client validation failed: " + v.getErrorsAsString(), l); return; }
         updateManager.saveClientDetails(projectId, client, l);
     }
+
     public void savePropertyDetails(@NonNull String projectId, @NonNull Map<String,Object> props, @Nullable OnCompleteListener<Void> l) {
         updateManager.savePropertyDetails(projectId, props, l);
     }
+
     public void saveApartmentDetails(@NonNull String projectId, @NonNull Map<String,Object> apt, @Nullable OnCompleteListener<Void> l) {
         var v = ProjectDataValidator.validateApartmentDetails(apt);
         if (!v.isValid()) { emitErr("Apartment details validation failed: " + v.getErrorsAsString(), l); return; }
@@ -137,9 +144,11 @@ public class ProjectRepository {
             updateManager.cleanupRootDuplicateFields(projectId, l);
         });
     }
+
     public void cleanupRootDuplicates(@NonNull String projectId, @Nullable OnCompleteListener<Void> l) {
         updateManager.cleanupRootDuplicateFields(projectId, l);
     }
+
     public void updateMultipleFields(@NonNull String projectId, @NonNull Map<String,Object> fields, @Nullable OnCompleteListener<Void> l) {
         updateManager.updateMultipleFields(projectId, fields, l);
     }
@@ -155,11 +164,17 @@ public class ProjectRepository {
 
     // ===== Deletion =====
     public void deleteProject(@NonNull String projectId, @Nullable OnCompleteListener<Void> l) {
-        dataService.deleteProject(projectId, task -> {
+        dataService.deleteProjectDeepAndCleanupAssignments(projectId, task -> {
             if (task.isSuccessful()) {
-                if (projectId.equals(currentProjectId)) { currentProjectId = null; currentProject.setValue(null); }
-                if (lastUsedUserIdForListening != null) loadProjectsForAppraiser(lastUsedUserIdForListening);
-                else loadAllProjectsWithListener();
+                if (projectId.equals(currentProjectId)) {
+                    currentProjectId = null;
+                    currentProject.setValue(null);
+                }
+                if (lastUsedUserIdForListening != null) {
+                    loadProjectsForAppraiser(lastUsedUserIdForListening);
+                } else {
+                    loadAllProjectsWithListener();
+                }
             }
             if (l != null) l.onComplete(task);
         });
@@ -219,6 +234,43 @@ public class ProjectRepository {
         assignmentService.updateProjectAndAppraiserAssignments(projectId, newCoAppraiserIds, listener);
     }
 
+    public void updateProjectNote(@NonNull String projectId,
+                                  @NonNull String newNote,
+                                  boolean append,
+                                  @Nullable OnCompleteListener<Void> listener) {
+        if (append) {
+            // מגדירים מפורשות שהטרנזקציה מחזירה Void
+            Task<Void> tx = db.runTransaction((Transaction.Function<Void>) trx -> {
+                DocumentReference doc = db.collection(FirestoreConstants.COLLECTION_PROJECTS).document(projectId);
+                DocumentSnapshot snap = trx.get(doc);
+
+                String existing = snap.getString(FirestoreConstants.FIELD_NOTE);
+                String time = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+                        .format(new java.util.Date());
+
+                String combined = (existing == null || existing.isEmpty())
+                        ? ("• " + newNote + " (" + time + ")")
+                        : (existing + "\n• " + newNote + " (" + time + ")");
+
+                trx.update(doc,
+                        FirestoreConstants.FIELD_NOTE, combined,
+                        FirestoreConstants.FIELD_LAST_UPDATE_DATE, FieldValue.serverTimestamp());
+                return null; // TResult = Void
+            });
+
+            // לא להשתמש ב-?: כדי למנוע קונפליקט בין <Void> ל<Object>
+            if (listener != null) {
+                tx.addOnCompleteListener(listener);
+            } else {
+                tx.addOnCompleteListener(task -> { /* no-op */ });
+            }
+        } else {
+            java.util.Map<String, Object> fields = new java.util.HashMap<>();
+            fields.put(FirestoreConstants.FIELD_NOTE, newNote);
+            fields.put(FirestoreConstants.FIELD_LAST_UPDATE_DATE, FieldValue.serverTimestamp());
+            updateManager.updateMultipleFields(projectId, fields, listener);
+        }
+    }
     // ===== Utils / state =====
     public void refreshCurrentProject() { if (currentProjectId != null) loadProject(currentProjectId); }
     public void projectExists(@NonNull String projectId, @Nullable OnCompleteListener<Boolean> l) { dataService.projectExists(projectId, l); }
@@ -232,5 +284,19 @@ public class ProjectRepository {
     private void emitErr(@NonNull String msg, @Nullable OnCompleteListener<Void> l) {
         errorMessage.setValue(msg);
         if (l != null) l.onComplete(Tasks.forException(new Exception(msg)));
+    }
+
+    /** עוצר את כל ה־listeners החיים על ה־Firestore (קריאה בטוחה). */
+    public void stopListening() {
+        try {
+            if (liveListeners != null) {
+                liveListeners.stop();
+                Log.d(TAG_REPO, "stopListening(): cleared active Firestore listeners");
+            } else {
+                Log.d(TAG_REPO, "stopListening(): liveListeners == null (nothing to stop)");
+            }
+        } catch (Exception e) {
+            Log.w(TAG_REPO, "stopListening(): no active listeners or already stopped", e);
+        }
     }
 }
