@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Collections;
+import java.util.HashSet;
 
 /**
  * ViewModel for the Project Preview screen. Loads and formats project header,
@@ -36,6 +38,23 @@ import java.util.Map;
  *   sectioned images (headers + photos), and admin permission flag.
  */
 public class ProjectPreviewViewModel extends ViewModel {
+
+    // ===== Logging helpers (no logic change) =====
+    private static final String TAG = "ProjectPreviewVM";
+    private static final boolean LOG_VERBOSE = true;
+    // For diagnostics only. We DO NOT use it to change values shown on screen.
+    private static final boolean ENABLE_SMART_LOOKUP = false;
+
+    private void logD(String msg) { if (LOG_VERBOSE) android.util.Log.d(TAG, msg); }
+    private void logW(String msg) { android.util.Log.w(TAG, msg); }
+    private void logE(String msg, Throwable t) { android.util.Log.e(TAG, msg, t); }
+
+    private String preview(Object v) {
+        if (v == null) return "null";
+        String s = String.valueOf(v);
+        if (s.length() > 120) s = s.substring(0, 120) + "…(" + s.length() + ")";
+        return s.replace("\n", "\\n");
+    }
 
     // Repositories (DB is always routed via ProjectRepository)
     private final ProjectRepository repo = ProjectRepository.getInstance();
@@ -93,13 +112,21 @@ public class ProjectPreviewViewModel extends ViewModel {
     // --- Header load & bind ---
     private void loadHeader(String projectId) {
         loadingHeader.setValue(true);
+        logD("loadHeader: projectId=" + projectId);
+        long t0 = System.nanoTime();
+
         repo.getProject(projectId, task -> {
+            long dtMs = (System.nanoTime() - t0) / 1_000_000;
             loadingHeader.setValue(false);
+
             if (!task.isSuccessful() || task.getResult() == null || !task.getResult().exists()) {
+                logW("loadHeader: FAILED (exists=" + (task.getResult() != null && task.getResult().exists()) + ") in " + dtMs + "ms");
                 header.setValue(ProjectHeaderUi.error("Failed to load project"));
                 return;
             }
-            bindHeader(task.getResult());
+            DocumentSnapshot doc = task.getResult();
+            logD("loadHeader: OK docId=" + doc.getId() + " in " + dtMs + "ms");
+            bindHeader(doc);
         });
     }
 
@@ -122,28 +149,79 @@ public class ProjectPreviewViewModel extends ViewModel {
         long lastUpdatedMillis = extractMillis(doc.get("lastUpdateDate"));
         String lastUpdatedTxt  = formatMillis(lastUpdatedMillis);
 
+        logD("bindHeader: address=" + preview(address) +
+                " | status=" + preview(status) +
+                " | client=" + preview(clientName) +
+                " | lastUpdated=" + preview(lastUpdatedTxt));
+
         header.setValue(new ProjectHeaderUi(address, status, clientName, lastUpdatedTxt, false, null));
     }
 
     // --- Details (sections & fields via dot-notation) ---
     private void loadDetails(String projectId) {
+        logD("loadDetails: projectId=" + projectId);
+        long t0 = System.nanoTime();
+
         repo.getProject(projectId, task -> {
+            long dtMs = (System.nanoTime() - t0) / 1_000_000;
+
             if (!task.isSuccessful() || task.getResult() == null || !task.getResult().exists()) {
+                logW("loadDetails: FAILED in " + dtMs + "ms");
                 details.setValue(new ArrayList<>());
                 return;
             }
+
             DocumentSnapshot doc = task.getResult();
+            Map<String, Object> flat = flatten(doc.getData());
+            Map<String, String> normIndex = buildNormIndex(flat.keySet());
+            logD("loadDetails: OK docId=" + doc.getId() + " • flatKeys=" + flat.size() + " in " + dtMs + "ms");
+
             List<KV> rows = new ArrayList<>();
+            int missing = 0, matched = 0;
 
             for (SectionSpec sec : SECTIONS) {
                 rows.add(KV.header(sec.title));
+                logD("Section ▶ " + sec.title + " (fields=" + sec.fields.size() + ")");
                 for (FieldSpec f : sec.fields) {
-                    Object raw = doc.get(f.path);
+                    Object raw;
+
+                    if (ENABLE_SMART_LOOKUP) {
+                        // Only if explicitly enabled (kept OFF to avoid logic changes)
+                        LookupResult lr = smartLookup(flat, normIndex, f.path);
+                        raw = (lr == null) ? null : lr.value;
+                        if (lr == null) {
+                            logD("  • " + f.path + " ⇒ NOT FOUND (smart lookup on) ");
+                        } else {
+                            logD("  • " + f.path + " ⇒ FOUND as " + lr.realKey + " = " + preview(lr.value));
+                        }
+                    } else {
+                        // Original behavior (no logic change)
+                        raw = doc.get(f.path);
+                        if (raw == null) {
+                            // Diagnostics only: where WOULD it be found?
+                            LookupResult probe = smartLookup(flat, normIndex, f.path);
+                            if (probe != null) {
+                                logD("  • " + f.path + " ⇒ NOT FOUND via doc.get(), BUT exists as: " + probe.realKey + " = " + preview(probe.value));
+                            } else {
+                                logD("  • " + f.path + " ⇒ NOT FOUND. Candidates: camel=" + toCamelTokens(f.path) + ", snake=" + toSnakeTokens(f.path));
+                            }
+                        } else {
+                            logD("  • " + f.path + " ⇒ FOUND via doc.get(): " + preview(raw));
+                        }
+                    }
+
                     String display = toDisplayValue(raw);
-                    if (display == null || display.trim().isEmpty()) display = "—";
+                    if (display == null || display.trim().isEmpty()) {
+                        display = "—";
+                        missing++;
+                    } else {
+                        matched++;
+                    }
                     rows.add(KV.row(f.label, display));
                 }
             }
+
+            logD("loadDetails: done. matched=" + matched + ", missing=" + missing);
             details.setValue(rows);
         });
     }
@@ -180,12 +258,21 @@ public class ProjectPreviewViewModel extends ViewModel {
     // --- Images ---
     private void loadImages(String projectId) {
         loadingImages.setValue(true);
+        logD("loadImages: projectId=" + projectId);
+        long t0 = System.nanoTime();
+
         repo.loadAllImagesForProject(projectId, task -> {
+            long dtMs = (System.nanoTime() - t0) / 1_000_000;
             loadingImages.setValue(false);
+
             List<Image> list = (task.isSuccessful() && task.getResult() != null)
                     ? task.getResult() : new ArrayList<>();
+            logD("loadImages: got " + (list == null ? 0 : list.size()) + " images in " + dtMs + "ms");
+
             images.setValue(list); // keep plain list
-            sectionedImages.setValue(buildSectionedImages(list)); // build headers + photos
+            List<UiImageItem> sectioned = buildSectionedImages(list); // build headers + photos
+            sectionedImages.setValue(sectioned);
+            logD("buildSectionedImages: flatItems=" + sectioned.size());
         });
     }
 
@@ -234,6 +321,17 @@ public class ProjectPreviewViewModel extends ViewModel {
             out.add(UiImageItem.header(heTitle(key)));
             for (Image im : bucket) out.add(UiImageItem.photo(im));
         }
+
+        // Diagnostic counters (no UI change)
+        int buckets = 0, photos = 0, headers = 0;
+        for (String k : byCategory.keySet()) {
+            List<Image> b = byCategory.get(k);
+            if (b != null && !b.isEmpty()) buckets++;
+        }
+        for (UiImageItem it : out) {
+            if (it.type == UiImageItem.TYPE_HEADER) headers++; else photos++;
+        }
+        logD("sectioned: buckets=" + buckets + " | headers=" + headers + " | photos=" + photos);
 
         return out;
     }
@@ -370,7 +468,93 @@ public class ProjectPreviewViewModel extends ViewModel {
         SectionSpec(String title, List<FieldSpec> fields) { this.title = title; this.fields = fields; }
     }
 
-    // Sections copied into VM to keep UI thin
+    // ========== Diagnostics-only lookup helpers (used for logs; no UI/logic changes) ==========
+    private static class LookupResult {
+        final String realKey; final Object value;
+        LookupResult(String realKey, Object value) { this.realKey = realKey; this.value = value; }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> flatten(Object root) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        if (!(root instanceof Map)) return out;
+        flattenRec("", (Map<String, Object>) root, out);
+        return out;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void flattenRec(String prefix, Map<String, Object> m, Map<String, Object> out) {
+        if (m == null) return;
+        for (Map.Entry<String, Object> e : m.entrySet()) {
+            String key = e.getKey();
+            Object val = e.getValue();
+            String path = prefix.isEmpty() ? key : prefix + "." + key;
+            if (val instanceof Map) {
+                flattenRec(path, (Map<String, Object>) val, out);
+            } else {
+                out.put(path, val);
+            }
+        }
+    }
+
+    private Map<String, String> buildNormIndex(java.util.Set<String> keys) {
+        Map<String, String> idx = new LinkedHashMap<>();
+        for (String k : keys) idx.put(norm(k), k);
+        return idx;
+    }
+
+    private String norm(String s) {
+        if (s == null) return "";
+        return s.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+    }
+
+    private String toCamelTokens(String dotted) {
+        String[] t = dotted.split("\\.");
+        for (int i = 0; i < t.length; i++) t[i] = toCamel(t[i]);
+        return String.join(".", t);
+    }
+
+    private String toSnakeTokens(String dotted) {
+        String[] t = dotted.split("\\.");
+        for (int i = 0; i < t.length; i++) t[i] = toSnake(t[i]);
+        return String.join(".", t);
+    }
+
+    private String toCamel(String s) {
+        if (s == null) return "";
+        String[] parts = s.split("[_\\-\\s/]");
+        if (parts.length == 0) return s;
+        StringBuilder sb = new StringBuilder(parts[0]);
+        for (int i = 1; i < parts.length; i++) {
+            if (parts[i].isEmpty()) continue;
+            sb.append(parts[i].substring(0,1).toUpperCase(Locale.ROOT)).append(parts[i].substring(1));
+        }
+        return sb.toString();
+    }
+
+    private String toSnake(String s) {
+        if (s == null) return "";
+        String r = s.replaceAll("([a-z])([A-Z])", "$1_$2");
+        r = r.replace('-', '_').replace(' ', '_').replace('/', '_');
+        return r.toLowerCase(Locale.ROOT);
+    }
+
+    private LookupResult smartLookup(Map<String, Object> flat, Map<String, String> normIndex, String path) {
+        if (flat.containsKey(path)) return new LookupResult(path, flat.get(path));
+        String camel = toCamelTokens(path);
+        if (flat.containsKey(camel)) return new LookupResult(camel, flat.get(camel));
+        String snake = toSnakeTokens(path);
+        if (flat.containsKey(snake)) return new LookupResult(snake, flat.get(snake));
+        String real = normIndex.get(norm(path));
+        if (real != null && flat.containsKey(real)) return new LookupResult(real, flat.get(real));
+        String real2 = normIndex.get(norm(camel));
+        if (real2 != null && flat.containsKey(real2)) return new LookupResult(real2, flat.get(real2));
+        String real3 = normIndex.get(norm(snake));
+        if (real3 != null && flat.containsKey(real3)) return new LookupResult(real3, flat.get(real3));
+        return null;
+    }
+
+    // ===== Sections (unchanged) =====
     private static final List<SectionSpec> SECTIONS = Arrays.asList(
             new SectionSpec("פרטי בנק", Arrays.asList(
                     new FieldSpec("שם בנק",                  "bankDetails.bankName"),

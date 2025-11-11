@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+<TextView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/txtHeader"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -7,9 +8,9 @@
     android:text="כותרת קטגוריה"
     android:textStyle="bold"
     android:textSize="18sp"
+    android:textColor="#111827"
     android:paddingTop="16dp"
     android:paddingBottom="8dp"
     android:paddingStart="8dp"
     android:paddingEnd="8dp"
-    android:textAlignment="viewStart"
-    android:textColor="#111827"/>
+    android:textAlignment="viewStart"/>

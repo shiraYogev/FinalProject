@@ -1,14 +1,4 @@
-/**
- * Summary:
- * Activity for displaying a read-only preview of a Project. Wires up the UI to
- * ProjectPreviewViewModel (header/details/images), shows loading states, and
- * performs no DB logic directly. Uses AuthRepository to supply current userId
- * to the VM (so the VM can expose admin permission when relevant).
- *
- * Notes:
- * - All DB work is delegated to the ViewModel (which uses ProjectRepository).
- * - All comments are in English per project conventions.
- */
+// file: app/src/main/java/com/example/finalprojectappraisal/activity/AllProjects/ProjectPreviewActivity.java
 package com.example.finalprojectappraisal.activity.AllProjects;
 
 import android.os.Bundle;
@@ -68,12 +58,13 @@ public class ProjectPreviewActivity extends AppCompatActivity {
         rvDetails = findViewById(R.id.rvDetails);
         rvDetails.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         rvDetails.setLayoutManager(new LinearLayoutManager(this));
+        rvDetails.setNestedScrollingEnabled(false); // ⬅️ חשוב ברגע שיש NestedScrollView
         detailsAdapter = new KeyValueAdapter();
         rvDetails.setAdapter(detailsAdapter);
 
         // Images grid: sectioned (headers span 3 columns, photos span 1)
         rvImages = findViewById(R.id.rvImages);
-        rvImages.setNestedScrollingEnabled(false);
+        rvImages.setNestedScrollingEnabled(false); // כבר היה אצלך עבור התמונות
 
         GridLayoutManager glm = new GridLayoutManager(this, 3);
         imagesAdapter = new SectionedImagesAdapter();
