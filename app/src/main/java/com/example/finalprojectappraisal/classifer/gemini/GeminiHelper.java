@@ -14,7 +14,9 @@ import com.google.ai.client.generativeai.type.GenerateContentResponse;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.Locale;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -56,12 +58,24 @@ public class GeminiHelper {
         void onError(String error);
     }
 
-    /** Public entry point: keeps your original signature. */
+    /** Public entry point (כמו שהיה): יוצר traceId אוטומטי. */
     public static void classifyImage(Context context, Uri imageUri, String prompt, ClassificationCallback callback) {
+        String traceId = makeTraceId(null, imageUri);
+        classifyImage(context, imageUri, prompt, traceId, callback);
+    }
+
+    /** Overload חדש עם traceId לצימוד לוגים בין שכבות. */
+    public static void classifyImage(Context context,
+                                     Uri imageUri,
+                                     String prompt,
+                                     String traceId,
+                                     ClassificationCallback callback) {
+        final String tid = (traceId == null || traceId.isEmpty()) ? makeTraceId(null, imageUri) : traceId;
+
         executor.execute(() -> {
             // 0) API key sanity
             if (API_KEY == null || API_KEY.trim().isEmpty()) {
-                logE("API key is missing. Did you set GEMINI_API_KEY in local.properties and sync?", null);
+                logE(tid, "API key is missing. Did you set GEMINI_API_KEY in local.properties and sync?", null);
                 if (callback != null) {
                     callback.onError("API key חסר. ודאי שהגדרת GEMINI_API_KEY ב-local.properties וסנכרנת Gradle.");
                 }
@@ -69,10 +83,11 @@ public class GeminiHelper {
             }
             final String key = API_KEY.trim();
             final String masked = key.substring(0, Math.min(4, key.length())) + "****" + key.substring(Math.max(key.length() - 3, 4));
-            logD("API key present? true, masked: " + masked);
+            logD(tid, "START classifyImage | API key present? true, masked=" + masked);
+            logD(tid, "Prompt length=" + (prompt == null ? 0 : prompt.length()));
 
             // 1) Kick off attempt with fallback chain
-            attemptWithFallback(context, imageUri, prompt, callback, /*modelIndex*/0, /*attempt*/0);
+            attemptWithFallback(context, imageUri, prompt, callback, /*modelIndex*/0, /*attempt*/0, tid);
         });
     }
 
@@ -83,12 +98,16 @@ public class GeminiHelper {
                                             String prompt,
                                             ClassificationCallback cb,
                                             int modelIndex,
-                                            int attempt) {
+                                            int attempt,
+                                            String tid) {
         final String modelName = MODEL_CHAIN[Math.min(modelIndex, MODEL_CHAIN.length - 1)];
+        logD(tid, String.format(Locale.US, "attemptWithFallback model=%s attempt=%d", modelName, attempt));
 
         // Real single attempt
-        callModelOnce(ctx, uri, prompt, modelName, new ClassificationCallback() {
+        callModelOnce(ctx, uri, prompt, modelName, tid, new ClassificationCallback() {
             @Override public void onResult(String rawJson) {
+                logD(tid, "SUCCESS from model=" + modelName + " | first200=" +
+                        rawJson.substring(0, Math.min(200, rawJson.length())));
                 if (cb != null) cb.onResult(rawJson);
             }
 
@@ -97,22 +116,23 @@ public class GeminiHelper {
                 // Retry same model?
                 if (d.retryable && attempt < MAX_RETRIES) {
                     long delay = backoffWithJitter(attempt);
-                    logD("Transient error (" + d.reason + "), retry " + (attempt + 1) + "/" + MAX_RETRIES +
+                    logD(tid, "Transient error (" + d.reason + "), retry " + (attempt + 1) + "/" + MAX_RETRIES +
                             " in " + delay + "ms, model=" + modelName);
                     scheduler.schedule(() ->
-                                    attemptWithFallback(ctx, uri, prompt, cb, modelIndex, attempt + 1),
+                                    attemptWithFallback(ctx, uri, prompt, cb, modelIndex, attempt + 1, tid),
                             delay, TimeUnit.MILLISECONDS);
                     return;
                 }
 
                 // Fallback to next model?
                 if (modelIndex + 1 < MODEL_CHAIN.length) {
-                    logD("Switching model due to: " + d.reason + " | Trying fallback " + MODEL_CHAIN[modelIndex + 1]);
-                    attemptWithFallback(ctx, uri, prompt, cb, modelIndex + 1, 0);
+                    logD(tid, "Switching model due to: " + d.reason + " | Trying fallback " + MODEL_CHAIN[modelIndex + 1]);
+                    attemptWithFallback(ctx, uri, prompt, cb, modelIndex + 1, 0, tid);
                     return;
                 }
 
                 // Give up
+                logE(tid, "GIVE UP after retries & fallbacks. reason=" + d.reason, null);
                 if (cb != null) cb.onError("Gemini unavailable: " + d.reason + " (after retries & fallbacks)");
             }
         });
@@ -128,24 +148,19 @@ public class GeminiHelper {
         if (err == null) return new RetryDecision(false, "unknown");
         String s = err.toLowerCase();
 
-        // 503 / overloaded / unavailable
         if (s.contains("503") || s.contains("overloaded") || s.contains("unavailable")) {
             return new RetryDecision(true, "503 UNAVAILABLE/overloaded");
         }
-        // 429 / rate limit
         if (s.contains("429") || s.contains("rate limit")) {
             return new RetryDecision(true, "429 rate limit");
         }
-        // network/timeout family
         if (s.contains("timeout") || s.contains("timed out") || s.contains("failed to connect")
                 || s.contains("connection reset") || s.contains("network")) {
             return new RetryDecision(true, "network/timeout");
         }
-        // SDK deserialization issue you saw: missing error.details
         if (s.contains("missingfieldexception") || s.contains("field 'details' is required")) {
             return new RetryDecision(true, "sdk deserialization (details missing)");
         }
-        // Default: non-retryable
         return new RetryDecision(false, s);
     }
 
@@ -162,23 +177,24 @@ public class GeminiHelper {
                                       Uri imageUri,
                                       String prompt,
                                       String modelName,
+                                      String tid,
                                       ClassificationCallback callback) {
         try {
             // 1) Load bitmap
             Bitmap bitmap = loadBitmap(context, imageUri);
             if (bitmap == null) {
                 String msg = "Failed to load bitmap from Uri: " + imageUri;
-                logE(msg, null);
+                logE(tid, msg, null);
                 if (callback != null) callback.onError("לא ניתן לטעון תמונה מה־Uri: " + imageUri);
                 return;
             }
 
             // Request metadata logs
-            logD("Model: " + modelName);
-            logD("Image Uri: " + safeUri(imageUri));
-            logD("Bitmap: " + bitmap.getWidth() + "x" + bitmap.getHeight() +
+            logD(tid, "Model=" + modelName);
+            logD(tid, "Image Uri=" + safeUri(imageUri));
+            logD(tid, "Bitmap=" + bitmap.getWidth() + "x" + bitmap.getHeight() +
                     ", approxJPEG=" + approxJpegSizeKB(bitmap) + "KB");
-            logD("Prompt length: " + (prompt == null ? 0 : prompt.length()));
+            logD(tid, "Calling generateContent...");
 
             // 2) Build model
             GenerativeModelFutures generativeModel =
@@ -197,25 +213,24 @@ public class GeminiHelper {
             String output = response.getText() != null ? response.getText().trim() : null;
             if (output == null || output.isEmpty()) {
                 String msg = "Empty response text";
-                logE(msg, null);
+                logE(tid, msg, null);
                 if (callback != null) callback.onError("לא התקבלה תשובה מהמודל (Response text ריק)");
             } else {
                 if (DEBUG) {
-                    logD("Success. First 200 chars: " + output.substring(0, Math.min(200, output.length())));
+                    logD(tid, "Success. First 200 chars: " + output.substring(0, Math.min(200, output.length())));
                 }
                 if (callback != null) callback.onResult(output);
             }
 
         } catch (ExecutionException ee) {
-            // Unwrap cause for clearer diagnostics
             Throwable cause = (ee.getCause() != null) ? ee.getCause() : ee;
             String chain = buildCauseChain(cause);
-            logE("ExecutionException (wrapped): " + chain, cause);
+            logE(tid, "ExecutionException (wrapped): " + chain, cause);
             if (callback != null) callback.onError(chain);
 
         } catch (Exception e) {
             String chain = buildCauseChain(e);
-            logE("General exception: " + chain, e);
+            logE(tid, "General exception: " + chain, e);
             if (callback != null) callback.onError(chain);
         }
     }
@@ -262,16 +277,23 @@ public class GeminiHelper {
         return sb.toString();
     }
 
-    private static void logD(String msg) {
-        if (DEBUG) Log.d(TAG, msg);
+    private static String makeTraceId(String base, Uri uri) {
+        String tail = (uri == null || uri.getPath() == null) ? "" : uri.getPath();
+        String last = tail.length() > 8 ? tail.substring(tail.length() - 8) : tail;
+        String rand = UUID.randomUUID().toString().substring(0, 6).toUpperCase(Locale.ROOT);
+        return (base == null || base.isEmpty() ? "GH" : base) + "-" + rand + "-" + last.replace("/", "");
     }
 
-    private static void logE(String msg, Throwable t) {
+    private static void logD(String tid, String msg) {
+        if (DEBUG) Log.d(TAG, "[" + tid + "] " + msg);
+    }
+
+    private static void logE(String tid, String msg, Throwable t) {
         if (DEBUG) {
-            if (t != null) Log.e(TAG, msg, t);
-            else Log.e(TAG, msg);
+            if (t != null) Log.e(TAG, "[" + tid + "] " + msg, t);
+            else Log.e(TAG, "[" + tid + "] " + msg);
         } else {
-            Log.e(TAG, msg);
+            Log.e(TAG, "[" + tid + "] " + msg);
         }
     }
 }
