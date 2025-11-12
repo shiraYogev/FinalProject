@@ -28,7 +28,7 @@ public class ProjectPreviewActivity extends AppCompatActivity {
     private ProgressBar progressProject, progressImages;
     private RecyclerView rvImages, rvDetails;
 
-    private SectionedImagesAdapter imagesAdapter; // ⬅️ replaced ImagesGridAdapter
+    private SectionedImagesAdapter imagesAdapter; // sectioned headers + photos
     private KeyValueAdapter detailsAdapter;
 
     private String projectId;
@@ -58,13 +58,13 @@ public class ProjectPreviewActivity extends AppCompatActivity {
         rvDetails = findViewById(R.id.rvDetails);
         rvDetails.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         rvDetails.setLayoutManager(new LinearLayoutManager(this));
-        rvDetails.setNestedScrollingEnabled(false); // ⬅️ חשוב ברגע שיש NestedScrollView
+        rvDetails.setNestedScrollingEnabled(false); // important inside NestedScrollView
         detailsAdapter = new KeyValueAdapter();
         rvDetails.setAdapter(detailsAdapter);
 
-        // Images grid: sectioned (headers span 3 columns, photos span 1)
+        // Images: sectioned (headers span 3, photos span 1)
         rvImages = findViewById(R.id.rvImages);
-        rvImages.setNestedScrollingEnabled(false); // כבר היה אצלך עבור התמונות
+        rvImages.setNestedScrollingEnabled(false);
 
         GridLayoutManager glm = new GridLayoutManager(this, 3);
         imagesAdapter = new SectionedImagesAdapter();
@@ -100,7 +100,6 @@ public class ProjectPreviewActivity extends AppCompatActivity {
         vm.getLoadingImages().observe(this, loading ->
                 progressImages.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
 
-        // ⬇️ Use sectioned list (headers + photos)
         vm.getSectionedImages().observe(this, list -> {
             if (list == null || list.isEmpty()) {
                 txtImagesEmpty.setText("אין תמונות להצגה");
@@ -163,10 +162,10 @@ public class ProjectPreviewActivity extends AppCompatActivity {
     }
 
     /**
-     * Sectioned images adapter: renders category headers (full row) and photos (grid cells).
+     * Sectioned images adapter: category headers (full row) + photos (grid cells).
      * Requires:
-     * - res/layout/item_image_header.xml  (TextView with id @id/txtHeader)
-     * - res/layout/item_image_square.xml  (ImageView with id @id/image)
+     * - res/layout/item_image_header.xml  (TextView id: @id/txtHeader)
+     * - res/layout/item_image_square.xml  (ImageView id: @id/image)
      */
     static class SectionedImagesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         static final int VT_HEADER = 10;

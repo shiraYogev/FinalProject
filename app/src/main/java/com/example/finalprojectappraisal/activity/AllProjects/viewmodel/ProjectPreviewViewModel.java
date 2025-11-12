@@ -24,26 +24,20 @@ import java.util.Locale;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Collections;
-import java.util.HashSet;
 
 /**
- * ViewModel for the Project Preview screen. Loads and formats project header,
- * details (by sections/fields), and images. Uses ProjectRepository as the single
- * DB access layer. Also exposes admin permission using AuthRepository (via the
- * Activity that provides the current userId).
- *
- * Notes:
- * - All formatting and dot-notation extraction happen here (keeps Activity lean).
- * - Exposes LiveData for loading states, header model, details rows, image list,
- *   sectioned images (headers + photos), and admin permission flag.
+ * ViewModel for the Project Preview screen.
+ * Loads and formats project header, details-by-sections, and images.
+ * All DB access goes via ProjectRepository.
  */
 public class ProjectPreviewViewModel extends ViewModel {
 
-    // ===== Logging helpers (no logic change) =====
+    // ===== Logging helpers =====
     private static final String TAG = "ProjectPreviewVM";
     private static final boolean LOG_VERBOSE = true;
-    // For diagnostics only. We DO NOT use it to change values shown on screen.
-    private static final boolean ENABLE_SMART_LOOKUP = false;
+
+    // We keep this flag, but lookups now go through getByPath(...) which always tries fallbacks.
+    private static final boolean ENABLE_SMART_LOOKUP = true;
 
     private void logD(String msg) { if (LOG_VERBOSE) android.util.Log.d(TAG, msg); }
     private void logW(String msg) { android.util.Log.w(TAG, msg); }
@@ -56,7 +50,7 @@ public class ProjectPreviewViewModel extends ViewModel {
         return s.replace("\n", "\\n");
     }
 
-    // Repositories (DB is always routed via ProjectRepository)
+    // Repository
     private final ProjectRepository repo = ProjectRepository.getInstance();
 
     // Loading flags
@@ -71,22 +65,21 @@ public class ProjectPreviewViewModel extends ViewModel {
     // Sectioned (flat) list of images: headers + photos
     private final MutableLiveData<List<UiImageItem>> sectionedImages = new MutableLiveData<>(new ArrayList<>());
 
-    // Admin permission (set via checkPermissionsFor(userId) from Activity)
+    // Admin permission
     private final MutableLiveData<Boolean> isAdmin = new MutableLiveData<>(false);
 
-    // (Optional) hook to current project object if needed in the future
     private final MediatorLiveData<com.example.finalprojectappraisal.model.Project> repoCurrentProject = new MediatorLiveData<>();
 
     // --- Expose LiveData to the UI ---
     public LiveData<Boolean> getLoadingHeader() { return loadingHeader; }
     public LiveData<Boolean> getLoadingImages() { return loadingImages; }
     public LiveData<ProjectHeaderUi> getHeader() { return header; }
-    public LiveData<List<Image>> getImages() { return images; } // kept for backwards compatibility
+    public LiveData<List<Image>> getImages() { return images; }
     public LiveData<List<KV>> getDetails() { return details; }
     public LiveData<Boolean> getIsAdmin() { return isAdmin; }
     public LiveData<List<UiImageItem>> getSectionedImages() { return sectionedImages; }
 
-    /** Initialize loads once the projectId is known (Activity calls this). */
+    /** Initialize loads once the projectId is known. */
     public void init(@NonNull String projectId) {
         loadHeader(projectId);
         loadDetails(projectId);
@@ -130,23 +123,35 @@ public class ProjectPreviewViewModel extends ViewModel {
         });
     }
 
-    /**
-     * Build header model *without* relying on toObject(Project.class) for date fields,
-     * to avoid "Long → Date" deserialization crash.
-     */
+    /** Build header model with robust key fallbacks. */
     private void bindHeader(@NonNull DocumentSnapshot doc) {
-        // Basic strings
-        String address = orDash(doc.getString("fullAddress"));
-        String status  = orDash(doc.getString("projectStatus"));
+        String address = firstNonEmpty(
+                doc.getString("fullAddress"),
+                doc.getString("full_address"),
+                doc.getString("address.full"),
+                doc.getString("addressFull")
+        );
+        if (address == null || address.trim().isEmpty()) address = "—";
 
-        // Client name: try a few common paths
-        String clientName = safeStr(doc.getString("client.fullName"));
-        if (clientName.isEmpty()) clientName = safeStr(doc.getString("clientName"));
-        if (clientName.isEmpty()) clientName = safeStr(doc.getString("client_full_name"));
-        if (clientName.isEmpty()) clientName = "—";
+        String status = firstNonEmpty(
+                doc.getString("projectStatus"),
+                doc.getString("project_status")
+        );
+        if (status == null || status.trim().isEmpty()) status = "—";
 
-        // lastUpdateDate might be Long/Timestamp/Date/Double/null
-        long lastUpdatedMillis = extractMillis(doc.get("lastUpdateDate"));
+        String clientName = firstNonEmpty(
+                doc.getString("client.fullName"),
+                doc.getString("clientName"),
+                doc.getString("client_full_name"),
+                "—"
+        );
+
+        long lastUpdatedMillis = firstNonZero(
+                extractMillis(doc.get("lastUpdateDate")),
+                extractMillis(doc.get("last_updated")),
+                extractMillis(doc.get("updatedAt")),
+                extractMillis(doc.get("lastUpdate"))
+        );
         String lastUpdatedTxt  = formatMillis(lastUpdatedMillis);
 
         logD("bindHeader: address=" + preview(address) +
@@ -183,39 +188,22 @@ public class ProjectPreviewViewModel extends ViewModel {
                 rows.add(KV.header(sec.title));
                 logD("Section ▶ " + sec.title + " (fields=" + sec.fields.size() + ")");
                 for (FieldSpec f : sec.fields) {
-                    Object raw;
 
-                    if (ENABLE_SMART_LOOKUP) {
-                        // Only if explicitly enabled (kept OFF to avoid logic changes)
-                        LookupResult lr = smartLookup(flat, normIndex, f.path);
-                        raw = (lr == null) ? null : lr.value;
-                        if (lr == null) {
-                            logD("  • " + f.path + " ⇒ NOT FOUND (smart lookup on) ");
-                        } else {
-                            logD("  • " + f.path + " ⇒ FOUND as " + lr.realKey + " = " + preview(lr.value));
-                        }
-                    } else {
-                        // Original behavior (no logic change)
-                        raw = doc.get(f.path);
-                        if (raw == null) {
-                            // Diagnostics only: where WOULD it be found?
-                            LookupResult probe = smartLookup(flat, normIndex, f.path);
-                            if (probe != null) {
-                                logD("  • " + f.path + " ⇒ NOT FOUND via doc.get(), BUT exists as: " + probe.realKey + " = " + preview(probe.value));
-                            } else {
-                                logD("  • " + f.path + " ⇒ NOT FOUND. Candidates: camel=" + toCamelTokens(f.path) + ", snake=" + toSnakeTokens(f.path));
-                            }
-                        } else {
-                            logD("  • " + f.path + " ⇒ FOUND via doc.get(): " + preview(raw));
-                        }
-                    }
+                    // --- unified robust lookup ---
+                    Object raw = getByPath(doc, flat, normIndex, f.path);
 
                     String display = toDisplayValue(raw);
                     if (display == null || display.trim().isEmpty()) {
                         display = "—";
                         missing++;
+                        if (raw == null) {
+                            logD("  • " + f.path + " ⇒ NOT FOUND");
+                        } else {
+                            logD("  • " + f.path + " ⇒ FOUND but empty after formatting: " + preview(raw));
+                        }
                     } else {
                         matched++;
+                        logD("  • " + f.path + " ⇒ " + preview(display));
                     }
                     rows.add(KV.row(f.label, display));
                 }
@@ -245,11 +233,13 @@ public class ProjectPreviewViewModel extends ViewModel {
             return formatMillis(((Date) val).getTime());
         }
         if (val instanceof Number) {
-            // If numeric and looks like epoch millis (~13 digits), format as date
             long n = ((Number) val).longValue();
-            if (n > 3_000_000_000L) { // heuristic: > ~1970-02 in millis
+            // Only treat as epochMillis if it's clearly in the far future threshold (avoid misclassifying regular IDs)
+            // 3e12 ~ year 2065; typical "now" (~1.7e12) will be treated as plain number unless your date fields are proper Timestamp/Date.
+            if (n > 3_000_000_000_000L) {
                 return formatMillis(n);
             }
+            return String.valueOf(n);
         }
         String s = String.valueOf(val).trim();
         return s.isEmpty() ? null : s;
@@ -281,7 +271,7 @@ public class ProjectPreviewViewModel extends ViewModel {
         List<UiImageItem> out = new ArrayList<>();
         if (all.isEmpty()) return out;
 
-        // Desired category order (normalize to these keys)
+        // Desired category order
         List<String> desiredOrder = Arrays.asList(
                 "FRONT",        // חזית / בניין
                 "LIVING_ROOM",  // סלון
@@ -289,7 +279,7 @@ public class ProjectPreviewViewModel extends ViewModel {
                 "BATHROOM",     // חדר רחצה
                 "BEDROOM",      // חדרי שינה
                 "VIEW",         // נוף
-                "DOCUMENT",     // מסמכים (אופציונלי אם יש)
+                "DOCUMENT",     // מסמכים
                 "OTHER"         // אחר
         );
 
@@ -301,12 +291,12 @@ public class ProjectPreviewViewModel extends ViewModel {
         for (Image im : all) {
             String key = safeCategory(im);
             if (!byCategory.containsKey(key)) {
-                byCategory.put(key, new ArrayList<>()); // for any unexpected category
+                byCategory.put(key, new ArrayList<>()); // accommodate unexpected categories
             }
             byCategory.get(key).add(im);
         }
 
-        // Emit only non-empty buckets, in desired order first, then any extras
+        // Emit only non-empty buckets, in desired order first, then extras
         for (String key : desiredOrder) {
             List<Image> bucket = byCategory.get(key);
             if (bucket == null || bucket.isEmpty()) continue;
@@ -322,7 +312,7 @@ public class ProjectPreviewViewModel extends ViewModel {
             for (Image im : bucket) out.add(UiImageItem.photo(im));
         }
 
-        // Diagnostic counters (no UI change)
+        // Diagnostics
         int buckets = 0, photos = 0, headers = 0;
         for (String k : byCategory.keySet()) {
             List<Image> b = byCategory.get(k);
@@ -344,7 +334,6 @@ public class ProjectPreviewViewModel extends ViewModel {
             if (catObj == null) return "OTHER";
             String s = String.valueOf(catObj).trim();
             if (s.isEmpty()) return "OTHER";
-            // Normalize to UPPER_SNAKE_CASE-like
             s = s.toUpperCase(Locale.ROOT)
                     .replace(' ', '_')
                     .replace('-', '_')
@@ -393,7 +382,18 @@ public class ProjectPreviewViewModel extends ViewModel {
         return DateFormat.format("dd.MM.yyyy HH:mm", new Date(millis)).toString();
     }
 
-    // --- UI models ---
+    @Nullable
+    private String firstNonEmpty(String... opts) {
+        if (opts == null) return null;
+        for (String s : opts) if (s != null && !s.trim().isEmpty()) return s.trim();
+        return null;
+    }
+    private long firstNonZero(long... vals) {
+        if (vals == null) return 0L;
+        for (long v : vals) if (v > 0L) return v;
+        return 0L;
+    }
+
     public static class ProjectHeaderUi {
         public final String address;
         public final String status;
@@ -457,7 +457,6 @@ public class ProjectPreviewViewModel extends ViewModel {
 
         private static String[] splitToTokens(String dotted) {
             if (dotted == null || dotted.trim().isEmpty()) return new String[0];
-            // Split only by dots. Special chars like () - / remain inside the token.
             return dotted.split("\\.");
         }
     }
@@ -468,7 +467,7 @@ public class ProjectPreviewViewModel extends ViewModel {
         SectionSpec(String title, List<FieldSpec> fields) { this.title = title; this.fields = fields; }
     }
 
-    // ========== Diagnostics-only lookup helpers (used for logs; no UI/logic changes) ==========
+    // ========== Diagnostics-only lookup helpers ==========
     private static class LookupResult {
         final String realKey; final Object value;
         LookupResult(String realKey, Object value) { this.realKey = realKey; this.value = value; }
@@ -508,18 +507,6 @@ public class ProjectPreviewViewModel extends ViewModel {
         return s.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
     }
 
-    private String toCamelTokens(String dotted) {
-        String[] t = dotted.split("\\.");
-        for (int i = 0; i < t.length; i++) t[i] = toCamel(t[i]);
-        return String.join(".", t);
-    }
-
-    private String toSnakeTokens(String dotted) {
-        String[] t = dotted.split("\\.");
-        for (int i = 0; i < t.length; i++) t[i] = toSnake(t[i]);
-        return String.join(".", t);
-    }
-
     private String toCamel(String s) {
         if (s == null) return "";
         String[] parts = s.split("[_\\-\\s/]");
@@ -532,11 +519,23 @@ public class ProjectPreviewViewModel extends ViewModel {
         return sb.toString();
     }
 
+    private String toCamelTokens(String dotted) {
+        String[] t = dotted.split("\\.");
+        for (int i = 0; i < t.length; i++) t[i] = toCamel(t[i]);
+        return String.join(".", t);
+    }
+
     private String toSnake(String s) {
         if (s == null) return "";
         String r = s.replaceAll("([a-z])([A-Z])", "$1_$2");
         r = r.replace('-', '_').replace(' ', '_').replace('/', '_');
         return r.toLowerCase(Locale.ROOT);
+    }
+
+    private String toSnakeTokens(String dotted) {
+        String[] t = dotted.split("\\.");
+        for (int i = 0; i < t.length; i++) t[i] = toSnake(t[i]);
+        return String.join(".", t);
     }
 
     private LookupResult smartLookup(Map<String, Object> flat, Map<String, String> normIndex, String path) {
@@ -554,7 +553,76 @@ public class ProjectPreviewViewModel extends ViewModel {
         return null;
     }
 
-    // ===== Sections (unchanged) =====
+    // ---------- Manual aliases for stubborn keys ----------
+    private static final Map<String, List<String>> FIELD_ALIASES;
+    static {
+        Map<String, List<String>> m = new LinkedHashMap<>();
+        // Address variants
+        m.put("full_address", Arrays.asList("fullAddress", "address.full", "addressFull"));
+        // Elevator variants
+        m.put("has_elevator", Arrays.asList("property_details.has_elevator", "propertyDetails.hasElevator"));
+        // Example for municipal form number
+        m.put("property_details.apartment_number(municipal_form)",
+                Arrays.asList("property_details.apartment_number_municipal_form",
+                        "propertyDetails.apartmentNumberMunicipalForm"));
+        // Add more aliases here as needed
+        FIELD_ALIASES = Collections.unmodifiableMap(m);
+    }
+
+    /**
+     * Unified robust getter that tries:
+     * 1) direct path,
+     * 2) aliases from FIELD_ALIASES,
+     * 3) smartLookup (camel/snake/normalized),
+     * 4) suffix fallback (e.g., match last tokens regardless of prefix).
+     */
+    @Nullable
+    private Object getByPath(@NonNull DocumentSnapshot doc,
+                             @NonNull Map<String,Object> flat,
+                             @NonNull Map<String,String> normIndex,
+                             @NonNull String path) {
+
+        // 1) direct
+        Object v = doc.get(path);
+        if (v != null) return v;
+
+        // 2) aliases
+        List<String> aliases = FIELD_ALIASES.get(path);
+        if (aliases != null) {
+            for (String alt : aliases) {
+                Object vv = doc.get(alt);
+                if (vv != null) {
+                    logD("  • " + path + " ⇒ FOUND via alias " + alt + " = " + preview(vv));
+                    return vv;
+                }
+            }
+        }
+
+        // 3) smart lookup
+        LookupResult lr = smartLookup(flat, normIndex, path);
+        if (lr != null) return lr.value;
+
+        // 4) suffix fallback (match by last token(s))
+        String[] toks = path.split("\\.");
+        List<String> suffixes = new ArrayList<>();
+        if (toks.length >= 1) suffixes.add(norm(toks[toks.length-1]));
+        if (toks.length >= 2) suffixes.add(norm(toks[toks.length-2] + "." + toks[toks.length-1]));
+
+        for (Map.Entry<String,Object> e : flat.entrySet()) {
+            String kNorm = norm(e.getKey());
+            for (String suf : suffixes) {
+                if (kNorm.endsWith(suf)) {
+                    logD("  • " + path + " ⇒ FOUND by suffix as " + e.getKey() + " = " + preview(e.getValue()));
+                    return e.getValue();
+                }
+            }
+        }
+
+        logD("  • " + path + " ⇒ NOT FOUND (after fallbacks)");
+        return null;
+    }
+
+    // ===== Sections =====
     private static final List<SectionSpec> SECTIONS = Arrays.asList(
             new SectionSpec("פרטי בנק", Arrays.asList(
                     new FieldSpec("שם בנק",                  "bankDetails.bankName"),
@@ -592,11 +660,11 @@ public class ProjectPreviewViewModel extends ViewModel {
             )),
             new SectionSpec("רישום וכתובת", Arrays.asList(
                     new FieldSpec("כתובת מלאה",               "full_address"),
-                    new FieldSpec("בניין – כניסה",            "building_entry"),
-                    new FieldSpec("בניין – מספר",             "building_number"),
-                    new FieldSpec("מס׳ אזור",                 "zone_number"),
-                    new FieldSpec("מס׳ תכנית בניין עיר",      "building_city_plan_number"),
-                    new FieldSpec("תקציר נכס",                "property_summary")
+                    new FieldSpec("בניין – כניסה",            "property_details.building_entry"),
+                    new FieldSpec("בניין – מספר",             "property_details.building_number"),
+                    new FieldSpec("מס׳ אזור",                 "property_details.zone_number"),
+                    new FieldSpec("מס׳ תכנית בניין עיר",      "property_details.building_city_plan_number"),
+                    new FieldSpec("תקציר נכס",                "property_details.property_summary")
             )),
             new SectionSpec("מאפייני סביבה ומבנה", Arrays.asList(
                     new FieldSpec("מאפייני סביבה",       "environment_characteristics"),
