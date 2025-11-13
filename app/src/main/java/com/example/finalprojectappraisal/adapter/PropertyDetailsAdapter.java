@@ -1,5 +1,6 @@
 package com.example.finalprojectappraisal.adapter;
 
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,6 +36,13 @@ public class PropertyDetailsAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         this.listener = listener;
     }
 
+    // מאפשר להחליף את כל התוכן לאחר טעינה מה-DB
+    public void submit(List<ListItem> data) {
+        items.clear();
+        if (data != null) items.addAll(data);
+        notifyDataSetChanged();
+    }
+
     @Override public int getItemViewType(int position) {
         return (items.get(position) instanceof SectionItem) ? TYPE_SECTION : TYPE_FIELD;
     }
@@ -61,17 +69,22 @@ public class PropertyDetailsAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         } else {
             FieldItem fi = (FieldItem) items.get(position);
             FieldVH vh = (FieldVH) h;
+
             vh.title.setText(fi.title);
 
-            // הצגה ידידותית גם לרב-בחירה
-            String display = fi.kind == PropertyDetailsActivity.Kind.MULTI
-                    ? (fi.multiValue.isEmpty() ? "—" : String.join(", ", fi.multiValue))
+            String display = (fi.kind == PropertyDetailsActivity.Kind.MULTI)
+                    ? (fi.multiValue == null || fi.multiValue.isEmpty()
+                    ? "—"
+                    : TextUtils.join(", ", fi.multiValue))
                     : (fi.value == null || fi.value.isEmpty() ? "—" : fi.value);
-
             vh.value.setText(display);
 
             View.OnClickListener click = v -> {
-                if (listener != null) listener.onFieldClicked(fi, position);
+                int p = h.getAdapterPosition();
+                if (p != RecyclerView.NO_POSITION && listener != null) {
+                    ListItem li = items.get(p);
+                    if (li instanceof FieldItem) listener.onFieldClicked((FieldItem) li, p);
+                }
             };
             vh.itemView.setOnClickListener(click);
             if (vh.edit != null) vh.edit.setOnClickListener(click);
@@ -93,12 +106,9 @@ public class PropertyDetailsAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
         FieldVH(@NonNull View itemView) {
             super(itemView);
-
-            // IDs שקיימים אצלך ב-item_field_row.xml
             title = itemView.findViewById(R.id.txtTitle);
             value = itemView.findViewById(R.id.txtValue);
 
-            // אופציונלי: אייקון עריכה אם יש
             ImageView e = null;
             int editRes = itemView.getResources()
                     .getIdentifier("imgEdit", "id", itemView.getContext().getPackageName());

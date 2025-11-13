@@ -149,8 +149,25 @@ public class ProjectRepository {
         updateManager.cleanupRootDuplicateFields(projectId, l);
     }
 
-    public void updateMultipleFields(@NonNull String projectId, @NonNull Map<String,Object> fields, @Nullable OnCompleteListener<Void> l) {
-        updateManager.updateMultipleFields(projectId, fields, l);
+    public void updateMultipleFields(@NonNull String projectId,
+                                     @NonNull Map<String,Object> fields,
+                                     @Nullable OnCompleteListener<Void> l) {
+        if (projectId.trim().isEmpty()) {
+            if (l != null) l.onComplete(Tasks.forException(new Exception("Empty projectId")));
+            return;
+        }
+        if (fields == null || fields.isEmpty()) {
+            if (l != null) l.onComplete(Tasks.forResult(null));
+            return;
+        }
+
+        Map<String, Object> merged = new HashMap<>(fields);
+        merged.put(FirestoreConstants.FIELD_LAST_UPDATE_DATE, FieldValue.serverTimestamp());
+
+        db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .document(projectId)
+                .update(merged) // update = לא מוחק שדות שלא שלחת
+                .addOnCompleteListener(l);
     }
 
     public void saveBankDetailsToProject(@NonNull String projectId,

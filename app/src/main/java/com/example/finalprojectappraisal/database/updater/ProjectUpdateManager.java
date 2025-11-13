@@ -423,12 +423,21 @@ public class ProjectUpdateManager {
      * Saves a project to Firestore
      */
     private void saveProject(String projectId, Project project, OnCompleteListener<Void> listener) {
-        db.collection(FirestoreConstants.COLLECTION_PROJECTS)
-                .document(projectId)
-                .set(project)
+        DocumentReference ref = db.collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .document(projectId);
+
+        Map<String, Object> stamp = new HashMap<>();
+        stamp.put(FirestoreConstants.FIELD_LAST_UPDATE_DATE, FieldValue.serverTimestamp());
+
+        // קודם מעדכן חותמת זמן, ואז ממזג את ה-POJO בלי למחוק שדות אחרים
+        ref.update(stamp)
+                .continueWithTask(t -> ref.set(project, SetOptions.merge()))
                 .addOnCompleteListener(listener)
-                .addOnFailureListener(e -> errorMessage.setValue(FirestoreConstants.ERROR_SAVING_PROJECT + ": " + e.getMessage()));
+                .addOnFailureListener(e ->
+                        errorMessage.setValue(FirestoreConstants.ERROR_SAVING_PROJECT + ": " + e.getMessage())
+                );
     }
+
 
     /**
      * Handles errors by setting error message and notifying listener
