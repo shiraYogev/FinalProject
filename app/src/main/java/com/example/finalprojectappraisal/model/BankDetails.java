@@ -1,6 +1,7 @@
 package com.example.finalprojectappraisal.model;
 
 import com.google.gson.annotations.SerializedName;
+import com.google.firebase.firestore.PropertyName; // <-- ייבוא חשוב עבור Firebase
 
 /**
  * The BankDetails class represents bank information extracted from bank documents.
@@ -98,155 +99,194 @@ public class BankDetails {
         this.appraisalFinalDate = appraisalFinalDate;
     }
 
-    // Getters and setters
+    // Getters and setters - ***כולל תיקון ה-@PropertyName***
+
+    @PropertyName("bank_name")
     public String getBankName() {
         return bankName;
     }
 
+    @PropertyName("bank_name")
     public void setBankName(String bankName) {
         this.bankName = bankName;
     }
 
+    @PropertyName("branch_name")
     public String getBranchName() {
         return branchName;
     }
 
+    @PropertyName("branch_name")
     public void setBranchName(String branchName) {
         this.branchName = branchName;
     }
 
+    @PropertyName("branch_email")
     public String getBranchEmail() {
         return branchEmail;
     }
 
+    @PropertyName("branch_email")
     public void setBranchEmail(String branchEmail) {
         this.branchEmail = branchEmail;
     }
 
+    @PropertyName("banker_name")
     public String getBankerName() {
         return bankerName;
     }
 
+    @PropertyName("banker_name")
     public void setBankerName(String bankerName) {
         this.bankerName = bankerName;
     }
 
+    @PropertyName("document_date_gre")
     public String getDocumentDateGre() {
         return documentDateGre;
     }
 
+    @PropertyName("document_date_gre")
     public void setDocumentDateGre(String documentDateGre) {
         this.documentDateGre = documentDateGre;
     }
 
+    @PropertyName("document_date_he")
     public String getDocumentDateHe() {
         return documentDateHe;
     }
 
+    @PropertyName("document_date_he")
     public void setDocumentDateHe(String documentDateHe) {
         this.documentDateHe = documentDateHe;
     }
 
+    @PropertyName("valuation_number")
     public String getValuationNumber() {
         return valuationNumber;
     }
 
+    @PropertyName("valuation_number")
     public void setValuationNumber(String valuationNumber) {
         this.valuationNumber = valuationNumber;
     }
 
+    @PropertyName("loan_number")
     public String getLoanNumber() {
         return loanNumber;
     }
 
+    @PropertyName("loan_number")
     public void setLoanNumber(String loanNumber) {
         this.loanNumber = loanNumber;
     }
 
+    @PropertyName("type_of_loan")
     public String getTypeOfLoan() {
         return typeOfLoan;
     }
 
+    @PropertyName("type_of_loan")
     public void setTypeOfLoan(String typeOfLoan) {
         this.typeOfLoan = typeOfLoan;
     }
 
+    @PropertyName("page1_header")
     public String getPage1Header() {
         return page1Header;
     }
 
+    @PropertyName("page1_header")
     public void setPage1Header(String page1Header) {
         this.page1Header = page1Header;
     }
 
+    @PropertyName("lot_number")
     public String getLotNumber() {
         return lotNumber;
     }
 
+    @PropertyName("lot_number")
     public void setLotNumber(String lotNumber) {
         this.lotNumber = lotNumber;
     }
 
+    @PropertyName("main_parcel")
     public String getMainParcel() {
         return mainParcel;
     }
 
+    @PropertyName("main_parcel")
     public void setMainParcel(String mainParcel) {
         this.mainParcel = mainParcel;
     }
 
+    @PropertyName("sub_parcel")
     public String getSubParcel() {
         return subParcel;
     }
 
+    @PropertyName("sub_parcel")
     public void setSubParcel(String subParcel) {
         this.subParcel = subParcel;
     }
 
+    @PropertyName("short_address")
     public String getShortAddress() {
         return shortAddress;
     }
 
+    @PropertyName("short_address")
     public void setShortAddress(String shortAddress) {
         this.shortAddress = shortAddress;
     }
 
+    @PropertyName("loaner_name")
     public String getLoanerName() {
         return loanerName;
     }
 
+    @PropertyName("loaner_name")
     public void setLoanerName(String loanerName) {
         this.loanerName = loanerName;
     }
 
+    @PropertyName("loaner_id")
     public String getLoanerId() {
         return loanerId;
     }
 
+    @PropertyName("loaner_id")
     public void setLoanerId(String loanerId) {
         this.loanerId = loanerId;
     }
 
+    @PropertyName("purpose_of_loan")
     public String getPurposeOfLoan() {
         return purposeOfLoan;
     }
 
+    @PropertyName("purpose_of_loan")
     public void setPurposeOfLoan(String purposeOfLoan) {
         this.purposeOfLoan = purposeOfLoan;
     }
 
+    @PropertyName("identity_of_customer")
     public String getIdentityOfCustomer() {
         return identityOfCustomer;
     }
 
+    @PropertyName("identity_of_customer")
     public void setIdentityOfCustomer(String identityOfCustomer) {
         this.identityOfCustomer = identityOfCustomer;
     }
 
+    @PropertyName("appraisal_final_date")
     public String getAppraisalFinalDate() {
         return appraisalFinalDate;
     }
 
+    @PropertyName("appraisal_final_date")
     public void setAppraisalFinalDate(String appraisalFinalDate) {
         this.appraisalFinalDate = appraisalFinalDate;
     }
