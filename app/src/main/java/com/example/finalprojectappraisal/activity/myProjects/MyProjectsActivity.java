@@ -98,6 +98,12 @@ public class MyProjectsActivity extends AppCompatActivity
 
         // Adapter
         adapter = new ProjectsAdapter(allProjects, new ProjectsAdapter.ProjectActionListener() {
+
+            @Override public void onCompass(Project project) {
+                Log.d(TAG_ACT, "onCompass invoked from Adapter for pid=" + project.getProjectId());
+                openCompassAppOrStore();
+            }
+
             @Override public void onEdit(Project project) {
                 Intent intent = new Intent(MyProjectsActivity.this,
                         com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity.class);
@@ -374,5 +380,38 @@ public class MyProjectsActivity extends AppCompatActivity
                 })
                 .setNegativeButton("ביטול", (dialog, id) -> { })
                 .create().show();
+    }
+
+    // בתוך MyProjectsActivity.java, עדכן את המתודה הזו:
+    // בתוך MyProjectsActivity.java
+    private void openCompassAppOrStore() {
+        // שם החבילה הספציפי שהתקבל מהקישור
+        String specificCompassPackage = "app.melon.icompass";
+
+        // 1. נסה לפתוח את האפליקציה הספציפית
+        Intent intent = getPackageManager().getLaunchIntentForPackage(specificCompassPackage);
+
+        if (intent != null) {
+            // נמצאה האפליקציה הספציפית ("iCompass - מצפן דיגיטלי")
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+            startActivity(intent);
+            return;
+        }
+
+        // 2. אם האפליקציה לא מותקנת, הפנה לחנות לאפליקציה הספציפית
+        Toast.makeText(this, "האפליקציה הספציפית לא נמצאה, מפנה לחנות.", Toast.LENGTH_LONG).show();
+
+        // Intent לחנות האפליקציות לדף האפליקציה הספציפית
+        Intent playStoreIntent = new Intent(Intent.ACTION_VIEW,
+                android.net.Uri.parse("market://details?id=" + specificCompassPackage));
+
+        if (playStoreIntent.resolveActivity(getPackageManager()) != null) {
+            startActivity(playStoreIntent);
+        } else {
+            // גיבוי לדפדפן
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW,
+                    android.net.Uri.parse("https://play.google.com/store/apps/details?id=" + specificCompassPackage));
+            startActivity(browserIntent);
+        }
     }
 }

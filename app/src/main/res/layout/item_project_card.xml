@@ -145,6 +145,20 @@
                 app:cornerRadius="@dimen/corner_12" />
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCompass"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_height"
+                android:minHeight="@dimen/button_height"
+                android:layout_marginEnd="@dimen/space_8"
+                android:text="מצפן"
+                app:icon="@android:drawable/ic_menu_compass"
+                app:iconPadding="8dp"
+                app:iconSize="20dp"
+                app:iconGravity="textStart"
+                app:cornerRadius="@dimen/corner_12" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAddNote"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"

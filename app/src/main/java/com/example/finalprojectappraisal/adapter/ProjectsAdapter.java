@@ -52,6 +52,7 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         void onReport(Project project);
         void onDelete(Project project);
         void onAssignAppraiser(Project project);
+        void onCompass(Project project);
     }
 
     private final Context context;
@@ -123,6 +124,14 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             showMapOptionsDialog(address);
         });
 
+        // <--- הוסף את הטיפול בכפתור המצפן כאן:
+        holder.btnCompass.setOnClickListener(v -> {
+            Log.d(TAG_AD, "click: btnCompass pid=" + pid);
+            if (listener != null && project != null) {
+                listener.onCompass(project);
+            }
+        });
+
         // סטטוס
         String status = project != null ? project.getProjectStatus() : null;
         applyStatusStyle(holder.txtStatus, status);
@@ -169,6 +178,7 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         holder.btnAddNote.setVisibility(View.VISIBLE);
         holder.btnReport.setVisibility(View.VISIBLE);
         holder.btnMap.setVisibility(View.VISIBLE);
+        holder.btnCompass.setVisibility(View.VISIBLE);
 
         if (canEdit) {
             holder.btnEdit.setOnClickListener(v -> {
@@ -485,7 +495,7 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
     static class ProjectViewHolder extends RecyclerView.ViewHolder {
         ImageView imageThumb;
         TextView txtAddress, txtNote, txtStatus, txtClient, txtDate;
-        Button btnEdit, btnAddNote, btnReport, btnDelete, btnChangeStatus, btnMap, btnAssignAppraiser;
+        Button btnEdit, btnAddNote, btnReport, btnDelete, btnChangeStatus, btnMap, btnAssignAppraiser, btnCompass;
         View btnMore;
         public ProjectViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -503,6 +513,7 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             btnChangeStatus = itemView.findViewById(R.id.btnChangeStatus);
             btnMap     = itemView.findViewById(R.id.btnMap);
             btnAssignAppraiser = itemView.findViewById(R.id.btnAssignAppraiser);
+            btnCompass = itemView.findViewById(R.id.btnCompass);
         }
     }
 
