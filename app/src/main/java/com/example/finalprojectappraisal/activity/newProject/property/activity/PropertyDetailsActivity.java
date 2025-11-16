@@ -21,6 +21,7 @@ import com.example.finalprojectappraisal.activity.newProject.property.activity.P
 import com.example.finalprojectappraisal.activity.newProject.property.activity.PropertyDetailsActivity.ListItem;
 import com.example.finalprojectappraisal.activity.newProject.property.activity.PropertyDetailsActivity.SectionItem;
 import com.example.finalprojectappraisal.activity.newProject.property.common.utils.Choices;
+import com.example.finalprojectappraisal.activity.newProject.property.common.utils.OtherOptionFieldHelper;
 import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Project;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -116,7 +117,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
 
             items.clear();
 
-            // ===== פרטים כלליים / בניין =====
+            // ===== General / building =====
             items.add(new SectionItem("פרטים כלליים על הנכס/בניין"));
             items.add(FieldItem.single(
                     "property_location", "מיקום הנכס",
@@ -134,7 +135,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                     Choices.PHYSICAL_CONDITION_OPTIONS
             ));
 
-            // ✅ תחזוקת הנכס (maintenance)
+            // Maintenance
             items.add(FieldItem.single(
                     "maintenance", "תחזוקת הנכס",
                     fromPd(pd, "maintenance", null),
@@ -142,7 +143,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                     true
             ));
 
-            // ✅ חומרי בנייה (construction_material)
+            // Construction material
             items.add(FieldItem.single(
                     "construction_material", "חומרי בנייה",
                     fromPd(pd, "construction_material", null),
@@ -178,7 +179,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                     fromPd(pd, "building_city_plan_number", p != null ? p.getBuildingCityPlanNumber() : null)
             ));
 
-            // ===== מאפייני סביבה (environment_characteristics במפה) =====
+            // ===== Environment characteristics =====
             EnvironmentParts env = parseEnvironmentCharacteristics(
                     fromPd(pd, "environment_characteristics", null)
             );
@@ -187,14 +188,14 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                     "environment_type_tmp", "סוג הסביבה",
                     env.type,
                     Choices.ENVIRONMENT_TYPES,
-                    false
+                    true   // ✅ allow "אחר" + free text
             ));
             items.add(FieldItem.text(
                     "environment_description_tmp", "תיאור הסביבה",
                     env.description
             ));
 
-            // ===== פרטי הדירה =====
+            // ===== Apartment details =====
             items.add(new SectionItem("פרטי הדירה"));
             items.add(FieldItem.text(
                     "apartment_number_municipal_form", "מס' דירה (טופס עירייה)",
@@ -211,7 +212,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                     Choices.ROOMS_OPTIONS, false
             ));
 
-            // ===== מדדים =====
+            // ===== Areas =====
             items.add(new SectionItem("מדדים (שטחים)"));
             items.add(FieldItem.decimalMeters(
                     "registered_apartment_area", "שטח רשום (מ\"ר)",
@@ -222,7 +223,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                     stripMr(fromPd(pd, "gross_apartment_area", p != null ? p.getGrossArea() : null))
             ));
 
-            // ===== כיווני אוויר =====
+            // ===== Air directions =====
             items.add(new SectionItem("כיווני אוויר"));
             items.add(FieldItem.multi(
                     "apartment_directions", "כיווני אוויר",
@@ -260,18 +261,17 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
         return s.replace("מ\"ר","").trim();
     }
 
-    // ===== פירוק ושחזור מאפייני סביבה =====
+    // ===== Parse & rebuild environment_characteristics =====
     private static class EnvironmentParts {
         String type = "";
         String description = "";
     }
 
     /**
-     * Parse environment_characteristics:
-     * פורמט צפוי:
+     * Parse environment_characteristics, expected format:
      *   "מגורים – תיאור חופשי"
-     * או רק "מגורים" / רק תיאור.
-     * אם הפורמט לא תואם, כל המחרוזת הולכת לתיאור בלבד.
+     * or only "מגורים" / only description.
+     * If not in this format, whole string goes to description only.
      */
     private EnvironmentParts parseEnvironmentCharacteristics(String combined) {
         EnvironmentParts res = new EnvironmentParts();
@@ -289,12 +289,12 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
             }
         }
 
-        // אם לא התחיל באחד הסוגים – מתייחס לכל המחרוזת כתיאור בלבד
+        // If not starting with one of the types – treat as description only
         res.description = s;
         return res;
     }
 
-    // ====== בניית האייטמים למסך (לוגיקה ישנה, כמעט לא בשימוש היום) ======
+    // ====== old buildList (kept for reference / not used much now) ======
     @SuppressWarnings("unused")
     private void buildList(Project p) {
         Log.d(TAG, "buildList: start");
@@ -364,7 +364,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
     private String or(String s) { return s == null ? "" : s; }
     private List<String> listOrEmpty(List<String> l) { return l == null ? new ArrayList<>() : l; }
 
-    // ====== פתיחת דיאלוגים לפי סוג ======
+    // ====== open dialogs according to field kind ======
     @Override
     public void onFieldClicked(FieldItem f, int position) {
         Log.d(TAG, "onFieldClicked: key=" + f.key + ", kind=" + f.kind + ", currentValue=" + f.value + ", multi=" + f.multiValue);
@@ -387,8 +387,14 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                 .setTitle(f.title)
                 .setItems(itemsArr, (d, which) -> {
                     String choice = opts.get(which);
-                    if (f.allowOther && "אחר".equals(choice)) {
-                        promptText("פרט/י", f.value, text -> updateValue(f, text, pos));
+                    if (f.allowOther) {
+                        OtherOptionFieldHelper.handleSelection(
+                                this,
+                                f.title,
+                                choice,
+                                f.value,
+                                newVal -> updateValue(f, newVal, pos)
+                        );
                     } else {
                         updateValue(f, choice, pos);
                     }
@@ -451,7 +457,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                 .setPositiveButton("אישור", (d, w) -> {
                     String s = input.getText().toString().trim();
                     Log.d(TAG, "openDecimalMeters: key=" + f.key + " entered=" + s);
-                    updateValue(f, s, pos); // הסיומת תתווסף בשמירה
+                    updateValue(f, s, pos); // suffix added on save
                 })
                 .setNegativeButton("ביטול", null)
                 .show();
@@ -502,7 +508,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
     }
 
     private void openFloorsComposite(FieldItem f, int pos) {
-        // שלב 1: מספר קומות
+        // Step 1: number of floors
         final String[] nums = new String[60];
         for (int i = 0; i < 60; i++) nums[i] = String.valueOf(i + 1);
 
@@ -510,7 +516,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                 .setTitle("מספר קומות")
                 .setItems(nums, (d, i) -> {
                     int count = i + 1;
-                    // שלב 2: מעל מה
+                    // Step 2: reference level
                     final List<String> opts = f.options != null ? f.options : new ArrayList<>();
                     CharSequence[] itemsArr = opts.toArray(new CharSequence[0]);
                     new AlertDialog.Builder(this)
@@ -560,7 +566,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
         startActivity(intent);
     }
 
-    // ====== שמירה ל-DB (עם לוגים) ======
+    // ====== Save to DB ======
     private void saveToDb() {
         if (projectId == null || projectId.trim().isEmpty()) {
             Toast.makeText(this, "חסר projectId לשמירה", Toast.LENGTH_SHORT).show();
@@ -575,7 +581,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
             if (!(li instanceof FieldItem)) continue;
             FieldItem f = (FieldItem) li;
 
-            // לא שומרים שדות טמפ של מאפייני סביבה ישירות
+            // Do not store env temp keys directly
             if ("environment_type_tmp".equals(f.key)) {
                 envType = (f.value == null) ? "" : f.value.trim();
                 continue;
@@ -599,7 +605,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
             }
         }
 
-        // ✅ בנייה ושמירה של environment_characteristics אחד
+        // Build environment_characteristics combined field
         if ((envType != null && !envType.isEmpty()) || (envDesc != null && !envDesc.isEmpty())) {
             String combined;
             if (envType == null || envType.isEmpty()) {
@@ -612,7 +618,6 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
             updates.put("environment_characteristics", combined);
         }
 
-        // שמירה מרוכזת ל-property_details
         ProjectRepository.getInstance().savePropertyDetails(projectId, updates, task -> {
             if (task.isSuccessful()) {
                 Toast.makeText(this, "נשמר בהצלחה", Toast.LENGTH_SHORT).show();
@@ -625,7 +630,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
         });
     }
 
-    // ====== מודלי אייטמים פנימיים ======
+    // ====== inner models ======
     public static abstract class ListItem {}
 
     public static class SectionItem extends ListItem {

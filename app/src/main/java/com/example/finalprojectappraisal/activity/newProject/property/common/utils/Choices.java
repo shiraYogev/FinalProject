@@ -44,7 +44,8 @@ public final class Choices {
     );
 
     public static final List<String> INTERIOR_DOOR_TYPES = Arrays.asList(
-            "מתכת","עץ","משולב עץ ומתכת","דמוי עץ-פולימרי","טרם הותקנו"
+            "מתכת","עץ","משולב עץ ומתכת","דמוי עץ-פולימרי","טרם הותקנו",
+            "אחר"
     );
 
     public static final List<String> PROPERTY_LOCATIONS = Arrays.asList("מרכזי","צדדי","סואן","אחר");
