@@ -17,6 +17,8 @@ import com.example.finalprojectappraisal.classifer.gemini.GeminiSummaryParser;
 import com.example.finalprojectappraisal.classifer.gemini.GeminiSummaryService;
 import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Image;
+import com.example.finalprojectappraisal.model.Project;
+import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,8 +30,13 @@ import java.util.Map;
  *  - maintenance (שיפוצים/תחזוקה)
  *  - apartment_includes (מה כלול בדירה)
  *  - property_summary (תיאור כללי, עם AI)
+ *
+ * טוען ערכים קיימים מ-property_details (עם נפילה לשורש אם צריך),
+ * ושומר חזרה ל-property_details.
  */
 public class PropertyDescriptionActivity extends AppCompatActivity {
+
+    private static final String TAG = "PropertyDescriptionAct";
 
     private String projectId;
 
@@ -39,9 +46,9 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
 
     private View progress;
     private Button btnSave, btnSkip;
-    private Button btnAiSummary;        // only AI button
-    private Button btnAiRegenerate;     // optional
-    private Button btnAiRefine;         // optional
+    private Button btnAiSummary;
+    private Button btnAiRegenerate;
+    private Button btnAiRefine;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -70,7 +77,60 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
             String hint = askForRefineHint();
             runSummary(hint);
         });
+
+        // ← טעינת ערכים קיימים מה-DB למסך
+        loadExistingFields();
     }
+
+    /** שליפת הערכים למסך מתוך property_details, עם נפילה לשורש (בעיקר לשמירה על תאימות לאחור). */
+    private void loadExistingFields() {
+        if (projectId == null || projectId.trim().isEmpty()) {
+            Toast.makeText(this, "חסר projectId", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        setBusy(true);
+
+        ProjectRepository.getInstance().getProject(projectId, task -> {
+            setBusy(false);
+
+            if (!task.isSuccessful() || task.getResult() == null || !task.getResult().exists()) {
+                Toast.makeText(this, "לא נמצא פרויקט", Toast.LENGTH_LONG).show();
+                return;
+            }
+            DocumentSnapshot snap = task.getResult();
+
+            // מקור אמת מועדף: property_details.*
+            @SuppressWarnings("unchecked")
+            Map<String, Object> pd = (Map<String, Object>) snap.get("property_details");
+
+            // נפילה לשורש (למקרה של נתונים היסטוריים)
+            Project p = null;
+            try { p = snap.toObject(Project.class); } catch (Exception ignore) {}
+
+            String maintenance = fromPd(pd, "maintenance", /* rootFallback */ null);
+            String includes    = fromPd(pd, "apartment_includes", /* rootFallback */ null);
+            String summary     = fromPd(pd, "property_summary", /* rootFallback */ null);
+
+            // אם לא נמצא ב-PD, אפשר (אופציונלי) לפול לשדות בשורש במידה וקיימים שם
+            if ((maintenance == null || maintenance.isEmpty()) && p != null) {
+                // אם יש לך getter בשורש – השתמשי בו; אחרת השאירי ריק
+                // maintenance = p.getMaintenance(); // אם קיים
+            }
+            if ((includes == null || includes.isEmpty()) && p != null) {
+                // includes = p.getApartmentIncludes(); // אם קיים
+            }
+            if ((summary == null || summary.isEmpty()) && p != null) {
+                // summary = p.getPropertySummary(); // אם קיים
+            }
+
+            // מילוי בשדות המסך
+            edtMaintenance.setText(safe(maintenance));
+            edtIncludes.setText(safe(includes));
+            edtSummary.setText(safe(summary));
+        });
+    }
+
+    // ===================== AI Summary =====================
 
     private void runSummary(@Nullable String refineHint) {
         if (projectId == null || projectId.trim().isEmpty()) {
@@ -89,7 +149,6 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
             List<Image> all = task.getResult();
             if (all == null) all = new ArrayList<>();
 
-            // ↓↓ FIX: compute once, then assign to a final variable (no re-assignment later)
             List<Uri> tmpUris = RepresentativePicker.pickUris(all, 6);
             final List<Uri> representativeUris = (tmpUris != null) ? tmpUris : java.util.Collections.emptyList();
 
@@ -106,7 +165,7 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
 
                 GeminiSummaryService.generatePropertySummary(
                         this,
-                        representativeUris, // ← captured safely (final)
+                        representativeUris,
                         structured,
                         new GeminiSummaryService.SummaryCallback() {
                             @Override public void onSuccess(GeminiSummaryParser.Result result, String rawJson) {
@@ -124,10 +183,11 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
         });
     }
 
+    // ===================== Save =====================
 
     private void saveFields() {
         if (projectId == null || projectId.trim().isEmpty()) {
-            Toast.makeText(this, "חסר projectId", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "חסר projectId לשמירה", Toast.LENGTH_SHORT).show();
             return;
         }
         String maintenance = safeText(edtMaintenance);
@@ -142,6 +202,7 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
         btnSave.setEnabled(false);
         progress.setVisibility(View.VISIBLE);
 
+        // נשמר תחת property_details (עם מילוי nulls לשדות חסרים אם הוגדרו ב-UpdateManager)
         ProjectRepository.getInstance().savePropertyDetails(projectId, updates, task -> {
             btnSave.setEnabled(true);
             progress.setVisibility(View.GONE);
@@ -155,16 +216,21 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
         });
     }
 
+    // ===================== Helpers =====================
+
     private String safeText(EditText et) {
         return et.getText() == null ? "" : et.getText().toString().trim();
     }
 
+    private String safe(String s) { return s == null ? "" : s; }
+
     private void setBusy(boolean busy) {
-        progress.setVisibility(busy ? View.VISIBLE : View.GONE);
+        if (progress != null) progress.setVisibility(busy ? View.VISIBLE : View.GONE);
         if (btnAiSummary != null) btnAiSummary.setEnabled(!busy);
         if (btnAiRegenerate != null) btnAiRegenerate.setEnabled(!busy);
         if (btnAiRefine != null) btnAiRefine.setEnabled(!busy);
         if (btnSave != null) btnSave.setEnabled(!busy);
+        if (btnSkip != null) btnSkip.setEnabled(!busy);
     }
 
     private void goToNextPage() {
@@ -175,14 +241,21 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
         Intent i = new Intent(this, com.example.finalprojectappraisal.activity.newProject.bank.BankDetailsActivity.class);
         i.putExtra("projectId", projectId);
         startActivity(i);
-        // אפקט מעבר עדין (לא חובה)
         overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
-        finish(); // סוגר את המסך הנוכחי בזרימה הליניארית
+        finish();
     }
-
 
     private String askForRefineHint() {
         // TODO: show a tiny dialog and return its text
         return "";
+    }
+
+    /** קורא ערך מ-property_details ואם אין—מחזיר fallback מהשורש/פרמטר */
+    private String fromPd(Map<String, Object> pd, String key, String rootFallback) {
+        if (pd != null && pd.containsKey(key) && pd.get(key) != null) {
+            Object v = pd.get(key);
+            return v == null ? "" : String.valueOf(v);
+        }
+        return rootFallback == null ? "" : rootFallback;
     }
 }
