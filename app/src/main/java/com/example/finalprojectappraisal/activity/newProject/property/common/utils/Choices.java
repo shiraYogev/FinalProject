@@ -40,7 +40,7 @@ public final class Choices {
     );
 
     public static final List<String> BATHROOM_FIXTURES = Arrays.asList(
-            "חדשים","רגילים","ישנים","טרם חופה","בית המגורים טרם נבנה"
+            "כלים סניטריים- חדשים","כלים סניטריים- רגילים","כלים סניטריים- ישנים","טרם חופה","בית המגורים טרם נבנה"
     );
 
     public static final List<String> INTERIOR_DOOR_TYPES = Arrays.asList(
@@ -69,7 +69,24 @@ public final class Choices {
             "מעל קומת מסחר","מעל קומת הכניסה","מעל הקרקע","אחר"
     );
 
-    public static final List<String> ROOMS_OPTIONS = Arrays.asList("1","2","3","4","5","6","7","8");
+    public static final List<String> ROOMS_OPTIONS = Arrays.asList(
+            "2",
+            "2.5",
+            "3",
+            "3.5",
+            "4",
+            "4.5",
+            "5",
+            "5.5",
+            "6",
+            "6.5",
+            "7",
+            "7.5",
+            "8",
+            "8.5",
+            "9",
+            "אחר"
+    );
 
     public static final List<String> AIR_DIRECTIONS = Arrays.asList("צפון","דרום","מזרח","מערב");
 
@@ -123,5 +140,7 @@ public final class Choices {
             "חלקי",
             "אין"
     );
+
+
 
 }

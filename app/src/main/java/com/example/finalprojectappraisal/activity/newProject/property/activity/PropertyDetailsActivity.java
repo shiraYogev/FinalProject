@@ -209,8 +209,9 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
             items.add(FieldItem.single(
                     "number_of_rooms", "מספר חדרים",
                     fromPd(pd, "number_of_rooms", p != null ? p.getNumberOfRooms() : null),
-                    Choices.ROOMS_OPTIONS, false
+                    Choices.ROOMS_OPTIONS, true   // ✅ מאפשר "אחר" + כתיבה חופשית
             ));
+
 
             // ===== Areas =====
             items.add(new SectionItem("מדדים (שטחים)"));
@@ -341,8 +342,8 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
         logVal("apartment_story", p.getFloorNumber());
         items.add(FieldItem.signedInt("apartment_story", "מספר הקומה", or(p.getFloorNumber()), -2, 60));
 
-        logVal("number_of_rooms", p.getNumberOfRooms());
-        items.add(FieldItem.single("number_of_rooms", "מספר חדרים", or(p.getNumberOfRooms()), Choices.ROOMS_OPTIONS, false));
+        items.add(FieldItem.single("number_of_rooms", "מספר חדרים",
+                or(p.getNumberOfRooms()), Choices.ROOMS_OPTIONS, true));
 
         items.add(new SectionItem("מדדים (שטחים)"));
 
