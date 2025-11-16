@@ -6,7 +6,7 @@ public class ApartmentEditableState {
     public String entranceDoorCondition;
     public String windowType;
     public boolean hasCentralHeating;
-    public boolean hasBars;
+    public String hasBars;
     public String hasAirConditioning;
     public String flooringType;
     public String flooringSize;
@@ -22,7 +22,7 @@ public class ApartmentEditableState {
         s.entranceDoorCondition = p.getEntranceDoorCondition();
         s.windowType = p.getWindowType();
         s.hasCentralHeating = p.isHasCentralHeating();
-        s.hasBars = p.isHasBars();
+        s.hasBars               = p.getHasBars();
         s.hasAirConditioning = p.isHasAirConditioning();
 
         String flooring = p.getFlooringType();

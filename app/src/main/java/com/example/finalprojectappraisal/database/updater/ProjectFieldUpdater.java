@@ -63,7 +63,8 @@ public final class ProjectFieldUpdater {
         updateStringField(project::setInteriorDoorCondition, features, FirestoreConstants.FIELD_INTERIOR_DOOR_CONDITION);
         updateStringField(project::setWindowType, features, FirestoreConstants.FIELD_WINDOW_TYPE);
 
-        updateBooleanField(project::setHasBars, features, FirestoreConstants.FIELD_HAS_BARS);
+        updateStringField(project::setHasBars, features, FirestoreConstants.FIELD_HAS_BARS);
+
 
         // Handle air direction list
         if (features.containsKey(FirestoreConstants.FIELD_AIR_DIRECTION)) {

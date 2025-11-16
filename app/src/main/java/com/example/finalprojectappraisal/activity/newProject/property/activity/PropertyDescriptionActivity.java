@@ -27,8 +27,8 @@ import java.util.Map;
 
 /**
  * מסך "תיאור כללי של הנכס":
- *  - maintenance (שיפוצים/תחזוקה)
- *  - apartment_includes (מה כלול בדירה)
+ *  - apartment_includes (מה כלול בדירה + שיפוצים)
+ *  - renovations (שדה פנימי למסך – נשמר כחלק מ-apartment_includes)
  *  - property_summary (תיאור כללי, עם AI)
  *
  * טוען ערכים קיימים מ-property_details (עם נפילה לשורש אם צריך),
@@ -40,6 +40,7 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
 
     private String projectId;
 
+    // NOTE: edtMaintenance משמש כאן בתור שדה "שיפוצים" בפועל
     private EditText edtMaintenance;
     private EditText edtIncludes;
     private EditText edtSummary;
@@ -58,8 +59,8 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
         projectId = getIntent() != null ? getIntent().getStringExtra("projectId") : null;
 
         progress       = findViewById(R.id.progress);
-        edtMaintenance = findViewById(R.id.edtMaintenance);
-        edtIncludes    = findViewById(R.id.edtApartmentIncludes);
+        edtMaintenance = findViewById(R.id.edtMaintenance);        // כאן נכתוב את השיפוצים
+        edtIncludes    = findViewById(R.id.edtApartmentIncludes);  // כאן "מה כלול בדירה"
         edtSummary     = findViewById(R.id.edtPropertySummary);
 
         btnSave        = findViewById(R.id.btnSaveSummary);
@@ -107,25 +108,20 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
             Project p = null;
             try { p = snap.toObject(Project.class); } catch (Exception ignore) {}
 
-            String maintenance = fromPd(pd, "maintenance", /* rootFallback */ null);
-            String includes    = fromPd(pd, "apartment_includes", /* rootFallback */ null);
-            String summary     = fromPd(pd, "property_summary", /* rootFallback */ null);
+            // כולל בדירה + שיפוצים – ביחד בשדה apartment_includes
+            String combinedIncludes = fromPd(pd, "apartment_includes", /* rootFallback */ null);
+            IncludesParts parts = parseApartmentIncludes(combinedIncludes);
 
-            // אם לא נמצא ב-PD, אפשר (אופציונלי) לפול לשדות בשורש במידה וקיימים שם
-            if ((maintenance == null || maintenance.isEmpty()) && p != null) {
-                // אם יש לך getter בשורש – השתמשי בו; אחרת השאירי ריק
-                // maintenance = p.getMaintenance(); // אם קיים
-            }
-            if ((includes == null || includes.isEmpty()) && p != null) {
-                // includes = p.getApartmentIncludes(); // אם קיים
-            }
+            // property_summary כרגיל
+            String summary     = fromPd(pd, "property_summary", /* rootFallback */ null);
             if ((summary == null || summary.isEmpty()) && p != null) {
-                // summary = p.getPropertySummary(); // אם קיים
+                // summary = p.getPropertySummary(); // אם יש getter בשורש
             }
 
             // מילוי בשדות המסך
-            edtMaintenance.setText(safe(maintenance));
-            edtIncludes.setText(safe(includes));
+            // edtMaintenance = שיפוצים בלבד (אם יש)
+            edtMaintenance.setText(safe(parts.renovations));
+            edtIncludes.setText(safe(parts.includes));
             edtSummary.setText(safe(summary));
         });
     }
@@ -190,19 +186,30 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
             Toast.makeText(this, "חסר projectId לשמירה", Toast.LENGTH_SHORT).show();
             return;
         }
-        String maintenance = safeText(edtMaintenance);
+
+        // כאן: edtMaintenance = שיפוצים, edtIncludes = מה כלול בדירה
+        String renovations = safeText(edtMaintenance);
         String includes    = safeText(edtIncludes);
         String summary     = safeText(edtSummary);
 
         Map<String, Object> updates = new HashMap<>();
-        if (!maintenance.isEmpty()) updates.put("maintenance", maintenance);
-        if (!includes.isEmpty())    updates.put("apartment_includes", includes);
-        if (!summary.isEmpty())     updates.put("property_summary", summary);
+
+        // בונים מחרוזת אחת ל-apartment_includes
+        String combinedIncludes = buildApartmentIncludes(includes, renovations);
+        if (!combinedIncludes.isEmpty()) {
+            updates.put("apartment_includes", combinedIncludes);
+        }
+
+        // לא נוגעים יותר בשדה maintenance כאן – הוא מנוהל ב-PropertyDetailsActivity
+
+        if (!summary.isEmpty()) {
+            updates.put("property_summary", summary);
+        }
 
         btnSave.setEnabled(false);
         progress.setVisibility(View.VISIBLE);
 
-        // נשמר תחת property_details (עם מילוי nulls לשדות חסרים אם הוגדרו ב-UpdateManager)
+        // נשמר תחת property_details
         ProjectRepository.getInstance().savePropertyDetails(projectId, updates, task -> {
             btnSave.setEnabled(true);
             progress.setVisibility(View.GONE);
@@ -257,5 +264,68 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
             return v == null ? "" : String.valueOf(v);
         }
         return rootFallback == null ? "" : rootFallback;
+    }
+
+    // ===== פירוק וחיבור של apartment_includes =====
+
+    /** מבנה פנימי: כולל בדירה + שיפוצים (כשנשמרים יחד ב-apartment_includes). */
+    private static class IncludesParts {
+        String includes = "";
+        String renovations = "";
+    }
+
+    /**
+     * Parse ל-apartment_includes.
+     * פורמט צפוי:
+     *   "<כולל בדירה> | שיפוצים: <טקסט>"
+     * או:
+     *   "שיפוצים: <טקסט>"
+     * או רק:
+     *   "<כולל בדירה>"
+     */
+    private IncludesParts parseApartmentIncludes(String combined) {
+        IncludesParts res = new IncludesParts();
+        if (combined == null) return res;
+
+        String s = combined.trim();
+        if (s.isEmpty()) return res;
+
+        final String marker = "| שיפוצים:";
+        final String markerStart = "שיפוצים:";
+
+        int idx = s.indexOf(marker);
+        if (idx >= 0) {
+            // "<כולל בדירה> | שיפוצים: <טקסט>"
+            res.includes = s.substring(0, idx).trim();
+            res.renovations = s.substring(idx + marker.length()).trim();
+            return res;
+        }
+
+        // אם מתחיל מ-"שיפוצים:" בלבד
+        if (s.startsWith(markerStart)) {
+            res.includes = "";
+            res.renovations = s.substring(markerStart.length()).trim();
+            return res;
+        }
+
+        // אחרת – כל הטקסט הוא "מה כלול בדירה"
+        res.includes = s;
+        res.renovations = "";
+        return res;
+    }
+
+    /**
+     * בונה את הערך שישמר ב-apartment_includes
+     * לפי התבנית שנקבעה.
+     */
+    private String buildApartmentIncludes(String includes, String renovations) {
+        String inc = (includes == null) ? "" : includes.trim();
+        String ren = (renovations == null) ? "" : renovations.trim();
+
+        if (inc.isEmpty() && ren.isEmpty()) return "";
+        if (ren.isEmpty()) return inc;
+        if (inc.isEmpty()) return "שיפוצים: " + ren;
+
+        return inc + " | שיפוצים: " + ren;
     }
 }

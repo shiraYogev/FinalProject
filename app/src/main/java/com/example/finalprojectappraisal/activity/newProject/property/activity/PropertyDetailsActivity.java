@@ -107,11 +107,10 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
             }
 
             DocumentSnapshot snap = task.getResult();
-            // מקור אמת מועדף
+
             @SuppressWarnings("unchecked")
             Map<String, Object> pd = (Map<String, Object>) snap.get("property_details");
 
-            // אופציונלי: שימוש ב-Project ל-fallback לשורש
             Project p = null;
             try { p = snap.toObject(Project.class); } catch (Exception ignored) {}
 
@@ -134,6 +133,23 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                     fromPd(pd, "physical_condition", p != null ? p.getBuildingCondition() : null),
                     Choices.PHYSICAL_CONDITION_OPTIONS
             ));
+
+            // ✅ תחזוקת הנכס (maintenance)
+            items.add(FieldItem.single(
+                    "maintenance", "תחזוקת הנכס",
+                    fromPd(pd, "maintenance", null),
+                    Choices.MAINTENANCE_OPTIONS,
+                    true
+            ));
+
+            // ✅ חומרי בנייה (construction_material)
+            items.add(FieldItem.single(
+                    "construction_material", "חומרי בנייה",
+                    fromPd(pd, "construction_material", null),
+                    Choices.CONSTRUCTION_MATERIAL_OPTIONS,
+                    false
+            ));
+
             items.add(FieldItem.single(
                     "external_cladding", "חיפוי חיצוני",
                     fromPd(pd, "external_cladding", p != null ? p.getExternalCladding() : null),
@@ -160,6 +176,22 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
             items.add(FieldItem.text(
                     "building_city_plan_number", "מספר תכנית עירונית (תב\"ע)",
                     fromPd(pd, "building_city_plan_number", p != null ? p.getBuildingCityPlanNumber() : null)
+            ));
+
+            // ===== מאפייני סביבה (environment_characteristics במפה) =====
+            EnvironmentParts env = parseEnvironmentCharacteristics(
+                    fromPd(pd, "environment_characteristics", null)
+            );
+            items.add(new SectionItem("מאפייני סביבה"));
+            items.add(FieldItem.single(
+                    "environment_type_tmp", "סוג הסביבה",
+                    env.type,
+                    Choices.ENVIRONMENT_TYPES,
+                    false
+            ));
+            items.add(FieldItem.text(
+                    "environment_description_tmp", "תיאור הסביבה",
+                    env.description
             ));
 
             // ===== פרטי הדירה =====
@@ -207,13 +239,14 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
         });
     }
 
-    // Helpers
+    // Helpers for reading from property_details
     private String fromPd(Map<String, Object> pd, String key, String rootVal) {
         if (pd != null && pd.containsKey(key) && pd.get(key) != null) {
             return String.valueOf(pd.get(key));
         }
         return rootVal == null ? "" : rootVal;
     }
+
     @SuppressWarnings("unchecked")
     private List<String> listFromPd(Map<String, Object> pd, String key, List<String> rootList) {
         if (pd != null && pd.containsKey(key) && pd.get(key) instanceof List) {
@@ -221,13 +254,48 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
         }
         return rootList == null ? new ArrayList<>() : new ArrayList<>(rootList);
     }
+
     private String stripMr(String s) {
         if (s == null) return "";
         return s.replace("מ\"ר","").trim();
     }
 
+    // ===== פירוק ושחזור מאפייני סביבה =====
+    private static class EnvironmentParts {
+        String type = "";
+        String description = "";
+    }
 
-    // ====== בניית האייטמים למסך (כותרות + שדות) ======
+    /**
+     * Parse environment_characteristics:
+     * פורמט צפוי:
+     *   "מגורים – תיאור חופשי"
+     * או רק "מגורים" / רק תיאור.
+     * אם הפורמט לא תואם, כל המחרוזת הולכת לתיאור בלבד.
+     */
+    private EnvironmentParts parseEnvironmentCharacteristics(String combined) {
+        EnvironmentParts res = new EnvironmentParts();
+        if (combined == null) return res;
+
+        String s = combined.trim();
+        if (s.isEmpty()) return res;
+
+        for (String t : Choices.ENVIRONMENT_TYPES) {
+            String prefix = t + " – ";
+            if (s.startsWith(prefix)) {
+                res.type = t;
+                res.description = s.substring(prefix.length()).trim();
+                return res;
+            }
+        }
+
+        // אם לא התחיל באחד הסוגים – מתייחס לכל המחרוזת כתיאור בלבד
+        res.description = s;
+        return res;
+    }
+
+    // ====== בניית האייטמים למסך (לוגיקה ישנה, כמעט לא בשימוש היום) ======
+    @SuppressWarnings("unused")
     private void buildList(Project p) {
         Log.d(TAG, "buildList: start");
 
@@ -500,9 +568,22 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
         }
 
         Map<String, Object> updates = new HashMap<>();
+        String envType = null;
+        String envDesc = null;
+
         for (ListItem li : items) {
             if (!(li instanceof FieldItem)) continue;
             FieldItem f = (FieldItem) li;
+
+            // לא שומרים שדות טמפ של מאפייני סביבה ישירות
+            if ("environment_type_tmp".equals(f.key)) {
+                envType = (f.value == null) ? "" : f.value.trim();
+                continue;
+            }
+            if ("environment_description_tmp".equals(f.key)) {
+                envDesc = (f.value == null) ? "" : f.value.trim();
+                continue;
+            }
 
             switch (f.kind) {
                 case MULTI:
@@ -518,7 +599,20 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
             }
         }
 
-        // <<< שינוי כאן: שמירה מרוכזת ל-property_details >>>
+        // ✅ בנייה ושמירה של environment_characteristics אחד
+        if ((envType != null && !envType.isEmpty()) || (envDesc != null && !envDesc.isEmpty())) {
+            String combined;
+            if (envType == null || envType.isEmpty()) {
+                combined = envDesc;
+            } else if (envDesc == null || envDesc.isEmpty()) {
+                combined = envType;
+            } else {
+                combined = envType + " – " + envDesc;
+            }
+            updates.put("environment_characteristics", combined);
+        }
+
+        // שמירה מרוכזת ל-property_details
         ProjectRepository.getInstance().savePropertyDetails(projectId, updates, task -> {
             if (task.isSuccessful()) {
                 Toast.makeText(this, "נשמר בהצלחה", Toast.LENGTH_SHORT).show();
@@ -530,7 +624,6 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
             }
         });
     }
-
 
     // ====== מודלי אייטמים פנימיים ======
     public static abstract class ListItem {}

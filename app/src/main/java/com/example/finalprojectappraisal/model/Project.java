@@ -46,6 +46,7 @@ public class Project {
 
     @ServerTimestamp
     private Date lastUpdateDate;
+
     // Property details
     @SerializedName("full_address")
     private String fullAddress;
@@ -86,7 +87,6 @@ public class Project {
     @SerializedName("external_cladding")
     private String externalCladding;
 
-
     // Apartment details
     @SerializedName("apartment_number(municipal_form)")
     private String apartmentNumber;
@@ -102,7 +102,6 @@ public class Project {
 
     @SerializedName("gross_apartment_area")
     private String grossArea;
-
 
     // Physical features of the apartment
     @SerializedName("apartment_flooring")
@@ -120,12 +119,12 @@ public class Project {
     @SerializedName("apartment_windows")
     private String windowType;
 
+    // ✅ שינוי: has_bars הופך להיות מחרוזת ("מלא" / "חלקי" / "אין")
     @SerializedName("has_bars")
-    private boolean hasBars;
+    private String hasBars;
 
     @SerializedName("apartment_directions")
     private List<String> airDirection;
-
 
     // Additional facilities and services
     @SerializedName("has_elevator")
@@ -149,7 +148,6 @@ public class Project {
     @SerializedName("apartment_bathroom_fixtures")
     private String bathroomFixtures;
 
-
     // Property images
     @Exclude
     private List<Image> propertyImages; // List of property images
@@ -161,8 +159,6 @@ public class Project {
 
     // הערה אופציונלית של השמאי (יכולה להיות null/ריקה)
     private String note;
-
-
 
     //////////     Constructors:     ////////////
 
@@ -194,7 +190,7 @@ public class Project {
                    String registeredArea, String grossArea,
                    String flooringType, String kitchenCondition,
                    String entranceDoorCondition, String interiorDoorCondition,
-                   String windowType, boolean hasBars, List<String> airDirection,
+                   String windowType, String hasBars, List<String> airDirection,
                    boolean hasElevator, boolean hasStorageRoom,
                    String hasAirConditioning, boolean hasParking,
                    boolean hasCentralHeating, String apartmentIncludes,
@@ -231,6 +227,7 @@ public class Project {
         this.bathroomFixtures = bathroomFixtures;
         this.coAppraiserIds = coAppraiserIds;
     }
+
     // Constructor to initialize the project details
     public Project(String projectId, Client client, String appraiserId, String fullAddress, String location,
                    String buildingType, String buildingCondition, String numberOfFloors) {
@@ -244,6 +241,7 @@ public class Project {
         this.numberOfFloors = numberOfFloors;
         // שאר השדות (אם רוצים אפשר להוסיף כאן בהמשך)
     }
+
     @PropertyName("appraisal_date")
     public String getAppraisalDate() { return appraisalDate; }
     @PropertyName("appraisal_date")
@@ -253,10 +251,10 @@ public class Project {
     public String getAppraiserRole() { return appraiserRole; }
     @PropertyName("appraiser_role")
     public void setAppraiserRole(String v) { this.appraiserRole = v; }
+
     public void updateLastUpdateDate() {
         this.lastUpdateDate = new Date(System.currentTimeMillis());
     }
-
 
     // Getters and Setters
     public String getProjectId() {
@@ -311,7 +309,6 @@ public class Project {
         return getCoAppraiserIds().contains(appraiserIdToCheck);
     }
 
-
     public String getAppraiserId() {
         return appraiserId;
     }
@@ -319,7 +316,6 @@ public class Project {
     public void setAppraiserId(String appraiserId) {
         this.appraiserId = appraiserId;
     }
-
 
     public long getCreationDate() {
         return creationDate;
@@ -501,14 +497,21 @@ public class Project {
         updateLastUpdateDate();
     }
 
+    // ✅ עכשיו get/set של has_bars כמחרוזת
     @PropertyName("has_bars")
-    public boolean isHasBars() {
+    public String getHasBars() {
         return hasBars;
     }
 
     @PropertyName("has_bars")
-    public void setHasBars(boolean hasBars) {
+    public void setHasBars(String hasBars) {
         this.hasBars = hasBars;
+    }
+
+    // עוזר אופציונלי אם תרצי בוליאן בלוגיקה פנימית
+    @Exclude
+    public boolean hasBarsAsBoolean() {
+        return hasBars != null && !"אין".equals(hasBars.trim());
     }
 
     @PropertyName("apartment_directions")
@@ -532,7 +535,6 @@ public class Project {
                 .map(String::trim).filter(x -> !x.isEmpty())
                 .collect(Collectors.toList());
     }
-
 
     @PropertyName("has_elevator")
     public boolean isHasElevator() {
@@ -711,7 +713,7 @@ public class Project {
                 ", entranceDoorCondition='" + entranceDoorCondition + '\'' +
                 ", interiorDoorCondition='" + interiorDoorCondition + '\'' +
                 ", windowType='" + windowType + '\'' +
-                ", hasBars=" + hasBars +
+                ", hasBars='" + hasBars + '\'' +
                 ", airDirection=" + airDirection +
                 ", hasElevator=" + hasElevator +
                 ", hasStorageRoom=" + hasStorageRoom +
@@ -726,5 +728,4 @@ public class Project {
                 ", coAppraiserIds=" + (coAppraiserIds != null ? coAppraiserIds.toString() : "[]") +
                 '}';
     }
-
 }

@@ -49,6 +49,11 @@ public final class Choices {
 
     public static final List<String> PROPERTY_LOCATIONS = Arrays.asList("מרכזי","צדדי","סואן","אחר");
 
+    // ✅ חדש: סוגי סביבה (לבחירה בשדה מאפייני סביבה)
+    public static final List<String> ENVIRONMENT_TYPES = Arrays.asList(
+            "מגורים","מסחר","תעשייה","משרדים","אחר"
+    );
+
     public static final List<String> BUILDING_TYPES = Arrays.asList(
             "בית משותף","צמוד לקרקע","נחלה ומרכיביה","מבנה תעשייתי",
             "בניה קלה","בניה קלה מעץ","בניה קלה ממתכת","אחר"
@@ -68,16 +73,54 @@ public final class Choices {
     public static final List<String> AIR_DIRECTIONS = Arrays.asList("צפון","דרום","מזרח","מערב");
 
     public static final List<String> EXTERNAL_CLADDING_OPTIONS = Arrays.asList(
-            "טיח רגיל",
-            "טיח צבעוני",
-            "אבן טבעית",
-            "שיש",
-            "שיש חברון",
-            "שיש גרניט",
-            "חיפוי אלומיניום",
-            "קירות מסך זכוכית",
+            "בבנייה",
+            "פסיפס",
+            "אבן שיש",
+            "אבן ירושלמית",
+            "פח/ מתכת",
+            "חשוף ללא חיפוי",
+            "טייח רגיל",
+            "טייח צבעוני",
+            "שפריץ",
+            "גרנולייט",
+            "גרנולייט משולב טייח",
             "אחר"
     );
 
+    public static final List<String> MAINTENANCE_OPTIONS = Arrays.asList(
+            "רגילה","טובה","נמוכה","טרם נבנה","בבנייה","אחר"
+    );
+
+    public static final List<String> CONSTRUCTION_MATERIAL_OPTIONS = Arrays.asList(
+            "בבנייה קונבנציונלית",
+            "בלוקים ובטון",
+            "בנייה קלה ממתכת",
+            "בנייה קלה מעץ",
+            "קונבנציונלי",
+            "טרם נבנה"
+    );
+
+    // מעלית – טקסטואלי לפי התקן
+    public static final List<String> ELEVATOR_OPTIONS = Arrays.asList(
+            "אין",
+            "יש (1)",
+            "יש (2)",
+            "יש (3)",
+            "יש (4)"
+    );
+
+    // ✅ סורגים – "מלא / חלקי / אין"
+    public static final List<String> BARS_LEVELS = Arrays.asList(
+            "מלא",
+            "חלקי",
+            "אין"
+    );
+
+    // ✅ מיזוג – "מלא / חלקי / אין"
+    public static final List<String> AIR_CONDITIONING_LEVELS = Arrays.asList(
+            "מלא",
+            "חלקי",
+            "אין"
+    );
 
 }

@@ -29,9 +29,7 @@ import com.example.finalprojectappraisal.activity.newProject.property.common.dia
 import com.example.finalprojectappraisal.activity.newProject.property.common.state.ApartmentEditableState;
 import com.example.finalprojectappraisal.activity.newProject.property.common.mappers.ApartmentDetailsMapper;
 
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +55,6 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
     private static final String VKEY_FLOORING_TYPE = "__ui_flooring_type";
     private static final String VKEY_FLOORING_SIZE = "__ui_flooring_size";
 
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,7 +79,6 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
         Button btnSaveAll = findViewById(R.id.btnSaveAll);
         btnSaveAll.setText("שמור והמשך");
         btnSaveAll.setOnClickListener(v -> saveApartmentDetailsAndNext());
-
     }
 
     private void loadProject() {
@@ -107,37 +103,96 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
 
         // ===== דלת כניסה =====
         items.add(SectionItem.of("דלת כניסה"));
-        items.add(FieldItem.of(GeminiJsonParser.FirestoreKeys.ENTRANCE_DOOR_CONDITION, "סוג דלת כניסה", Formatters.safe(state.entranceDoorCondition)));
+        items.add(FieldItem.of(
+                GeminiJsonParser.FirestoreKeys.ENTRANCE_DOOR_CONDITION,
+                "סוג דלת כניסה",
+                Formatters.safe(state.entranceDoorCondition)
+        ));
 
         // ===== סלון =====
         items.add(SectionItem.of("סלון"));
-        items.add(FieldItem.of(GeminiJsonParser.FirestoreKeys.WINDOW_TYPE, "חלונות", Formatters.safe(state.windowType)));
-        items.add(FieldItem.of(GeminiJsonParser.FirestoreKeys.HAS_CENTRAL_HEATING, "הסקה מרכזית/קמין", Formatters.boolText(state.hasCentralHeating)));
-        items.add(FieldItem.of(GeminiJsonParser.FirestoreKeys.HAS_BARS, "סורגים", Formatters.boolText(state.hasBars)));
-        // מיזוג – String "כן"/"לא"
-        items.add(FieldItem.of(GeminiJsonParser.FirestoreKeys.HAS_AIR_CONDITIONING, "מיזוג אוויר", Formatters.safe(state.hasAirConditioning)));
+        items.add(FieldItem.of(
+                GeminiJsonParser.FirestoreKeys.WINDOW_TYPE,
+                "חלונות",
+                Formatters.safe(state.windowType)
+        ));
+        items.add(FieldItem.of(
+                GeminiJsonParser.FirestoreKeys.HAS_CENTRAL_HEATING,
+                "הסקה מרכזית/קמין",
+                Formatters.boolText(state.hasCentralHeating)
+        ));
+
+        // ✅ סורגים – מציג את הטקסט ("מלא"/"חלקי"/"אין")
+        items.add(FieldItem.of(
+                GeminiJsonParser.FirestoreKeys.HAS_BARS,
+                "סורגים",
+                Formatters.safe(state.hasBars)
+        ));
+
+        // ✅ מיזוג אוויר – "מלא"/"חלקי"/"אין"
+        items.add(FieldItem.of(
+                GeminiJsonParser.FirestoreKeys.HAS_AIR_CONDITIONING,
+                "מיזוג אוויר",
+                Formatters.safe(state.hasAirConditioning)
+        ));
 
         // ריצוף (מוצג כשני שדות נפרדים לעריכה; נשמר לשדה יחיד משולב)
-        items.add(FieldItem.of(VKEY_FLOORING_TYPE, "ריצוף - סוג", Formatters.safe(state.flooringType)));
-        items.add(FieldItem.of(VKEY_FLOORING_SIZE, "ריצוף - מידה", Formatters.safe(state.flooringSize)));
+        items.add(FieldItem.of(
+                VKEY_FLOORING_TYPE,
+                "ריצוף - סוג",
+                Formatters.safe(state.flooringType)
+        ));
+        items.add(FieldItem.of(
+                VKEY_FLOORING_SIZE,
+                "ריצוף - מידה",
+                Formatters.safe(state.flooringSize)
+        ));
 
         // ===== חדר שינה =====
         items.add(SectionItem.of("חדר שינה"));
-        items.add(FieldItem.of(GeminiJsonParser.FirestoreKeys.INTERIOR_DOOR_CONDITION, "דלתות פנים", Formatters.safe(state.interiorDoorCondition)));
+        items.add(FieldItem.of(
+                GeminiJsonParser.FirestoreKeys.INTERIOR_DOOR_CONDITION,
+                "דלתות פנים",
+                Formatters.safe(state.interiorDoorCondition)
+        ));
 
         // ===== מטבח =====
         items.add(SectionItem.of("מטבח"));
-        items.add(FieldItem.of(GeminiJsonParser.FirestoreKeys.KITCHEN_CONDITION, "מצב מטבח (טקסט משולב)", Formatters.safe(state.kitchenCondition)));
+        items.add(FieldItem.of(
+                GeminiJsonParser.FirestoreKeys.KITCHEN_CONDITION,
+                "מצב מטבח (טקסט משולב)",
+                Formatters.safe(state.kitchenCondition)
+        ));
 
         // ===== חדר רחצה =====
         items.add(SectionItem.of("חדר רחצה"));
-        items.add(FieldItem.of(GeminiJsonParser.FirestoreKeys.BATHROOM_FIXTURES, "כלים סניטריים", Formatters.safe(state.bathroomFixtures)));
+        items.add(FieldItem.of(
+                GeminiJsonParser.FirestoreKeys.BATHROOM_FIXTURES,
+                "כלים סניטריים",
+                Formatters.safe(state.bathroomFixtures)
+        ));
 
         // ===== מתקנים כלליים =====
         items.add(SectionItem.of("מתקנים כלליים"));
-        items.add(FieldItem.of(GeminiJsonParser.FirestoreKeys.HAS_ELEVATOR, "מעלית", Formatters.boolText(state.hasElevator)));
-        items.add(FieldItem.of(GeminiJsonParser.FirestoreKeys.HAS_PARKING, "חניה", Formatters.boolText(state.hasParking)));
-        items.add(FieldItem.of(GeminiJsonParser.FirestoreKeys.HAS_STORAGE, "מחסן", Formatters.boolText(state.hasStorage)));
+
+        // מעלית – תצוגה טקסטואלית לפי boolean (אין/יש (1) כברירת מחדל)
+        String elevatorDisplay = state.hasElevator ? "יש (1)" : "אין";
+        items.add(FieldItem.of(
+                GeminiJsonParser.FirestoreKeys.HAS_ELEVATOR,
+                "מעלית",
+                elevatorDisplay
+        ));
+
+        items.add(FieldItem.of(
+                GeminiJsonParser.FirestoreKeys.HAS_PARKING,
+                "חניה",
+                Formatters.boolText(state.hasParking)
+        ));
+        items.add(FieldItem.of(
+                GeminiJsonParser.FirestoreKeys.HAS_STORAGE,
+                "מחסן",
+                Formatters.boolText(state.hasStorage)
+        ));
 
         adapter.submit(items);
     }
@@ -156,8 +211,6 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
             return;
         }
 
-        // אם יש לך ProgressBar עם @id/progress אפשר להציג/להסתיר:
-        // (ודאי שמיובא android.view.View)
         android.view.View progress = findViewById(R.id.progress);
         if (progress != null) progress.setVisibility(android.view.View.VISIBLE);
 
@@ -169,27 +222,17 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
                 goToNextScreen();
             } else {
                 Exception e = task.getException();
-                Toast.makeText(this, "שמירה נכשלה: " + (e != null ? e.getMessage() : ""), Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "שמירה נכשלה: " +
+                        (e != null ? e.getMessage() : ""), Toast.LENGTH_LONG).show();
             }
         });
     }
 
     private void goToNextScreen() {
-        // אם יש לך PropertyDescriptionActivity – זה היעד הטבעי:
         Intent i = new Intent(this, PropertyDetailsActivity.class);
         i.putExtra("projectId", projectId);
         startActivity(i);
     }
-
-    // עוזר קטן לסינון מחרוזות ריקות/מקף תצוגה
-    private void putIfNotEmpty(Map<String, Object> map, String key, String value) {
-        if (value == null) return;
-        String v = value.trim();
-        if (!v.isEmpty() && !"—".equals(v)) {
-            map.put(key, v);
-        }
-    }
-
 
     // ================== FieldClickListener ==================
 
@@ -197,19 +240,54 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
     public void onFieldClicked(FieldItem item) {
         String key = item.key;
 
-        // בוליאנים פשוטים
-        if (GeminiJsonParser.FirestoreKeys.HAS_ELEVATOR.equals(key) || GeminiJsonParser.FirestoreKeys.HAS_PARKING.equals(key) || GeminiJsonParser.FirestoreKeys.HAS_STORAGE.equals(key)
-                || GeminiJsonParser.FirestoreKeys.HAS_CENTRAL_HEATING.equals(key)
-                || GeminiJsonParser.FirestoreKeys.HAS_BARS.equals(key)) {
+        // ✅ מעלית – דיאלוג: אין / יש (1-4) (עדיין בוליאן ל-DB)
+        if (GeminiJsonParser.FirestoreKeys.HAS_ELEVATOR.equals(key)) {
+            FormDialogs.showSingleChoice(
+                    this,
+                    item.title,
+                    Choices.ELEVATOR_OPTIONS,
+                    item.value,
+                    selection -> {
+                        boolean val = !"אין".equals(selection);
+                        state.hasElevator = val;
+
+                        Map<String, Object> update = new HashMap<>();
+                        update.put(GeminiJsonParser.FirestoreKeys.HAS_ELEVATOR, val);
+                        saveAndRefresh(update);
+                    }
+            );
+            return;
+        }
+
+        // ✅ סורגים – מחרוזת "מלא/חלקי/אין"
+        if (GeminiJsonParser.FirestoreKeys.HAS_BARS.equals(key)) {
+            FormDialogs.showSingleChoice(
+                    this,
+                    item.title,
+                    Choices.BARS_LEVELS,
+                    item.value,
+                    selection -> {
+                        state.hasBars = selection;
+                        Map<String, Object> update = new HashMap<>();
+                        update.put(GeminiJsonParser.FirestoreKeys.HAS_BARS, selection);
+                        saveAndRefresh(update);
+                    }
+            );
+            return;
+        }
+
+        // בוליאנים פשוטים: חניה / מחסן / הסקה
+        if (GeminiJsonParser.FirestoreKeys.HAS_PARKING.equals(key)
+                || GeminiJsonParser.FirestoreKeys.HAS_STORAGE.equals(key)
+                || GeminiJsonParser.FirestoreKeys.HAS_CENTRAL_HEATING.equals(key)) {
+
             FormDialogs.showYesNo(this, item.title, Formatters.YES.equals(item.value), selectedYes -> {
                 Map<String, Object> update = new HashMap<>();
                 boolean val = selectedYes;
-                // עדכון state + שמירה
-                if (GeminiJsonParser.FirestoreKeys.HAS_ELEVATOR.equals(key)) state.hasElevator = val;
+
                 if (GeminiJsonParser.FirestoreKeys.HAS_PARKING.equals(key))  state.hasParking  = val;
                 if (GeminiJsonParser.FirestoreKeys.HAS_STORAGE.equals(key))  state.hasStorage  = val;
                 if (GeminiJsonParser.FirestoreKeys.HAS_CENTRAL_HEATING.equals(key)) state.hasCentralHeating = val;
-                if (GeminiJsonParser.FirestoreKeys.HAS_BARS.equals(key)) state.hasBars = val;
 
                 update.put(key, val);
                 saveAndRefresh(update);
@@ -217,14 +295,19 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
             return;
         }
 
-        // מיזוג אוויר – נשמר כמחרוזת "כן"/"לא"
+        // ✅ מיזוג אוויר – "מלא/חלקי/אין"
         if (GeminiJsonParser.FirestoreKeys.HAS_AIR_CONDITIONING.equals(key)) {
-            FormDialogs.showSingleChoice(this, item.title, Arrays.asList(Formatters.YES, Formatters.NO), item.value, selection -> {
-                state.hasAirConditioning = selection;
-                Map<String, Object> update = new HashMap<>();
-                update.put(GeminiJsonParser.FirestoreKeys.HAS_AIR_CONDITIONING, selection);
-                saveAndRefresh(update);
-            });
+            FormDialogs.showSingleChoice(
+                    this,
+                    item.title,
+                    Choices.AIR_CONDITIONING_LEVELS,
+                    item.value,
+                    selection -> {
+                        state.hasAirConditioning = selection;
+                        Map<String, Object> update = new HashMap<>();
+                        update.put(GeminiJsonParser.FirestoreKeys.HAS_AIR_CONDITIONING, selection);
+                        saveAndRefresh(update);
+                    });
             return;
         }
 
@@ -244,7 +327,7 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
             return;
         }
 
-        // דלתות פנים
+        // דלתות פנים – עכשיו עם "אחר" ב-Choices.INTERIOR_DOOR_TYPES
         if (GeminiJsonParser.FirestoreKeys.INTERIOR_DOOR_CONDITION.equals(key)) {
             FormDialogs.showSingleChoice(this, item.title, Choices.INTERIOR_DOOR_TYPES, item.value, selection -> {
                 state.interiorDoorCondition = selection;
@@ -277,8 +360,6 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
             return;
         }
 
-        // מטבח (תיאור משולב) – כאן אפשר לפתוח Dialog חכם שיבחר Cabinets + Worktop ויבנה טקסט
-        // כרגע: שדה טקסט חופשי/תצוגה בלבד. אם תרצי, נוסיף בהמשך דיאלוג משולב כמו בריצוף.
         Toast.makeText(this, "עריכה מתקדמת למטבח תתווסף בהמשך 😊", Toast.LENGTH_SHORT).show();
     }
 
@@ -299,7 +380,6 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
                 Toast.makeText(this, "שמירה נכשלה: " +
                         (task.getException() != null ? task.getException().getMessage() : "שגיאה"), Toast.LENGTH_LONG).show();
             }
-            // מרעננים את הרשימה (ע"פ ה־state הלוקאלי)
             bindList();
         });
     }

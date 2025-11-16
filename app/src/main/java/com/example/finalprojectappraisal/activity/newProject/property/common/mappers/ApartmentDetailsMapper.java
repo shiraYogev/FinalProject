@@ -27,7 +27,7 @@ public final class ApartmentDetailsMapper {
         }
 
         m.put(GeminiJsonParser.FirestoreKeys.HAS_CENTRAL_HEATING, s.hasCentralHeating);
-        m.put(GeminiJsonParser.FirestoreKeys.HAS_BARS,            s.hasBars);
+        putIfNotEmpty(m, GeminiJsonParser.FirestoreKeys.HAS_BARS, s.hasBars);
         m.put(GeminiJsonParser.FirestoreKeys.HAS_ELEVATOR,        s.hasElevator);
         m.put(GeminiJsonParser.FirestoreKeys.HAS_PARKING,         s.hasParking);
         m.put(GeminiJsonParser.FirestoreKeys.HAS_STORAGE,         s.hasStorage);
