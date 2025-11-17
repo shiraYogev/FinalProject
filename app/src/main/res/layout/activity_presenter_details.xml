@@ -96,20 +96,20 @@
                     android:textAlignment="viewEnd"
                     android:layout_gravity="end"/>
 
-                <!-- מחוון התקדמות חזותי – 7 קווים, השביעי מודגש -->
+                <!-- מחוון התקדמות חזותי – 7 קווים, השביעי משמאל מודגש -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="8dp"
                     android:layout_gravity="end">
 
-                    <!-- 1 -->
+                    <!-- 1 (ימני ביותר, 7 משמאל – מודגש) -->
                     <View
                         android:layout_width="40dp"
                         android:layout_height="3dp"
                         android:background="@drawable/progress_indicator"
-                        android:backgroundTint="#4DFFFFFF"
+                        android:backgroundTint="@android:color/white"
                         android:layout_marginEnd="6dp"/>
 
                     <!-- 2 -->
@@ -152,13 +152,15 @@
                         android:backgroundTint="#4DFFFFFF"
                         android:layout_marginEnd="6dp"/>
 
-                    <!-- 7 – מודגש -->
+                    <!-- 7 (שמאלי ביותר, 1 משמאל) -->
                     <View
                         android:layout_width="40dp"
                         android:layout_height="3dp"
                         android:background="@drawable/progress_indicator"
-                        android:backgroundTint="@android:color/white"/>
+                        android:backgroundTint="#4DFFFFFF"/>
                 </LinearLayout>
+
+
             </LinearLayout>
 
             <!-- כפתור סיום (כרטיס) -->

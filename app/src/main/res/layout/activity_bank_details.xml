@@ -100,7 +100,7 @@
                     android:textAlignment="viewEnd"
                     android:layout_gravity="end"/>
 
-                <!-- מחוון התקדמות חזותי – 7 קווים, השישי מודגש -->
+                <!-- מחוון התקדמות חזותי – 7 קווים, השישי משמאל מודגש -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -108,7 +108,7 @@
                     android:layout_marginTop="16dp"
                     android:layout_gravity="end">
 
-                    <!-- 1 -->
+                    <!-- 1 (ימני ביותר, 7 משמאל) -->
                     <View
                         android:layout_width="40dp"
                         android:layout_height="3dp"
@@ -116,12 +116,12 @@
                         android:backgroundTint="#4DFFFFFF"
                         android:layout_marginEnd="6dp"/>
 
-                    <!-- 2 -->
+                    <!-- 2 (6 משמאל – מודגש) -->
                     <View
                         android:layout_width="40dp"
                         android:layout_height="3dp"
                         android:background="@drawable/progress_indicator"
-                        android:backgroundTint="#4DFFFFFF"
+                        android:backgroundTint="@android:color/white"
                         android:layout_marginEnd="6dp"/>
 
                     <!-- 3 -->
@@ -148,15 +148,15 @@
                         android:backgroundTint="#4DFFFFFF"
                         android:layout_marginEnd="6dp"/>
 
-                    <!-- 6 – מסומן (לבן) -->
+                    <!-- 6 -->
                     <View
                         android:layout_width="40dp"
                         android:layout_height="3dp"
                         android:background="@drawable/progress_indicator"
-                        android:backgroundTint="@android:color/white"
+                        android:backgroundTint="#4DFFFFFF"
                         android:layout_marginEnd="6dp"/>
 
-                    <!-- 7 -->
+                    <!-- 7 (שמאלי ביותר, 1 משמאל) -->
                     <View
                         android:layout_width="40dp"
                         android:layout_height="3dp"

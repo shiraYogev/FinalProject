@@ -153,6 +153,13 @@
                         android:layout_height="3dp"
                         android:background="@drawable/progress_indicator"
                         android:backgroundTint="#4DFFFFFF"/>
+
+                    <!-- 7 משמאל (ימני ביותר) - בהיר -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"/>
                 </LinearLayout>
 
             </LinearLayout>

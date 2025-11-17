@@ -147,7 +147,14 @@
                         android:backgroundTint="#4DFFFFFF"
                         android:layout_marginEnd="6dp"/>
 
-                    <!-- 6 משמאל (ימני ביותר) - בהיר -->
+                    <!-- 6 משמאל - בהיר -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"/>
+
+                    <!-- 7 משמאל (ימני ביותר) - בהיר -->
                     <View
                         android:layout_width="40dp"
                         android:layout_height="3dp"
