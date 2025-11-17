@@ -7,11 +7,407 @@
     android:layout_height="match_parent"
     android:layoutDirection="rtl"
     android:textDirection="rtl"
-    android:background="@drawable/modern_gradient_bg"
+    android:background="#F5F7FA"
     android:focusableInTouchMode="true"
     android:padding="0dp">
 
-    <!-- שכבת טעינה -->
+    <!-- אזור עליון עם גרדיאנט מודרני (כמו שאר המסכים) -->
+    <LinearLayout
+        android:id="@+id/header_bg"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/modern_gradient_bg"
+        android:elevation="4dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/header_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="48dp"
+            android:paddingTop="32dp"
+            android:paddingBottom="32dp">
+
+            <!-- מיכל הכותרות - בצד ימין (כמו פרטי לקוח/דירה) -->
+            <LinearLayout
+                android:id="@+id/title_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="end"
+                android:layout_marginStart="48dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <!-- אייקון + כותרת (כיתוב בצד ימין) -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_gravity="end"
+                    android:layoutDirection="rtl">
+
+                    <!-- אייקון -->
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        app:srcCompat="@drawable/ic_building"
+                        app:tint="#E0FFFFFF"/>
+
+                    <!-- נקודה -->
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="4dp"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@drawable/dot_indicator"
+                        android:backgroundTint="#80FFFFFF"/>
+
+                    <!-- כותרת ראשית - תיאור הנכס -->
+                    <!-- שימי לב: שמרתי id בשם title אם את משתמשת בו בקוד -->
+                    <TextView
+                        android:id="@+id/title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="תיאור הנכס"
+                        android:textColor="@android:color/white"
+                        android:textSize="28sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.01"
+                        android:shadowColor="#40000000"
+                        android:shadowDx="0"
+                        android:shadowDy="2"
+                        android:shadowRadius="8"
+                        android:textAlignment="viewEnd"/>
+                </LinearLayout>
+
+                <!-- תת כותרת -->
+                <TextView
+                    android:id="@+id/subtitle_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="תחזוקה, תכולת הדירה ותקציר אוטומטי"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="14sp"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="sans-serif"
+                    android:letterSpacing="0.02"
+                    android:gravity="end"
+                    android:textAlignment="viewEnd"
+                    android:layout_gravity="end"/>
+
+                <!-- מחוון התקדמות חזותי: 7 קווים, החמישי משמאל מודגש -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="16dp"
+                    android:layout_gravity="end"
+                    android:layoutDirection="ltr">
+
+                    <!-- 1 משמאל - בהיר -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 2 משמאל - בהיר -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 3 משמאל - בהיר -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 4 משמאל - בהיר -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 5 משמאל - מודגש (לבן) -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="@android:color/white"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 6 משמאל - בהיר -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 7 משמאל (ימני ביותר) - בהיר -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- כפתור חזור מעוצב - בצד שמאל -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/back_button_card"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#26FFFFFF"
+                app:strokeWidth="0dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/btn_back"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    app:srcCompat="@drawable/ic_arrow_back"
+                    app:tint="@android:color/white"
+                    android:contentDescription="חזור"/>
+            </com.google.android.material.card.MaterialCardView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+
+    <!-- כרטיס מרכזי עם תוכן המסך (טקסט חופשי + AI) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/main_content_card"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="48dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="24dp"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:strokeColor="#E5E7EB"
+        app:strokeWidth="1dp"
+        app:layout_constraintTop_toBottomOf="@id/header_bg"
+        app:layout_constraintBottom_toTopOf="@id/actionsRow"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_max="1200dp">
+
+        <ScrollView
+            android:id="@+id/scroll"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="32dp"
+                android:layoutDirection="rtl">
+
+                <!-- תחזוקה -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="תחזוקה / שיפוצים"
+                    app:boxBackgroundColor="#F2F2F2"
+                    app:boxStrokeColor="@color/primary_blue"
+                    android:layout_marginBottom="16dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/edtMaintenance"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textMultiLine"
+                        android:minLines="2"
+                        android:maxLines="5"
+                        android:textColor="@android:color/black" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- מה כלול בדירה -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="מה כלול בדירה"
+                    app:boxBackgroundColor="#F2F2F2"
+                    app:boxStrokeColor="@color/primary_blue"
+                    android:layout_marginBottom="16dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/edtApartmentIncludes"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textMultiLine"
+                        android:minLines="2"
+                        android:maxLines="5"
+                        android:textColor="@android:color/black" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- כותרת תקציר -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="תקציר כללי (3 משפטים)"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#1F2937"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="12dp"/>
+
+                <!-- כפתורי AI -->
+                <LinearLayout
+                    android:id="@+id/aiRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="end"
+                    android:layout_marginBottom="12dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAiSummary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:minWidth="88dp"
+                        android:paddingVertical="10dp"
+                        android:text="צור תקציר אוטומטי"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        app:icon="@drawable/ic_lightning"
+                        app:iconPadding="8dp"
+                        app:iconTint="@color/primary_blue"
+                        android:textColor="@color/primary_blue" />
+
+                    <Space
+                        android:layout_width="8dp"
+                        android:layout_height="0dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAiRegenerate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:minWidth="72dp"
+                        android:paddingVertical="10dp"
+                        android:text="גרסה נוספת"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:textColor="@color/primary_blue" />
+
+                    <Space
+                        android:layout_width="8dp"
+                        android:layout_height="0dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAiRefine"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:minWidth="72dp"
+                        android:paddingVertical="10dp"
+                        android:text="מיקוד"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:textColor="@color/primary_blue" />
+                </LinearLayout>
+
+                <!-- תיאור כללי -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="תיאור כללי (ניתן לעריכה)"
+                    app:boxBackgroundColor="#F2F2F2"
+                    app:boxStrokeColor="@color/primary_blue">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/edtPropertySummary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textMultiLine"
+                        android:minLines="3"
+                        android:maxLines="6"
+                        android:textColor="@android:color/black" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- טקסט עזר -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="* התקציר ייווצר מתמונה מייצגת + שדות קיימים. תמיד ניתן לערוך."
+                    android:textSize="12sp"
+                    android:textColor="#6B7280"
+                    android:layout_marginTop="8dp"/>
+            </LinearLayout>
+        </ScrollView>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- כפתורי תחתית -->
+    <LinearLayout
+        android:id="@+id/actionsRow"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="48dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="32dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSkip"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="דלג"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:textColor="#6B7280"
+            app:strokeColor="#D1D5DB"
+            app:cornerRadius="12dp"/>
+
+        <Space
+            android:layout_width="12dp"
+            android:layout_height="0dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSaveSummary"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="2"
+            android:text="שמור"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@null"
+            android:background="@drawable/bg_main_card_gradient"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_check"
+            app:iconGravity="textStart"
+            app:iconTint="@android:color/white"/>
+    </LinearLayout>
+
+    <!-- שכבת טעינה מעל הכל -->
     <FrameLayout
         android:id="@+id/progress"
         android:layout_width="0dp"
@@ -29,209 +425,5 @@
             android:layout_gravity="center"
             android:indeterminateTint="@color/primary_blue"/>
     </FrameLayout>
-
-    <!-- כותרת -->
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="תיאור הנכס"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:fontFamily="sans-serif"
-        android:textColor="@color/text_primary_white"
-        android:layout_marginTop="32dp"
-        android:layout_marginHorizontal="24dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- ScrollView -->
-    <ScrollView
-        android:id="@+id/scroll"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:fillViewport="true"
-        app:layout_constraintTop_toBottomOf="@id/title"
-        app:layout_constraintBottom_toTopOf="@+id/actionsRow"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="24dp"
-            android:layoutDirection="rtl">
-
-            <!-- תחזוקה -->
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="תחזוקה / שיפוצים"
-                app:boxBackgroundColor="#F2F2F2"
-                app:boxStrokeColor="@color/primary_blue"
-                android:layout_marginBottom="16dp">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/edtMaintenance"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textMultiLine"
-                    android:minLines="2"
-                    android:maxLines="5"
-                    android:textColor="@android:color/black" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- מה כלול בדירה -->
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="מה כלול בדירה"
-                app:boxBackgroundColor="#F2F2F2"
-                app:boxStrokeColor="@color/primary_blue"
-                android:layout_marginBottom="16dp">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/edtApartmentIncludes"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textMultiLine"
-                    android:minLines="2"
-                    android:maxLines="5"
-                    android:textColor="@android:color/black" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- כותרת תקציר -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="תקציר כללי (3 משפטים)"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary_white"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="12dp"/>
-
-            <!-- כפתורי AI -->
-            <LinearLayout
-                android:id="@+id/aiRow"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="end"
-                android:layout_marginBottom="12dp">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnAiSummary"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minHeight="48dp"
-                    android:minWidth="88dp"
-                    android:paddingVertical="10dp"
-                    android:text="צור תקציר אוטומטי"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    app:icon="@drawable/ic_lightning"
-                    app:iconPadding="8dp"
-                    app:iconTint="@color/primary_blue"
-                    android:textColor="@color/primary_blue" />
-
-                <Space android:layout_width="8dp" android:layout_height="0dp"/>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnAiRegenerate"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minHeight="48dp"
-                    android:minWidth="72dp"
-                    android:paddingVertical="10dp"
-                    android:text="גרסה נוספת"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:textColor="@color/primary_blue" />
-
-                <Space android:layout_width="8dp" android:layout_height="0dp"/>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnAiRefine"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minHeight="48dp"
-                    android:minWidth="72dp"
-                    android:paddingVertical="10dp"
-                    android:text="מיקוד"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:textColor="@color/primary_blue" />
-            </LinearLayout>
-
-            <!-- תיאור כללי -->
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="תיאור כללי (ניתן לעריכה)"
-                app:boxBackgroundColor="#F2F2F2"
-                app:boxStrokeColor="@color/primary_blue">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/edtPropertySummary"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textMultiLine"
-                    android:minLines="3"
-                    android:maxLines="6"
-                    android:textColor="@android:color/black" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- טקסט עזר -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="* התקציר ייווצר מתמונה מייצגת + שדות קיימים. תמיד ניתן לערוך."
-                android:textSize="12sp"
-                android:textColor="@color/text_secondary_white"
-                android:layout_marginTop="8dp"/>
-        </LinearLayout>
-    </ScrollView>
-
-    <!-- כפתורי תחתית -->
-    <LinearLayout
-        android:id="@+id/actionsRow"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingHorizontal="24dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="24dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSkip"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="דלג"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:textColor="@color/text_primary_white"
-            app:strokeColor="@color/text_primary_white"
-            app:cornerRadius="12dp"/>
-
-        <Space android:layout_width="12dp" android:layout_height="0dp"/>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSaveSummary"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="2"
-            android:text="שמור"
-            android:textColor="@android:color/white"
-            android:backgroundTint="@color/primary_blue"
-            app:cornerRadius="12dp"
-            app:icon="@drawable/ic_check"
-            app:iconGravity="textStart"/>
-    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

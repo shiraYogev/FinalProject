@@ -7,69 +7,330 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layoutDirection="rtl"
-    android:padding="16dp"
+    android:background="#F5F7FA"
     tools:context=".activity.newProject.bank.BankDetailsActivity">
 
-    <!-- כותרת -->
-    <TextView
-        android:id="@+id/txtTitle"
+    <!-- אזור עליון עם גרדיאנט מודרני -->
+    <LinearLayout
+        android:id="@+id/header_bg"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="פרטי בנק"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:textColor="?android:attr/textColorPrimary"
+        android:orientation="vertical"
+        android:background="@drawable/modern_gradient_bg"
+        android:elevation="4dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- כפתור העלאת PDF -->
-    <Button
-        android:id="@+id/uploadPdfButton"
+        <!-- Header מעוצב -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/header_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="48dp"
+            android:paddingTop="32dp"
+            android:paddingBottom="32dp">
+
+            <!-- מיכל הכותרות - בצד ימין (כמו שאר המסכים החדשים) -->
+            <LinearLayout
+                android:id="@+id/title_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="end"
+                android:layout_marginStart="48dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <!-- אייקון + כותרת (כיתוב בצד ימין) -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_gravity="end"
+                    android:layoutDirection="rtl">
+
+                    <!-- אייקון בנק -->
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        app:srcCompat="@drawable/ic_bank"
+                        app:tint="#E0FFFFFF"/>
+
+                    <!-- נקודה -->
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="4dp"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@drawable/dot_indicator"
+                        android:backgroundTint="#80FFFFFF"/>
+
+                    <!-- כותרת ראשית - משתמשת ב-id המקורי txtTitle -->
+                    <TextView
+                        android:id="@+id/txtTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="פרטי בנק"
+                        android:textColor="@android:color/white"
+                        android:textSize="28sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.01"
+                        android:shadowColor="#40000000"
+                        android:shadowDx="0"
+                        android:shadowDy="2"
+                        android:shadowRadius="8"
+                        android:textAlignment="viewEnd"/>
+                </LinearLayout>
+
+                <!-- תת כותרת מעוצבת -->
+                <TextView
+                    android:id="@+id/subtitle_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ייבוא אוטומטי או עריכה ידנית של פרטי הבנק"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="14sp"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="sans-serif"
+                    android:letterSpacing="0.02"
+                    android:gravity="end"
+                    android:textAlignment="viewEnd"
+                    android:layout_gravity="end"/>
+
+                <!-- מחוון התקדמות חזותי – 7 קווים, השישי מודגש -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="16dp"
+                    android:layout_gravity="end">
+
+                    <!-- 1 -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 2 -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 3 -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 4 -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 5 -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 6 – מסומן (לבן) -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="@android:color/white"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 7 -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"/>
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- כפתור חזור מעוצב - בצד שמאל (כמו במסכים האחרים) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/back_button_card"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#26FFFFFF"
+                app:strokeWidth="0dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/btn_back"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    app:srcCompat="@drawable/ic_arrow_back"
+                    app:tint="@android:color/white"
+                    android:contentDescription="חזור"/>
+            </com.google.android.material.card.MaterialCardView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+
+    <!-- כרטיס מרכזי לפרטי הבנק -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/main_content_card"
         android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:text="העלה קובץ PDF"
-        android:layout_marginTop="24dp"
-        app:layout_constraintTop_toBottomOf="@id/txtTitle"
-        app:layout_constraintStart_toStartOf="@id/txtTitle"
-        app:layout_constraintEnd_toEndOf="@id/txtTitle" />
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="48dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="48dp"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="8dp"
+        app:strokeColor="#E5E7EB"
+        app:strokeWidth="1dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:layout_constraintTop_toBottomOf="@id/header_bg"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_max="1200dp">
 
-    <!-- כפתור עריכה ידנית (חדש) -->
-    <Button
-        android:id="@+id/editManuallyButton"
-        android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:text="עריכת פרטים ידנית"
-        android:layout_marginTop="12dp"
-        app:layout_constraintTop_toBottomOf="@id/uploadPdfButton"
-        app:layout_constraintStart_toStartOf="@id/uploadPdfButton"
-        app:layout_constraintEnd_toEndOf="@id/uploadPdfButton" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="32dp">
 
-    <!-- שם הקובץ שנבחר -->
-    <TextView
-        android:id="@+id/txtFileName"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="לא נבחר קובץ"
-        android:textSize="14sp"
-        android:textColor="?android:attr/textColorSecondary"
-        android:ellipsize="end"
-        android:singleLine="true"
-        android:layout_marginTop="12dp"
-        app:layout_constraintTop_toBottomOf="@id/editManuallyButton"
-        app:layout_constraintStart_toStartOf="@id/editManuallyButton"
-        app:layout_constraintEnd_toEndOf="@id/editManuallyButton" />
+            <!-- כותרת החלק בכרטיס -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical|end"
+                android:layout_marginBottom="24dp"
+                android:layoutDirection="rtl">
 
-    <!-- ProgressBar -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyleLarge"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:visibility="gone"
-        android:layout_marginTop="24dp"
-        app:layout_constraintTop_toBottomOf="@id/txtFileName"
-        app:layout_constraintStart_toStartOf="@id/txtFileName"
-        app:layout_constraintEnd_toEndOf="@id/txtFileName" />
+                <TextView
+                    android:id="@+id/section_title_bank"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="מסמכי הבנק"
+                    android:textColor="#1F2937"
+                    android:textSize="20sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.02"
+                    android:layout_marginStart="8dp"/>
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    app:tint="@color/primary_blue"
+                    tools:srcCompat="@drawable/ic_bank"/>
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="2dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="16dp"
+                    android:background="@drawable/divider_gradient"/>
+            </LinearLayout>
+
+            <!-- טקסט עזר -->
+            <TextView
+                android:id="@+id/bank_helper_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="ניתן להעלות דוח PDF מהבנק לניתוח אוטומטי, או להזין את הנתונים באופן ידני."
+                android:textSize="14sp"
+                android:textColor="#6B7280"
+                android:fontFamily="sans-serif"
+                android:layout_marginBottom="24dp"/>
+
+            <!-- כפתור העלאת PDF (MaterialButton + גרדיאנט) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/uploadPdfButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="העלה קובץ PDF"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.02"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="@null"
+                android:background="@drawable/bg_main_card_gradient"
+                android:elevation="4dp"
+                android:stateListAnimator="@null"
+                app:cornerRadius="16dp"
+                app:icon="@drawable/ic_upload"
+                app:iconTint="@android:color/white"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconSize="22dp"/>
+
+            <!-- כפתור עריכה ידנית (Outlined) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/editManuallyButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="עריכת פרטים ידנית"
+                android:textColor="#6B7280"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.02"
+                android:layout_marginBottom="16dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                app:cornerRadius="16dp"
+                app:strokeColor="#D1D5DB"
+                app:strokeWidth="2dp"
+                app:icon="@drawable/ic_edit"
+                app:iconTint="#6B7280"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconSize="22dp"/>
+
+            <!-- שם הקובץ שנבחר -->
+            <TextView
+                android:id="@+id/txtFileName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="לא נבחר קובץ"
+                android:textSize="14sp"
+                android:textColor="#6B7280"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:layout_marginTop="4dp"/>
+
+            <!-- ProgressBar בתוך הכרטיס -->
+            <ProgressBar
+                android:id="@+id/progressBar"
+                style="?android:attr/progressBarStyleLarge"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="24dp"
+                android:layout_gravity="center_horizontal"
+                android:visibility="gone"
+                android:indeterminateTint="@color/primary_blue"/>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

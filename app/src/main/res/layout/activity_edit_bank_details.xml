@@ -5,82 +5,225 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/modern_gradient_bg"  android:layoutDirection="rtl"
+    android:layoutDirection="rtl"
+    android:background="@color/brand_bg"
     tools:context=".activity.newProject.bank.EditBankDetailsActivity">
 
-    <View
-        android:id="@+id/status_bar_overlay"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="@color/dark_navy_primary"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/header_section" />
-
+    <!-- אזור עליון עם גרדיאנט מודרני -->
     <LinearLayout
-        android:id="@+id/header_section"
+        android:id="@+id/header_bg"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="24dp"
-        android:paddingTop="56dp"
-        android:paddingBottom="16dp"
+        android:orientation="vertical"
+        android:background="@drawable/modern_gradient_bg"
+        android:elevation="4dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <ImageView
-            android:id="@+id/btn_back"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:padding="12dp"
-            android:src="@drawable/ic_arrow_back" android:contentDescription="חזור"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?android:attr/selectableItemBackgroundBorderless"
-            app:tint="@color/text_primary_white" />
-
-        <TextView
-            android:layout_width="0dp"
+        <!-- Header מעוצב -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/header_section"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="עריכת פרטי הבנק והנכס"
-            android:textColor="@color/text_primary_white"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:gravity="center_horizontal" />
+            android:paddingHorizontal="48dp"
+            android:paddingTop="32dp"
+            android:paddingBottom="32dp">
 
-        <View
-            android:layout_width="48dp"
-            android:layout_height="48dp" />
+            <!-- מיכל הכותרות - בצד ימין -->
+            <LinearLayout
+                android:id="@+id/title_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="end"
+                android:layout_marginStart="48dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <!-- אייקון + כותרת -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_gravity="end"
+                    android:layoutDirection="rtl">
+
+                    <!-- אייקון בנק -->
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        app:srcCompat="@drawable/ic_bank"
+                        app:tint="#E0FFFFFF"/>
+
+                    <!-- נקודה -->
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="4dp"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@drawable/dot_indicator"
+                        android:backgroundTint="#80FFFFFF"/>
+
+                    <!-- כותרת ראשית -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="עריכת פרטי הבנק והנכס"
+                        android:textColor="@android:color/white"
+                        android:textSize="28sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.01"
+                        android:shadowColor="#40000000"
+                        android:shadowDx="0"
+                        android:shadowDy="2"
+                        android:shadowRadius="8"
+                        android:textAlignment="viewEnd"/>
+                </LinearLayout>
+
+                <!-- תת כותרת -->
+                <TextView
+                    android:id="@+id/subtitle_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="בדיקה ותיקון של פרטי הבנק שנשלפו אוטומטית"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="14sp"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="sans-serif"
+                    android:letterSpacing="0.02"
+                    android:gravity="end"
+                    android:textAlignment="viewEnd"
+                    android:layout_gravity="end"/>
+
+                <!-- מחוון התקדמות חזותי – 7 קווים, השישי מודגש -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="16dp"
+                    android:layout_gravity="end">
+
+                    <!-- 1 -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 2 -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 3 -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 4 -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 5 -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 6 – מסומן (לבן) -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="@android:color/white"
+                        android:layout_marginEnd="6dp"/>
+
+                    <!-- 7 -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"/>
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- כפתור חזור מעוצב - בצד שמאל -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/back_button_card"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#26FFFFFF"
+                app:strokeWidth="0dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/btn_back"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    app:srcCompat="@drawable/ic_arrow_back"
+                    app:tint="@android:color/white"
+                    android:contentDescription="חזור"/>
+            </com.google.android.material.card.MaterialCardView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
 
+    <!-- אינדיקטור טעינה לינארי (נשאר עם אותו id) -->
     <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/progressIndicator"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:indeterminate="true"
         android:visibility="gone"
-        app:indicatorColor="?attr/colorPrimary"
-        app:layout_constraintTop_toBottomOf="@id/header_section"
+        app:indicatorColor="@color/primary_blue"
+        app:trackColor="@color/primary_blue_20"
+        app:layout_constraintTop_toBottomOf="@id/header_bg"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- כרטיס התוכן המרכזי -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/main_content_card"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginHorizontal="16dp"
+        android:layout_marginHorizontal="48dp"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="12dp"
+        android:layout_marginBottom="48dp"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:strokeColor="@color/fp_outline"
+        app:strokeWidth="1dp"
         app:layout_constraintTop_toBottomOf="@id/progressIndicator"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_max="1200dp">
 
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
@@ -92,14 +235,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="24dp"
-                android:background="@android:color/white">
+                android:padding="32dp">
 
+                <!-- כרטיס מידע - צבעים לפי info_* -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="24dp"
-                    app:cardBackgroundColor="#E3F2FD" app:strokeColor="#1565C0" app:strokeWidth="1dp"
+                    app:cardBackgroundColor="@color/info_background"
+                    app:strokeColor="@color/info_color"
+                    app:strokeWidth="1dp"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="0dp">
 
@@ -107,20 +252,22 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:padding="16dp"
-                        android:text="הפרטים הבאים חולצו אוטומטיט מהמסמך. אנא בדקי ותקני לפי הצורך."
-                        android:textColor="#1565C0"
+                        android:text="הפרטים הבאים חולצו אוטומטית מהמסמך. אנא בדקי ותקני לפי הצורך."
+                        android:textColor="@color/info_text"
                         android:textSize="14sp" />
                 </com.google.android.material.card.MaterialCardView>
 
+                <!-- כותרת חלק: פרטי הבנק והסניף -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     android:text="פרטי הבנק והסניף"
-                    android:textColor="?attr/colorPrimary"
+                    android:textColor="@color/text_primary_dark"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
+                <!-- שדות כמו בקוד המקורי (משאירים סגנון Material3 אם הוא מתאים לך כרגע) -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -128,6 +275,7 @@
                     android:layout_marginBottom="16dp"
                     android:hint="שם הבנק"
                     app:endIconMode="clear_text">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editBankName"
                         android:layout_width="match_parent"
@@ -142,6 +290,7 @@
                     android:layout_marginBottom="16dp"
                     android:hint="שם הסניף"
                     app:endIconMode="clear_text">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editBranchName"
                         android:layout_width="match_parent"
@@ -156,6 +305,7 @@
                     android:layout_marginBottom="16dp"
                     android:hint="אימייל הסניף"
                     app:endIconMode="clear_text">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editBranchEmail"
                         android:layout_width="match_parent"
@@ -170,6 +320,7 @@
                     android:layout_marginBottom="32dp"
                     android:hint="שם הבנקאי"
                     app:endIconMode="clear_text">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editBankerName"
                         android:layout_width="match_parent"
@@ -177,15 +328,17 @@
                         android:inputType="text" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-
+                <!-- כותרת: פרטי המסמך והשמאות -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     android:text="פרטי המסמך והשמאות"
-                    android:textColor="?attr/colorPrimary"
+                    android:textColor="@color/text_primary_dark"
                     android:textSize="18sp"
                     android:textStyle="bold" />
+
+                <!-- (מכאן ואילך כל שאר TextInputLayout בדיוק כמו בקוד ששלחת, רק בפורמט מסודר) -->
 
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
@@ -193,11 +346,13 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     android:hint="תאריך (לועזי)"
-                    app:endIconMode="clear_text"> <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editDocumentDateGre"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="date" />
+                    app:endIconMode="clear_text">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editDocumentDateGre"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="date" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -207,6 +362,7 @@
                     android:layout_marginBottom="16dp"
                     android:hint="תאריך (עברי)"
                     app:endIconMode="clear_text">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editDocumentDateHe"
                         android:layout_width="match_parent"
@@ -221,6 +377,7 @@
                     android:layout_marginBottom="16dp"
                     android:hint="מספר שומה"
                     app:endIconMode="clear_text">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editValuationNumber"
                         android:layout_width="match_parent"
@@ -235,6 +392,7 @@
                     android:layout_marginBottom="16dp"
                     android:hint="מספר תיק/ הלוואה"
                     app:endIconMode="clear_text">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editLoanNumber"
                         android:layout_width="match_parent"
@@ -249,6 +407,7 @@
                     android:layout_marginBottom="16dp"
                     android:hint="סוג הלוואה"
                     app:endIconMode="clear_text">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editTypeOfLoan"
                         android:layout_width="match_parent"
@@ -263,6 +422,7 @@
                     android:layout_marginBottom="32dp"
                     android:hint="כותרת עמוד 1"
                     app:endIconMode="clear_text">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editPage1Header"
                         android:layout_width="match_parent"
@@ -270,12 +430,13 @@
                         android:inputType="text" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- פרטי הנכס -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     android:text="פרטי הנכס"
-                    android:textColor="?attr/colorPrimary"
+                    android:textColor="@color/text_primary_dark"
                     android:textSize="18sp"
                     android:textStyle="bold"/>
 
@@ -284,6 +445,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     android:orientation="horizontal">
+
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                         android:layout_width="0dp"
@@ -292,6 +454,7 @@
                         android:layout_weight="1"
                         android:hint="גוש"
                         app:endIconMode="clear_text">
+
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/editLotNumber"
                             android:layout_width="match_parent"
@@ -307,6 +470,7 @@
                         android:layout_weight="1"
                         android:hint="מס' חלקה"
                         app:endIconMode="clear_text">
+
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/editMainParcel"
                             android:layout_width="match_parent"
@@ -322,13 +486,13 @@
                         android:layout_weight="1"
                         android:hint="מס' תת-חלקה"
                         app:endIconMode="clear_text">
+
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/editSubParcel"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="number" />
                     </com.google.android.material.textfield.TextInputLayout>
-
                 </LinearLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -338,6 +502,7 @@
                     android:layout_marginBottom="32dp"
                     android:hint="כתובת מלאה (רחוב, מס דירה, שכונה, קומה, עיר)"
                     app:endIconMode="clear_text">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editShortAddress"
                         android:layout_width="match_parent"
@@ -345,12 +510,13 @@
                         android:inputType="text" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- פרטי הלווה -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     android:text="פרטי הלווה"
-                    android:textColor="?attr/colorPrimary"
+                    android:textColor="@color/text_primary_dark"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
@@ -361,6 +527,7 @@
                     android:layout_marginBottom="16dp"
                     android:hint="שם הלווה"
                     app:endIconMode="clear_text">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editLoanerName"
                         android:layout_width="match_parent"
@@ -377,6 +544,7 @@
                     app:counterEnabled="true"
                     app:counterMaxLength="9"
                     app:endIconMode="clear_text">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editLoanerId"
                         android:layout_width="match_parent"
@@ -392,6 +560,7 @@
                     android:layout_marginBottom="16dp"
                     android:hint="מטרת ההלוואה"
                     app:endIconMode="clear_text">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editPurposeOfLoan"
                         android:layout_width="match_parent"
@@ -406,6 +575,7 @@
                     android:layout_marginBottom="16dp"
                     android:hint="זהות מזמין השומה"
                     app:endIconMode="clear_text">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editIdentityOfCustomer"
                         android:layout_width="match_parent"
@@ -419,48 +589,61 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="24dp"
                     android:hint="המועד הקובע לשומה"
-                    app:endIconMode="clear_text"> <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editAppraisalFinalDate"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="date" />
+                    app:endIconMode="clear_text">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editAppraisalFinalDate"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="date" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- כפתורי פעולה תחתונים -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginTop="8dp">
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnCancel"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="0dp"
                         android:layout_height="60dp"
                         android:layout_marginEnd="8dp"
                         android:layout_weight="1"
                         android:text="ביטול"
-                        android:textColor="?attr/colorPrimary"
-                        app:strokeColor="?attr/colorPrimary"
-                        app:cornerRadius="12dp" />
+                        android:textColor="#6B7280"
+                        app:strokeColor="#D1D5DB"
+                        app:strokeWidth="2dp"
+                        app:cornerRadius="16dp"
+                        app:icon="@drawable/ic_close"
+                        app:iconTint="#6B7280"
+                        app:iconGravity="textStart"
+                        app:iconPadding="12dp"
+                        app:iconSize="22dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSave"
                         android:layout_width="0dp"
                         android:layout_height="60dp"
                         android:layout_marginStart="8dp"
-                        android:layout_weight="1"
+                        android:layout_weight="1.5"
                         android:text="שמור שינויים"
-                        app:cornerRadius="12dp"
+                        android:textColor="@android:color/white"
                         android:textSize="16sp"
-                        android:textStyle="bold" />
-
+                        android:textStyle="bold"
+                        android:backgroundTint="@null"
+                        android:background="@drawable/bg_main_card_gradient"
+                        app:cornerRadius="16dp"
+                        app:icon="@drawable/ic_save"
+                        app:iconTint="@android:color/white"
+                        app:iconGravity="textStart"
+                        app:iconPadding="12dp"
+                        app:iconSize="22dp" />
                 </LinearLayout>
             </LinearLayout>
-
         </androidx.core.widget.NestedScrollView>
-
     </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

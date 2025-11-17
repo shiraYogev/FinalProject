@@ -96,8 +96,8 @@
     <color name="fp_primary_dark">#3142A3</color>   <!-- ~10% כהה יותר -->
 
     <!-- הטוקנים שהגרדיאנט משתמש בהם -->
-    <color name="primary_gradient_start">@color/fp_primary_dark</color>
-    <color name="primary_gradient_end">@color/fp_primary</color>
+    <color name="primary_gradient_start">#4559C7</color>
+    <color name="primary_gradient_end">@color/brand_accent</color>
 
     <!-- טקסטים לבנים/כהים (קיימים) -->
     <color name="text_primary_white">#FFFFFF</color>
