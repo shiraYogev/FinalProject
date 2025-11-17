@@ -1,5 +1,7 @@
 package com.example.finalprojectappraisal.model;
 
+import android.util.Log;
+
 import com.google.firebase.firestore.Exclude;
 import com.google.firebase.firestore.IgnoreExtraProperties;
 import com.google.firebase.firestore.PropertyName;
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
  */
 @IgnoreExtraProperties
 public class Project {
+
+    private static final String TAG = "ProjectModel";
 
     // Project identification
     private String projectId;
@@ -119,9 +123,10 @@ public class Project {
     @SerializedName("apartment_windows")
     private String windowType;
 
-    // ✅ שינוי: has_bars הופך להיות מחרוזת ("מלא" / "חלקי" / "אין")
+    // ⚠️ raw backing field for has_bars – can be Boolean OR String in Firestore
     @SerializedName("has_bars")
-    private String hasBars;
+    @PropertyName("has_bars")
+    private Object hasBarsRaw;
 
     @SerializedName("apartment_directions")
     private List<String> airDirection;
@@ -216,7 +221,7 @@ public class Project {
         this.entranceDoorCondition = entranceDoorCondition;
         this.interiorDoorCondition = interiorDoorCondition;
         this.windowType = windowType;
-        this.hasBars = hasBars;
+        this.hasBarsRaw = hasBars; // נשמר כמחרוזת, אבל השדה הוא Object
         this.airDirection = airDirection;
         this.hasElevator = hasElevator;
         this.hasStorageRoom = hasStorageRoom;
@@ -497,21 +502,70 @@ public class Project {
         updateLastUpdateDate();
     }
 
-    // ✅ עכשיו get/set של has_bars כמחרוזת
-    @PropertyName("has_bars")
+    // ===== has_bars as String API, backed by Object =====
+
+    /**
+     * מחזיר את has_bars כמחרוזת, גם אם בפועל ב-Firestore הוא נשמר כ-Boolean.
+     */
+    @Exclude
     public String getHasBars() {
-        return hasBars;
+        if (hasBarsRaw == null) {
+            Log.d(TAG, "getHasBars: raw value is null");
+            return null;
+        }
+        if (hasBarsRaw instanceof String) {
+            Log.d(TAG, "getHasBars: raw is String = " + hasBarsRaw);
+            return (String) hasBarsRaw;
+        }
+        if (hasBarsRaw instanceof Boolean) {
+            Boolean b = (Boolean) hasBarsRaw;
+            String mapped = b ? "יש" : "אין";
+            Log.d(TAG, "getHasBars: raw is Boolean = " + b + ", mapped to String = '" + mapped + "'");
+            return mapped;
+        }
+        Log.w(TAG, "getHasBars: unexpected raw type = " +
+                hasBarsRaw.getClass().getName() + ", value = " + hasBarsRaw +
+                " – using String.valueOf(...)");
+        return String.valueOf(hasBarsRaw);
     }
 
-    @PropertyName("has_bars")
+    /**
+     * מגדיר את has_bars כמחרוזת – בצד של Firestore זה יישמר כ-String.
+     */
+    @Exclude
     public void setHasBars(String hasBars) {
-        this.hasBars = hasBars;
+        Log.d(TAG, "setHasBars(String): value = '" + hasBars + "'");
+        this.hasBarsRaw = hasBars;
     }
 
-    // עוזר אופציונלי אם תרצי בוליאן בלוגיקה פנימית
+    /**
+     * עוזר אופציונלי אם תרצי בוליאן בלוגיקה פנימית.
+     */
     @Exclude
     public boolean hasBarsAsBoolean() {
-        return hasBars != null && !"אין".equals(hasBars.trim());
+        if (hasBarsRaw == null) {
+            Log.d(TAG, "hasBarsAsBoolean: raw is null -> false");
+            return false;
+        }
+        if (hasBarsRaw instanceof Boolean) {
+            boolean b = (Boolean) hasBarsRaw;
+            Log.d(TAG, "hasBarsAsBoolean: raw Boolean = " + b);
+            return b;
+        }
+        if (hasBarsRaw instanceof String) {
+            String s = ((String) hasBarsRaw).trim();
+            boolean result = !(s.isEmpty()
+                    || "אין".equals(s)
+                    || "לא".equals(s)
+                    || "false".equalsIgnoreCase(s)
+                    || "0".equals(s));
+            Log.d(TAG, "hasBarsAsBoolean: raw String = '" + s + "', mapped to " + result);
+            return result;
+        }
+        Log.w(TAG, "hasBarsAsBoolean: unexpected raw type = " +
+                hasBarsRaw.getClass().getName() + ", value = " + hasBarsRaw +
+                " -> default false");
+        return false;
     }
 
     @PropertyName("apartment_directions")
@@ -713,7 +767,7 @@ public class Project {
                 ", entranceDoorCondition='" + entranceDoorCondition + '\'' +
                 ", interiorDoorCondition='" + interiorDoorCondition + '\'' +
                 ", windowType='" + windowType + '\'' +
-                ", hasBars='" + hasBars + '\'' +
+                ", hasBars='" + getHasBars() + '\'' +
                 ", airDirection=" + airDirection +
                 ", hasElevator=" + hasElevator +
                 ", hasStorageRoom=" + hasStorageRoom +
