@@ -30,16 +30,16 @@
         <!-- כפתור מחיקה עגול -->
         <ImageButton
             android:id="@+id/btnDeleteImage"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
             android:layout_margin="12dp"
-            android:background="@drawable/avatar_circle_bg"
-            android:src="@drawable/ic_close"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_trash"
             android:contentDescription="מחק תמונה"
             android:scaleType="center"
-            android:padding="10dp"
+            android:padding="4dp"
             app:tint="@color/text_primary_dark" />
 
         <!-- תיאור התמונה -->

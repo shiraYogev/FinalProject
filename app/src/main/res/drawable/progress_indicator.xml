@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- עיגול מלא (פס התקדמות מעוגל) -->
+    <corners android:radius="999dp" />
+
+    <!-- הצבע עצמו כמעט לא משנה כי את משתמשת ב-backgroundTint -->
+    <solid android:color="@android:color/white" />
+
+    <!-- גובה ברירת מחדל, הרוחב מגיע מה-View -->
+    <size android:height="3dp" />
+</shape>
