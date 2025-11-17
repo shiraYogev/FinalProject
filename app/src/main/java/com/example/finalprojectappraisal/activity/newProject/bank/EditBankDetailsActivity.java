@@ -3,6 +3,7 @@ package com.example.finalprojectappraisal.activity.newProject.bank;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -11,6 +12,9 @@ import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.model.BankDetails;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.gson.Gson;
 
 public class EditBankDetailsActivity extends AppCompatActivity {
@@ -37,6 +41,10 @@ public class EditBankDetailsActivity extends AppCompatActivity {
     private Button btnSave, btnCancel;
     private String pdfUriString, fileName, projectId;
 
+    // Firebase
+    private FirebaseFirestore db;
+    private static final String TAG = "EditBankDetailsActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,20 +52,33 @@ public class EditBankDetailsActivity extends AppCompatActivity {
 
         // אתחול רכיבי ה-UI
         initViews();
+        db = FirebaseFirestore.getInstance();
 
         // קבלת הנתונים מה-Intent
         Intent intent = getIntent();
         if (intent != null) {
-            String bankDetailsJson = intent.getStringExtra("bankDetails");
+            //String bankDetailsJson = intent.getStringExtra("bankDetails");
             projectId = intent.getStringExtra("projectId");
             pdfUriString = intent.getStringExtra("pdfUriString");
             fileName = intent.getStringExtra("fileName");
 
-            if (bankDetailsJson != null) {
-                Gson gson = new Gson();
-                BankDetails bankDetails = gson.fromJson(bankDetailsJson, BankDetails.class);
-                displayBankDetails(bankDetails);
+            // ודא ש-projectId קיים לפני הטעינה
+            if (projectId != null && !projectId.isEmpty()) {
+                loadBankDetailsFromFirebase(projectId);
+            } else {
+                // אם אין projectId, אפשר להציג שדות ריקים
+                Toast.makeText(this, "Project ID is missing. Starting with empty details.", Toast.LENGTH_LONG).show();
+                showLoading(false); // הפסק את הלואדינג אם אין מזהה פרויקט
             }
+
+            //if (bankDetailsJson != null) {
+            //    Gson gson = new Gson();
+            //    BankDetails bankDetails = gson.fromJson(bankDetailsJson, BankDetails.class);
+            //    displayBankDetails(bankDetails);
+            //}
+
+        } else {
+            showLoading(false);
         }
 
         // הגדרת מאזין לכפתור השמירה
@@ -68,6 +89,8 @@ public class EditBankDetailsActivity extends AppCompatActivity {
             setResult(RESULT_CANCELED);
             finish();
         });
+
+        showLoading(true); // הצג לואדינג בזמן טעינת הנתונים
     }
 
     private void initViews() {
@@ -205,6 +228,32 @@ public class EditBankDetailsActivity extends AppCompatActivity {
 
         setResult(RESULT_OK, resultIntent);
         finish();
+
+        // ** <<< השינוי מתחיל כאן >>> **
+        if (projectId != null && !projectId.isEmpty()) {
+            showLoading(true); // 1. מציג לואדינג
+
+            // 2. שולח את האובייקט המעודכן ל-Firebase
+            db.collection("projects").document(projectId)
+                    .update("bankDetails", updatedBankDetails)
+
+                    // 3. אם השמירה הצליחה:
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "Details Saved.", Toast.LENGTH_SHORT).show();
+                        // 4. מחזיר את התוצאה למסך הקודם
+                        returnResultToPreviousScreen(updatedBankDetails);
+                    })
+
+                    // 5. אם השמירה נכשלה:
+                    .addOnFailureListener(e -> {
+                        showLoading(false); // 6. מכבה לואדינג ומציג שגיאה
+                        Toast.makeText(this, "Error saving details to database.", Toast.LENGTH_LONG).show();
+                    });
+        } else {
+            // ... טיפול במקרה שאין projectId ...
+            returnResultToPreviousScreen(updatedBankDetails);
+        }
+
     }
 
     private void showLoading(boolean isLoading) {
@@ -217,5 +266,54 @@ public class EditBankDetailsActivity extends AppCompatActivity {
             btnSave.setEnabled(true);
             btnCancel.setEnabled(true);
         }
+    }
+
+    /**
+     * טוען את פרטי הבנק מ-Firebase ומציג אותם ב-UI.
+     * @param projectId מזהה הפרויקט ב-Firestore.
+     */
+    private void loadBankDetailsFromFirebase(String projectId) {
+        DocumentReference docRef = db.collection("projects").document(projectId);
+
+        docRef.get().addOnCompleteListener(task -> {
+            showLoading(false); // הפסק את הלואדינג לאחר סיום המשימה
+            if (task.isSuccessful()) {
+                DocumentSnapshot document = task.getResult();
+                if (document.exists() && document.contains("bankDetails")) {
+
+                    // ⭐️ התיקון המרכזי: קוראים ישירות לאובייקט BankDetails
+                    // בלי ניסיון להמיר ל-String או להשתמש ב-GSON.
+                    BankDetails bankDetails = document.get("bankDetails", BankDetails.class);
+
+                    if (bankDetails != null) {
+                        displayBankDetails(bankDetails);
+                        Log.d(TAG, "Bank Details loaded successfully using Firebase Model Mapping.");
+                    } else {
+                        Log.e(TAG, "BankDetails field exists but failed to parse into BankDetails object.");
+                        Toast.makeText(this, "Error loading bank details.", Toast.LENGTH_LONG).show();
+                    }
+
+                } else {
+                    Log.d(TAG, "No bank details found for this project. Starting with empty fields.");
+                    // אם המסמך קיים אך אין שדה bankDetails, נשארים עם שדות ריקים
+                }
+            } else {
+                Log.e(TAG, "Error getting project document from Firebase: ", task.getException());
+                Toast.makeText(this, "Failed to load details from database.", Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    // שינוי קטן: כעת מקבל BankDetails במקום JSON String
+    private void returnResultToPreviousScreen(BankDetails updatedBankDetails) {
+        // ממירים ל-JSON רק כדי להחזיר את הנתונים למסך הקודם
+        Intent resultIntent = new Intent();
+        resultIntent.putExtra("updatedBankDetails", new Gson().toJson(updatedBankDetails));
+        resultIntent.putExtra("pdfUriString", pdfUriString);
+        resultIntent.putExtra("fileName", fileName);
+
+        setResult(RESULT_OK, resultIntent);
+        showLoading(false); // וודא שהלואדינג כבה לפני סיום
+        finish();
     }
 }
