@@ -96,10 +96,8 @@ public class BankDetailsActivity extends AppCompatActivity {
 
     // פותח את מסך העריכה הידנית ללא PDF (BankDetails ריק שניתן לעריכה)
     private void showManualEdit() {
-        BankDetails empty = new BankDetails(); // נדרש קונסטרקטור ריק במודל
         Intent intent = new Intent(this, EditBankDetailsActivity.class);
-        Gson gson = new Gson();
-        intent.putExtra("bankDetails", gson.toJson(empty));
+        // הסרנו: intent.putExtra("bankDetails", gson.toJson(empty));
         intent.putExtra("projectId", projectId);
         intent.putExtra("pdfUriString", ""); // אין PDF
         intent.putExtra("fileName", "");
@@ -174,13 +172,28 @@ public class BankDetailsActivity extends AppCompatActivity {
     }
 
     private void showEditActivity(BankDetails bankDetails, Uri pdfUri, String fileName) {
-        Intent intent = new Intent(this, EditBankDetailsActivity.class);
-        Gson gson = new Gson();
-        intent.putExtra("bankDetails", gson.toJson(bankDetails));
-        intent.putExtra("projectId", projectId);
-        intent.putExtra("pdfUriString", pdfUri.toString());
-        intent.putExtra("fileName", fileName);
-        startActivityForResult(intent, REVIEW_REQUEST_CODE);
+        // 1. שמור את הנתונים שחולצו מ-Gemini מיד ל-Firestore
+        ProjectRepository.getInstance().saveBankDetailsToProject(projectId, bankDetails, task -> {
+            if (task.isSuccessful()) {
+                Log.d("BankDetailsActivity", "Successfully saved extracted data to Firestore before review.");
+
+                // 2. פתח את מסך העריכה, שיטען את הנתונים שכרגע נשמרו מ-Firestore
+                Intent intent = new Intent(this, EditBankDetailsActivity.class);
+                intent.putExtra("projectId", projectId);
+                intent.putExtra("pdfUriString", pdfUri.toString());
+                intent.putExtra("fileName", fileName);
+
+                // 3. עצור את הלואדינג לפני המעבר
+                resetUI();
+
+                startActivityForResult(intent, REVIEW_REQUEST_CODE);
+
+            } else {
+                Log.e("BankDetailsActivity", "Failed to save extracted data before review.", task.getException());
+                Toast.makeText(this, "שגיאה בשמירת נתונים לביקורת. נסה שוב.", Toast.LENGTH_LONG).show();
+                resetUI();
+            }
+        });
     }
 
     private void uploadPdfAndSaveData(Uri pdfUri, String fileName, BankDetails bankDetails) {
