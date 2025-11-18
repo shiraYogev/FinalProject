@@ -5,57 +5,209 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layoutDirection="rtl"
-    android:background="@drawable/modern_gradient_bg">
+    android:background="#F5F7FA">
 
-    <!-- כותרת -->
+    <!-- אזור עליון עם גרדיאנט מודרני -->
     <LinearLayout
-        android:id="@+id/header_section"
+        android:id="@+id/header_bg"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:paddingTop="56dp"
-        android:paddingBottom="16dp"
-        android:paddingHorizontal="24dp"
         android:orientation="vertical"
+        android:background="@drawable/modern_gradient_bg"
+        android:elevation="4dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:id="@+id/title_text"
+        <!-- Header מעוצב כמו שאר המסכים -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/header_section"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="העלאת תמונות נכס"
-            android:textColor="@color/text_primary_white"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:gravity="center"/>
+            android:paddingHorizontal="48dp"
+            android:paddingTop="32dp"
+            android:paddingBottom="24dp">
 
-        <TextView
-            android:id="@+id/description_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="העלה תמונות לכל קטגוריה עבור הערכת הנכס"
-            android:textColor="@color/text_secondary_white"
-            android:textSize="14sp"
-            android:gravity="center"
-            android:layout_marginTop="4dp"/>
+            <!-- מיכל הכותרות - בצד ימין -->
+            <LinearLayout
+                android:id="@+id/title_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="end"
+                android:layout_marginStart="48dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <!-- אייקון + כותרת (כיתוב בצד ימין) -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_gravity="end"
+                    android:layoutDirection="rtl">
+
+                    <!-- אייקון -->
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        app:srcCompat="@drawable/ic_building"
+                        app:tint="#E0FFFFFF"/>
+
+                    <!-- נקודה -->
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="4dp"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@drawable/dot_indicator"
+                        android:backgroundTint="#80FFFFFF"/>
+
+                    <!-- כותרת ראשית -->
+                    <TextView
+                        android:id="@+id/title_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="העלאת תמונות נכס"
+                        android:textColor="@android:color/white"
+                        android:textSize="28sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.01"
+                        android:shadowColor="#40000000"
+                        android:shadowDx="0"
+                        android:shadowDy="2"
+                        android:shadowRadius="8"
+                        android:textAlignment="viewEnd"/>
+                </LinearLayout>
+
+                <!-- תת כותרת -->
+                <TextView
+                    android:id="@+id/description_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="העלה תמונות לכל קטגוריה עבור הערכת הנכס"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="14sp"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="sans-serif"
+                    android:letterSpacing="0.02"
+                    android:gravity="end"
+                    android:textAlignment="viewEnd"
+                    android:layout_gravity="end"/>
+
+                <!-- מחוון התקדמות חזותי - 6 קווים, השני מודגש -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="16dp"
+                    android:layout_gravity="end">
+
+                    <!-- קו 1 (בהיר) -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"/>
+
+                    <!-- קו 2 (מודגש) -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="@android:color/white"/>
+
+                    <!-- קו 3 (בהיר) -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"/>
+
+                    <!-- קו 4 (בהיר) -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"/>
+
+                    <!-- קו 5 (בהיר) -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"/>
+
+                    <!-- קו 6 (בהיר) -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"/>
+
+                    <!-- 7 (שמאלי ביותר, 1 משמאל) -->
+                    <View
+                        android:layout_width="40dp"
+                        android:layout_height="3dp"
+                        android:background="@drawable/progress_indicator"
+                        android:backgroundTint="#4DFFFFFF"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- כפתור חזור מעוצב - בצד שמאל -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/back_button_card"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#26FFFFFF"
+                app:strokeWidth="0dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/btn_back"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    app:srcCompat="@drawable/ic_arrow_back"
+                    app:tint="@android:color/white"
+                    android:contentDescription="חזור"/>
+            </com.google.android.material.card.MaterialCardView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
 
-    <!-- אזור תוכן עם רקע לבן וכרטיס -->
+    <!-- כרטיס תוכן עם RecyclerView לקטגוריות התמונות -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/image_upload_card"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginHorizontal="24dp"
+        android:layout_marginHorizontal="48dp"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
-        app:layout_constraintTop_toBottomOf="@id/header_section"
+        android:layout_marginBottom="24dp"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="8dp"
+        app:strokeColor="#E5E7EB"
+        app:strokeWidth="1dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:layout_constraintTop_toBottomOf="@id/header_bg"
         app:layout_constraintBottom_toTopOf="@id/btnSaveAndContinue"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="8dp"
-        app:strokeColor="@android:color/transparent">
+        app:layout_constraintWidth_max="1200dp">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerCategories"
@@ -70,21 +222,23 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSaveAndContinue"
         android:layout_width="0dp"
-        android:layout_height="56dp"
-        android:layout_margin="24dp"
+        android:layout_height="64dp"
         android:text="שמור והמשך"
-        android:textSize="16sp"
+        android:textSize="17sp"
         android:textStyle="bold"
         android:textColor="@android:color/white"
+        android:layout_marginHorizontal="48dp"
+        android:layout_marginBottom="32dp"
         android:backgroundTint="@null"
         android:background="@drawable/bg_main_card_gradient"
-        app:cornerRadius="12dp"
-        app:icon="@drawable/ic_check"
+        app:cornerRadius="16dp"
+        app:icon="@drawable/ic_save"
         app:iconTint="@android:color/white"
         app:iconGravity="textStart"
-        app:iconPadding="8dp"
+        app:iconPadding="12dp"
+        app:iconSize="22dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
