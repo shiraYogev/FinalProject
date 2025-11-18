@@ -30,6 +30,7 @@ import com.google.android.gms.common.api.Status;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 public class ClientDetailsActivity extends AppCompatActivity {
 
@@ -59,9 +60,8 @@ public class ClientDetailsActivity extends AppCompatActivity {
 
         // 1. אתחול Google Places SDK
         if (!Places.isInitialized()) {
-            Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));
+            Places.initialize(getApplicationContext(), getString(R.string.google_maps_key), Locale.forLanguageTag("he"));
         }
-
         // 2. הגדרת לחיצה על שדה הכתובת להפעלת Autocomplete
         // שדה זה הוגדר כ-focusable="false" ב-XML כדי לאפשר את הלחיצה
         fullAddressEditText.setOnClickListener(v -> startAutocompleteIntent());
@@ -93,9 +93,9 @@ public class ClientDetailsActivity extends AppCompatActivity {
         // עדיף לבקש רק את השדות הנחוצים כדי לחסוך בעלויות.
         List<Place.Field> fields = Arrays.asList(
                 Place.Field.ID,
-                Place.Field.NAME,
-                Place.Field.ADDRESS, // הכתובת המלאה
-                Place.Field.LAT_LNG // אם נדרש מיקום גיאוגרפי
+                Place.Field.DISPLAY_NAME,           // היה NAME
+                Place.Field.FORMATTED_ADDRESS,       // היה ADDRESS
+                Place.Field.LOCATION                 // היה LAT_LNG
         );
 
         // יצירת Intent של Autocomplete
@@ -106,7 +106,6 @@ public class ClientDetailsActivity extends AppCompatActivity {
 
         startActivityForResult(intent, AUTOCOMPLETE_REQUEST_CODE);
     }
-
     /**
      * מטפל בתוצאה החוזרת מה-Autocomplete Intent
      */
@@ -119,9 +118,8 @@ public class ClientDetailsActivity extends AppCompatActivity {
                 // הצלחה: המשתמש בחר מקום
                 Place place = Autocomplete.getPlaceFromIntent(data);
 
-                String address = place.getAddress();
+                String address = place.getFormattedAddress();
                 if (address != null) {
-                    // ממלאים את שדה הכתובת בכתובת המלאה שנבחרה
                     fullAddressEditText.setText(address);
                 }
 
