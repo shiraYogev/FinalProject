@@ -14,8 +14,9 @@ import java.util.Map;
  *
  * Examples:
  * - Living room / bedroom air conditioning: OR over all images ("כן" if any image has AC).
- * - Kitchen cabinets: combine all images into a single layout (upper/lower) + material.
+ * - Kitchen cabinets: combine all images into a single layout (upper/lower) + worktop.
  * - Bars in bedrooms/living rooms: "אין" / "יש" / "יש באופן חלקי".
+ * - Interior doors (bedrooms): prefer any real value over "טרם הותקנו".
  *
  * This class does NOT touch Firestore directly; it only returns a Map<String, Object>
  * with Firestore field names (keys from GeminiJsonParser.FirestoreKeys).
@@ -39,8 +40,9 @@ public final class ProjectImageAggregator {
         aggregateAirConditioning(images, updates);
         aggregateBars(images, updates);
         aggregateKitchen(images, updates);
+        aggregateInteriorDoors(images, updates);
 
-        // אפשר להוסיף כאן בעתיד עוד aggregator-ים (מעלית, נוף, וכו')
+        // אפשר להרחיב פה בעתיד לעוד שדות
         return updates;
     }
 
@@ -58,8 +60,8 @@ public final class ProjectImageAggregator {
 
             switch (img.getCategory()) {
                 case LIVING_ROOM:
-                case BEDROOM:
-                    // Description is something like:
+                case BEDROOM: {
+                    // Description looks like:
                     // "זוהה: חלונות: ..., ... , מיזוג אוויר: כן, ..."
                     Boolean ac = parseYesNoFromDescription(
                             img.getDescription(),
@@ -67,8 +69,9 @@ public final class ProjectImageAggregator {
                     );
                     if (ac == null) break;
                     if (ac) countYes++;
-                    else   countNo++;
+                    else    countNo++;
                     break;
+                }
                 default:
                     break;
             }
@@ -101,7 +104,7 @@ public final class ProjectImageAggregator {
 
             switch (img.getCategory()) {
                 case LIVING_ROOM:
-                case BEDROOM:
+                case BEDROOM: {
                     Boolean bars = parseYesNoFromDescription(
                             img.getDescription(),
                             "סורגים"
@@ -110,6 +113,7 @@ public final class ProjectImageAggregator {
                     if (bars) countYes++;
                     else      countNo++;
                     break;
+                }
                 default:
                     break;
             }
@@ -135,6 +139,7 @@ public final class ProjectImageAggregator {
     // =========================================================
     // 3) Kitchen – cabinets + worktop aggregation
     //    using aiClassifications: CABINETS, WORKTOP
+    //    (no material type, only layout: עליונים/תחתונים/אין)
     // =========================================================
 
     private static void aggregateKitchen(@NonNull List<Image> images,
@@ -163,20 +168,21 @@ public final class ProjectImageAggregator {
                     if (bestWorktop == null) {
                         bestWorktop = w;
                     }
-                    // אם תרצי בעתיד לוגיקה יותר חכמה (עדיפות לסוג מסוים) – אפשר להרחיב פה
+                    // אפשר להרחיב לוגיקה אם תרצי עדיפויות לסוגים מסוימים
                 }
             }
         }
 
-        // Build final kitchenCondition (apartment_kitchen) string as in GeminiJsonParser
+        // build final "apartment_kitchen" string like GeminiJsonParser does
         String cabinetsStr = buildCabinetsString(flags);
         String kitchenCondition = null;
 
         if (cabinetsStr != null) {
-            // cabinetsStr is either "אין ארונות" or "<LAYOUT> | <MATERIAL>"
+            // לדוגמה: "ארונות: עליונים ותחתונים"
             kitchenCondition = "ארונות: " + cabinetsStr;
         }
         if (bestWorktop != null) {
+            // מוסיפים "משטח: X"
             kitchenCondition = (kitchenCondition == null ? "" : kitchenCondition + ", ")
                     + "משטח: " + bestWorktop;
         }
@@ -187,65 +193,46 @@ public final class ProjectImageAggregator {
     }
 
     // ---------------------------------------------------------
-    // Helpers for cabinets aggregation
+    // Helpers for cabinets aggregation (layout only)
     // ---------------------------------------------------------
 
     private static class CabinetsFlags {
         boolean hasUpper;
         boolean hasLower;
-        String material; // first non-"לא ידוע" material
     }
 
     /**
      * Accumulate cabinets info from a single image string.
-     * Format is defined in KITCHEN_PROMPT:
+     * With the new KITCHEN_PROMPT we expect:
      * - "אין ארונות"
-     * - "<LAYOUT> | <MATERIAL>"
-     *   where LAYOUT ∈ {"עליונים בלבד","תחתונים בלבד","עליונים ותחתונים"}
+     * - "עליונים בלבד"
+     * - "תחתונים בלבד"
+     * - "עליונים ותחתונים"
      */
     private static CabinetsFlags accumulateCabinets(CabinetsFlags acc, String cabinetsVal) {
         if (cabinetsVal == null || cabinetsVal.trim().isEmpty()) return acc;
 
         String v = cabinetsVal.trim();
-        if ("אין ארונות".equals(v)) {
-            // No upper/lower; no positive contribution
-            if (acc == null) acc = new CabinetsFlags();
-            return acc;
-        }
+        if (acc == null) acc = new CabinetsFlags();
 
-        String[] parts = v.split("\\|");
-        String layout = parts[0].trim();
-        String material = (parts.length > 1) ? parts[1].trim() : null;
-
-        boolean upper = false;
-        boolean lower = false;
-
-        switch (layout) {
+        switch (v) {
+            case "אין ארונות":
+                // no contribution to upper/lower
+                break;
             case "עליונים בלבד":
-                upper = true;
+                acc.hasUpper = true;
                 break;
             case "תחתונים בלבד":
-                lower = true;
+                acc.hasLower = true;
                 break;
             case "עליונים ותחתונים":
-                upper = true;
-                lower = true;
+                acc.hasUpper = true;
+                acc.hasLower = true;
                 break;
             default:
-                // Unexpected layout – ignore layout, keep only material if needed
+                // unexpected string – ignore
                 break;
         }
-
-        if (acc == null) acc = new CabinetsFlags();
-        acc.hasUpper = acc.hasUpper || upper;
-        acc.hasLower = acc.hasLower || lower;
-
-        if (material != null && !material.isEmpty()) {
-            if (acc.material == null || "לא ידוע".equals(acc.material)) {
-                acc.material = material;
-            }
-        }
-
         return acc;
     }
 
@@ -258,20 +245,75 @@ public final class ProjectImageAggregator {
         if (!flags.hasUpper && !flags.hasLower) {
             return "אין ארונות";
         }
-
-        String layout;
         if (flags.hasUpper && flags.hasLower) {
-            layout = "עליונים ותחתונים";
-        } else if (flags.hasUpper) {
-            layout = "עליונים בלבד";
-        } else {
-            layout = "תחתונים בלבד";
+            return "עליונים ותחתונים";
+        }
+        if (flags.hasUpper) {
+            return "עליונים בלבד";
+        }
+        return "תחתונים בלבד";
+    }
+
+    // =========================================================
+    // 4) Interior doors – take any non-"טרם הותקנו" if exists
+    //    based mainly on BEDROOM images
+    // =========================================================
+
+    private static void aggregateInteriorDoors(@NonNull List<Image> images,
+                                               @NonNull Map<String, Object> out) {
+        String bestDoor = null;          // first seen value (could be "טרם הותקנו")
+        String bestNonPending = null;    // first value that is NOT "טרם הותקנו"
+
+        for (Image img : images) {
+            if (img == null || img.getCategory() == null) continue;
+
+            // כרגע דלתות פנים מסווגות בחדרי שינה
+            if (img.getCategory() != Image.Category.BEDROOM) continue;
+
+            String doorVal = null;
+
+            // 1) קודם מנסה מה-aiClassifications (Subcategory.DOOR)
+            Map<Image.Subcategory, String> ai = img.getAiClassifications();
+            if (ai != null && !ai.isEmpty()) {
+                String v = ai.get(Image.Subcategory.DOOR);
+                if (v != null && !v.trim().isEmpty()) {
+                    doorVal = v.trim();
+                }
+            }
+
+            // 2) אם לא מצאנו ב-aiClassifications – ננסה מה-description ("דלתות פנים: X")
+            if (doorVal == null || doorVal.isEmpty()) {
+                String fromDesc = extractValueFromDescription(img.getDescription(), "דלתות פנים");
+                if (fromDesc != null && !fromDesc.trim().isEmpty()) {
+                    doorVal = fromDesc.trim();
+                }
+            }
+
+            if (doorVal == null || doorVal.isEmpty()) continue;
+
+            // זוכרים את הערך הראשון שנתקלנו בו (למקרה שכולם "טרם הותקנו")
+            if (bestDoor == null) {
+                bestDoor = doorVal;
+            }
+
+            // אם זה משהו אמיתי ולא "טרם הותקנו" – נשמור כעדיפות
+            if (!"טרם הותקנו".equals(doorVal)) {
+                if (bestNonPending == null) {
+                    bestNonPending = doorVal;
+                }
+            }
         }
 
-        if (flags.material == null || flags.material.isEmpty()) {
-            return layout + " | לא ידוע";
+        String finalVal = null;
+        if (bestNonPending != null) {
+            finalVal = bestNonPending;
+        } else if (bestDoor != null) {
+            finalVal = bestDoor; // כנראה "טרם הותקנו" או ערך יחיד
         }
-        return layout + " | " + flags.material;
+
+        if (finalVal != null) {
+            out.put(GeminiJsonParser.FirestoreKeys.INTERIOR_DOOR_CONDITION, finalVal);
+        }
     }
 
     // ---------------------------------------------------------
