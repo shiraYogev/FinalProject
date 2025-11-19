@@ -32,7 +32,7 @@ public final class Choices {
     );
 
     public static final List<String> KITCHEN_CABINETS = Arrays.asList(
-            "עליונים בלבד", "תחתונים בלבד", "עליונים ותחתונים", "אין ארונות"
+             "ארונות עץ תחתונים בלבד", "ארונות עץ עליונים ותחתונים", "טרם הותקן"
     );
 
     public static final List<String> KITCHEN_WORKTOPS = Arrays.asList(
@@ -129,9 +129,9 @@ public final class Choices {
 
     // ✅ סורגים – "מלא / חלקי / אין"
     public static final List<String> BARS_LEVELS = Arrays.asList(
-            "מלא",
-            "חלקי",
-            "אין"
+            "כן",
+            "לא",
+            "בחלק"
     );
 
     // ✅ מיזוג – "מלא / חלקי / אין"
