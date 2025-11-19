@@ -4,6 +4,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
+import com.example.finalprojectappraisal.classifer.aggregation.ProjectImageAggregator;
 import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Image;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -12,6 +13,8 @@ import com.google.android.gms.tasks.Task;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+
+
 
 /**
  * Flow:
@@ -118,6 +121,54 @@ public class EnhancedGeminiHelper {
         });
     }
 
+    /**
+     * אחרי שהוספנו תמונה ועדכנו שדות פרויקט מהתמונה עצמה,
+     * מריצים איחוד על *כל* התמונות של הפרויקט (מיזוג, סורגים, ארונות מטבח...).
+     */
+    private static void recomputeProjectAggregates(String projectId,
+                                                   String traceId) {
+        ProjectRepository repo = ProjectRepository.getInstance();
+
+        logD(traceId, "recomputeProjectAggregates: loading all images for projectId=" + projectId);
+
+        repo.getImagesForProject(projectId, task -> {
+            if (!task.isSuccessful() || task.getResult() == null) {
+                String msg = (task.getException() != null)
+                        ? task.getException().getMessage()
+                        : "Unknown error";
+                logE(traceId, "recomputeProjectAggregates: getImagesForProject FAILED: " + msg,
+                        task.getException());
+                return;
+            }
+
+            java.util.List<Image> images = task.getResult();
+            logD(traceId, "recomputeProjectAggregates: got " + images.size() + " images");
+
+            Map<String, Object> aggregated =
+                    ProjectImageAggregator.buildAggregatedUpdates(images);
+
+            if (aggregated == null || aggregated.isEmpty()) {
+                logD(traceId, "recomputeProjectAggregates: nothing to update");
+                return;
+            }
+
+            logD(traceId, "recomputeProjectAggregates: updating fields " + aggregated.keySet());
+
+            repo.updateMultipleFields(projectId, aggregated, updateTask -> {
+                if (!updateTask.isSuccessful()) {
+                    String msg2 = (updateTask.getException() != null)
+                            ? updateTask.getException().getMessage()
+                            : "Unknown error";
+                    logE(traceId, "recomputeProjectAggregates: updateMultipleFields FAILED: " + msg2,
+                            updateTask.getException());
+                } else {
+                    logD(traceId, "recomputeProjectAggregates: updateMultipleFields OK");
+                }
+            });
+        });
+    }
+
+
     /** מוסיף/שומר את התמונה ואז מעדכן את שדות הפרויקט */
     private static void saveImageThenUpdateProject(String projectId,
                                                    Image image,
@@ -136,13 +187,15 @@ public class EnhancedGeminiHelper {
             }
             logD(traceId, "addImageToProject OK");
 
-            // 2) עדכון שדות הפרויקט (אם יש מה לעדכן)
+            // 1) אם אין שדות לעדכן מהתמונה עצמה → ישר איחוד
             if (fieldsToUpdate == null || fieldsToUpdate.isEmpty()) {
-                logD(traceId, "No project fields to update. Done.");
-                if (listener != null) listener.onComplete(addTask); // הצלחה ללא עדכון נוסף
+                logD(traceId, "No project fields to update from single image. Running aggregation...");
+                recomputeProjectAggregates(projectId, traceId);
+                if (listener != null) listener.onComplete(addTask);
                 return;
             }
 
+            // 2) אם יש שדות לעדכן מהתמונה הזו → קודם updateMultipleFields, ואז איחוד
             logD(traceId, "updateMultipleFields → fields=" + fieldsToUpdate.keySet());
             repo.updateMultipleFields(projectId, fieldsToUpdate, task -> {
                 if (!task.isSuccessful()) {
@@ -151,10 +204,15 @@ public class EnhancedGeminiHelper {
                 } else {
                     logD(traceId, "updateMultipleFields OK");
                 }
+
+                // ⬅️ כאן האיחוד על כל התמונות
+                recomputeProjectAggregates(projectId, traceId);
+
                 if (listener != null) listener.onComplete(task);
             });
         });
     }
+
 
     /** בחירת פרומפט לפי קטגוריה */
     private static String getPromptByCategory(Image.Category category) {
