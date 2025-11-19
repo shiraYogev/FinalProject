@@ -75,7 +75,13 @@ public final class ProjectFieldUpdater {
         }
 
         // Facilities
-        updateBooleanField(project::setHasElevator, features, FirestoreConstants.FIELD_HAS_ELEVATOR);
+        // inside ProjectFieldUpdater
+        updateStringField(
+                project::setHasElevator,              // setter that accepts String
+                features,
+                FirestoreConstants.FIELD_HAS_ELEVATOR // key for this feature
+        );
+
         updateBooleanField(project::setHasStorageRoom, features, FirestoreConstants.FIELD_HAS_STORAGE_ROOM);
         updateStringField(project::setHasAirConditioning, features, FirestoreConstants.FIELD_HAS_AIR_CONDITIONING);
         updateBooleanField(project::setHasParking, features, FirestoreConstants.FIELD_HAS_PARKING);

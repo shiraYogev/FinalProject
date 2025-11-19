@@ -175,13 +175,19 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
         // ===== מתקנים כלליים =====
         items.add(SectionItem.of("מתקנים כלליים"));
 
-        // מעלית – תצוגה טקסטואלית לפי boolean (אין/יש (1) כברירת מחדל)
-        String elevatorDisplay = state.hasElevator ? "יש (1)" : "אין";
+        // מעלית – תצוגה טקסטואלית (String מתוך "אין", "יש (1)", "יש (2)", "יש (3)", "יש (4)")
+// אם עדיין אין ערך בפרויקט – נציג "אין" כברירת מחדל
+        String elevatorDisplay =
+                (state.hasElevator != null && !state.hasElevator.trim().isEmpty())
+                        ? state.hasElevator
+                        : "אין";
+
         items.add(FieldItem.of(
                 GeminiJsonParser.FirestoreKeys.HAS_ELEVATOR,
                 "מעלית",
                 elevatorDisplay
         ));
+
 
         items.add(FieldItem.of(
                 GeminiJsonParser.FirestoreKeys.HAS_PARKING,
@@ -240,19 +246,18 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
     public void onFieldClicked(FieldItem item) {
         String key = item.key;
 
-        // ✅ מעלית – דיאלוג: אין / יש (1-4) (עדיין בוליאן ל-DB)
         if (GeminiJsonParser.FirestoreKeys.HAS_ELEVATOR.equals(key)) {
             FormDialogs.showSingleChoice(
                     this,
                     item.title,
-                    Choices.ELEVATOR_OPTIONS,
-                    item.value,
+                    Choices.ELEVATOR_OPTIONS, // ["אין","יש (1)","יש (2)","יש (3)","יש (4)"]
+                    item.value,               // current value as String
                     selection -> {
-                        boolean val = !"אין".equals(selection);
-                        state.hasElevator = val;
+                        // selection is already the exact String we want in the project & DB
+                        state.hasElevator = selection;  // ApartmentEditableState.hasElevator = String
 
                         Map<String, Object> update = new HashMap<>();
-                        update.put(GeminiJsonParser.FirestoreKeys.HAS_ELEVATOR, val);
+                        update.put(GeminiJsonParser.FirestoreKeys.HAS_ELEVATOR, selection);
                         saveAndRefresh(update);
                     }
             );

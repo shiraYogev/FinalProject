@@ -132,8 +132,11 @@ public class Project {
     private List<String> airDirection;
 
     // Additional facilities and services
+
+    // ⚠️ raw backing field for has_elevator – יכול להיות Boolean (ישן) או String (חדש: "אין", "יש (1)"...)
     @SerializedName("has_elevator")
-    private boolean hasElevator;
+    @PropertyName("has_elevator")
+    private Object hasElevatorRaw;
 
     @SerializedName("has_storage")
     private boolean hasStorageRoom;
@@ -196,7 +199,7 @@ public class Project {
                    String flooringType, String kitchenCondition,
                    String entranceDoorCondition, String interiorDoorCondition,
                    String windowType, String hasBars, List<String> airDirection,
-                   boolean hasElevator, boolean hasStorageRoom,
+                   String hasElevator, boolean hasStorageRoom,
                    String hasAirConditioning, boolean hasParking,
                    boolean hasCentralHeating, String apartmentIncludes,
                    String bathroomFixtures, List<String> coAppraiserIds) {
@@ -223,7 +226,7 @@ public class Project {
         this.windowType = windowType;
         this.hasBarsRaw = hasBars; // נשמר כמחרוזת, אבל השדה הוא Object
         this.airDirection = airDirection;
-        this.hasElevator = hasElevator;
+        this.hasElevatorRaw = hasElevator; // String כמו "אין"/"יש (1)" יישמר ישירות
         this.hasStorageRoom = hasStorageRoom;
         this.hasAirConditioning = hasAirConditioning;
         this.hasParking = hasParking;
@@ -590,15 +593,78 @@ public class Project {
                 .collect(Collectors.toList());
     }
 
-    @PropertyName("has_elevator")
-    public boolean isHasElevator() {
-        return hasElevator;
+    // ===== מעלית – API כמו has_bars, עם Object raw =====
+
+    /**
+     * מחזיר את מצב המעלית כמחרוזת:
+     * "אין", "יש (1)", "יש (2)", "יש (3)", "יש (4)".
+     * אם ב-Firestore נשמר Boolean ישן:
+     *   true  → "יש (1)"
+     *   false → "אין"
+     */
+    @Exclude
+    public String getHasElevator() {
+        if (hasElevatorRaw == null) {
+            Log.d(TAG, "getHasElevator: raw value is null");
+            return null;
+        }
+        if (hasElevatorRaw instanceof String) {
+            Log.d(TAG, "getHasElevator: raw is String = " + hasElevatorRaw);
+            return (String) hasElevatorRaw;
+        }
+        if (hasElevatorRaw instanceof Boolean) {
+            Boolean b = (Boolean) hasElevatorRaw;
+            String mapped = b ? "יש (1)" : "אין";
+            Log.d(TAG, "getHasElevator: raw is Boolean = " + b + ", mapped to String = '" + mapped + "'");
+            return mapped;
+        }
+        Log.w(TAG, "getHasElevator: unexpected raw type = " +
+                hasElevatorRaw.getClass().getName() + ", value = " + hasElevatorRaw +
+                " – using String.valueOf(...)");
+        return String.valueOf(hasElevatorRaw);
     }
 
-    @PropertyName("has_elevator")
-    public void setHasElevator(boolean hasElevator) {
-        this.hasElevator = hasElevator;
+    /**
+     * מגדיר את מצב המעלית כמחרוזת – בצד של Firestore זה יישמר כ-String.
+     * צפוי לקבל אחת מהאפשרויות:
+     * "אין", "יש (1)", "יש (2)", "יש (3)", "יש (4)".
+     */
+    @Exclude
+    public void setHasElevator(String hasElevator) {
+        Log.d(TAG, "setHasElevator(String): value = '" + hasElevator + "'");
+        this.hasElevatorRaw = hasElevator;
         updateLastUpdateDate();
+    }
+
+    /**
+     * לוגיקה בוליאנית נוחה:
+     * true אם יש לפחות מעלית אחת (כל ערך שאיננו "אין"/ריק/0/false).
+     */
+    @Exclude
+    public boolean hasElevatorAsBoolean() {
+        if (hasElevatorRaw == null) {
+            Log.d(TAG, "hasElevatorAsBoolean: raw is null -> false");
+            return false;
+        }
+        if (hasElevatorRaw instanceof Boolean) {
+            boolean b = (Boolean) hasElevatorRaw;
+            Log.d(TAG, "hasElevatorAsBoolean: raw Boolean = " + b);
+            return b;
+        }
+        if (hasElevatorRaw instanceof String) {
+            String s = ((String) hasElevatorRaw).trim();
+            boolean result = !(s.isEmpty()
+                    || "אין".equals(s)
+                    || "לא".equals(s)
+                    || "false".equalsIgnoreCase(s)
+                    || "0".equals(s));
+            Log.d(TAG, "hasElevatorAsBoolean: raw String = '" + s + "', mapped to " + result);
+            return result;
+        }
+        Log.w(TAG, "hasElevatorAsBoolean: unexpected raw type = " +
+                hasElevatorRaw.getClass().getName() + ", value = " + hasElevatorRaw +
+                " -> default false");
+        return false;
     }
 
     @PropertyName("has_storage")
@@ -769,7 +835,7 @@ public class Project {
                 ", windowType='" + windowType + '\'' +
                 ", hasBars='" + getHasBars() + '\'' +
                 ", airDirection=" + airDirection +
-                ", hasElevator=" + hasElevator +
+                ", hasElevator='" + getHasElevator() + '\'' +
                 ", hasStorageRoom=" + hasStorageRoom +
                 ", hasAirConditioning=" + hasAirConditioning +
                 ", hasParking=" + hasParking +
