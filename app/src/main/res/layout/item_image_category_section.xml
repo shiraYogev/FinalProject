@@ -39,6 +39,18 @@
             android:overScrollMode="never"
             android:background="@drawable/image_container_bg" />
 
+        <!-- תיאור התמונה הנוכחית (description) -->
+        <TextView
+            android:id="@+id/txtImageDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary_dark"
+            android:maxLines="4"
+            android:ellipsize="end"
+            android:gravity="start" />
+
         <!-- אינדיקטור (אופציונלי) -->
         <LinearLayout
             android:id="@+id/layoutPageIndicator"

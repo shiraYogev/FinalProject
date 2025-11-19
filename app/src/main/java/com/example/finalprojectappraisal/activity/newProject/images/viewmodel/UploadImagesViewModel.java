@@ -1,17 +1,3 @@
-/**
- * Summary:
- * ViewModel for UploadImagesActivity. Owns all DB/Storage work:
- * - Load existing images for a project
- * - Upload a picked image to Firebase Storage
- * - Persist image document under projects/{id}/images/{imageId}
- * - Maintain property image arrays (front_image / interior_image)
- * - Delete image from project and cleanup arrays
- *
- * Notes:
- * - Activity handles UI and classification (Gemini) only.
- * - No Context is kept here; repositories perform async work.
- */
-
 package com.example.finalprojectappraisal.activity.newProject.images.viewmodel;
 
 import androidx.annotation.NonNull;
@@ -27,6 +13,19 @@ import com.example.finalprojectappraisal.model.Image;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Summary:
+ * ViewModel for UploadImagesActivity. Owns all DB/Storage work:
+ * - Load existing images for a project
+ * - Upload a picked image to Firebase Storage
+ * - Persist image document under projects/{id}/images/{imageId}
+ * - Maintain property image arrays (front_image / interior_image)
+ * - Delete image from project and cleanup arrays
+ *
+ * Notes:
+ * - Activity handles UI and classification (Gemini) only.
+ * - No Context is kept here; repositories perform async work.
+ */
 public class UploadImagesViewModel extends ViewModel {
 
     private final ProjectRepository repo = ProjectRepository.getInstance();
@@ -34,16 +33,30 @@ public class UploadImagesViewModel extends ViewModel {
     private String projectId;
 
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
-    private final MutableLiveData<String>  error   = new MutableLiveData<>(null);
+    private final MutableLiveData<String> error = new MutableLiveData<>(null);
     private final MutableLiveData<List<Image>> existing = new MutableLiveData<>(new ArrayList<>());
-    private final MutableLiveData<Image>  lastSavedImage = new MutableLiveData<>(null);
-    private final MutableLiveData<Boolean> lastDeleteOk  = new MutableLiveData<>(null);
+    private final MutableLiveData<Image> lastSavedImage = new MutableLiveData<>(null);
+    private final MutableLiveData<Boolean> lastDeleteOk = new MutableLiveData<>(null);
 
-    public LiveData<Boolean> getLoading()        { return loading; }
-    public LiveData<String>  getError()          { return error; }
-    public LiveData<List<Image>> getExisting()   { return existing; }
-    public LiveData<Image>  getLastSavedImage()  { return lastSavedImage; }
-    public LiveData<Boolean> getLastDeleteOk()   { return lastDeleteOk; }
+    public LiveData<Boolean> getLoading() {
+        return loading;
+    }
+
+    public LiveData<String> getError() {
+        return error;
+    }
+
+    public LiveData<List<Image>> getExisting() {
+        return existing;
+    }
+
+    public LiveData<Image> getLastSavedImage() {
+        return lastSavedImage;
+    }
+
+    public LiveData<Boolean> getLastDeleteOk() {
+        return lastDeleteOk;
+    }
 
     public void init(@NonNull String projectId) {
         this.projectId = projectId;
@@ -106,7 +119,7 @@ public class UploadImagesViewModel extends ViewModel {
                 // Update property image array (front_image / interior_image)
                 String arrayField = arrayNameForCategory(category);
                 if (arrayField == null) {
-                    // no array update needed
+                    // no array update needed (e.g. קטגוריה OTHER)
                     loading.setValue(false);
                     lastSavedImage.setValue(image);
                     return;
@@ -181,7 +194,7 @@ public class UploadImagesViewModel extends ViewModel {
             case KITCHEN:
             case BATHROOM:
                 return FirestoreConstants.FIELD_INTERIOR_IMAGE; // "interior_image"
-            // case TABU_CROP: return FirestoreConstants.FIELD_TABU_CROP_IMAGE;
+            // OTHER, VIEW, ENTRANCE_DOOR וכו' לא נכנסים למערך התמונות הראשיות
             default:
                 return null;
         }

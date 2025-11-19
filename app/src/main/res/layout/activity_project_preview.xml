@@ -1,113 +1,215 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
     android:layoutDirection="rtl"
-    android:overScrollMode="never">
+    android:overScrollMode="never"
+    android:background="@color/brand_bg">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="24dp">
 
-        <!-- Report section -->
-        <TextView
-            android:id="@+id/sectionReport"
+        <!-- ===== כרטיס דוח ===== -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="דוח"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:paddingBottom="6dp"/>
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="@color/fp_surface"
+            app:strokeColor="@color/fp_outline"
+            app:strokeWidth="1dp">
 
-        <ProgressBar
-            android:id="@+id/progressProject"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:visibility="gone"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
 
-        <!-- Header fields -->
-        <TextView
-            android:id="@+id/txtTitle"
+                <!-- כותרת "דוח" + קו מפריד -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical|end"
+                    android:layoutDirection="rtl"
+                    android:layout_marginBottom="12dp">
+
+                    <!-- טקסט הכותרת -->
+                    <TextView
+                        android:id="@+id/sectionReport"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="דוח"
+                        android:textStyle="bold"
+                        android:textSize="18sp"
+                        android:textColor="@color/text_primary_dark"
+                        android:layout_marginStart="8dp"/>
+
+                    <!-- אייקון קטן לדוח (אופציונלי) -->
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        app:srcCompat="@drawable/ic_document"
+                        app:tint="@color/primary_blue"/>
+
+                    <!-- קו מפריד לצד שמאל -->
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="2dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/divider_gradient"/>
+                </LinearLayout>
+
+                <!-- Progress דוח -->
+                <ProgressBar
+                    android:id="@+id/progressProject"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="12dp"
+                    android:visibility="gone"
+                    android:indeterminateTint="@color/primary_blue"/>
+
+                <!-- כותרת הדוח -->
+                <TextView
+                    android:id="@+id/txtTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:textColor="@color/text_primary_dark"/>
+
+                <TextView
+                    android:id="@+id/txtAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textColor="@color/text_secondary_dark"
+                    android:paddingTop="2dp"/>
+
+                <TextView
+                    android:id="@+id/txtClient"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="לקוח: —"
+                    android:textColor="@color/text_secondary_dark"
+                    android:paddingTop="2dp"/>
+
+                <TextView
+                    android:id="@+id/txtStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="סטטוס: —"
+                    android:textColor="@color/text_secondary_dark"
+                    android:paddingTop="2dp"/>
+
+                <TextView
+                    android:id="@+id/txtUpdated"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="עודכן: —"
+                    android:textColor="@color/text_secondary_dark"
+                    android:paddingTop="2dp"/>
+
+                <!-- טבלת פרטים (RecyclerView) -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvDetails"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never"
+                    android:paddingTop="12dp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ===== כרטיס תמונות ===== -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="—"
-            android:textStyle="bold"
-            android:textSize="16sp"/>
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="@color/fp_surface"
+            app:strokeColor="@color/fp_outline"
+            app:strokeWidth="1dp">
 
-        <TextView
-            android:id="@+id/txtAddress"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="—"
-            android:paddingTop="2dp"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
 
-        <TextView
-            android:id="@+id/txtClient"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="לקוח: —"
-            android:paddingTop="2dp"/>
+                <!-- כותרת "תמונות" + קו מפריד -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical|end"
+                    android:layoutDirection="rtl"
+                    android:layout_marginBottom="12dp">
 
-        <TextView
-            android:id="@+id/txtStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="סטטוס: —"
-            android:paddingTop="2dp"/>
+                    <TextView
+                        android:id="@+id/sectionImages"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="תמונות"
+                        android:textStyle="bold"
+                        android:textSize="18sp"
+                        android:textColor="@color/text_primary_dark"
+                        android:layout_marginStart="8dp"/>
 
-        <TextView
-            android:id="@+id/txtUpdated"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="עודכן: —"
-            android:paddingTop="2dp"/>
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        app:tint="@color/primary_blue"/>
 
-        <!-- Key/Value details table -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvDetails"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false"
-            android:overScrollMode="never"
-            android:paddingTop="8dp" />
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="2dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/divider_gradient"/>
+                </LinearLayout>
 
-        <!-- Images section -->
-        <TextView
-            android:id="@+id/sectionImages"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="תמונות"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:paddingTop="16dp"
-            android:paddingBottom="6dp"/>
+                <!-- Progress תמונות -->
+                <ProgressBar
+                    android:id="@+id/progressImages"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:visibility="gone"
+                    android:indeterminateTint="@color/primary_blue"/>
 
-        <ProgressBar
-            android:id="@+id/progressImages"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:visibility="gone"/>
+                <!-- טקסט אין תמונות -->
+                <TextView
+                    android:id="@+id/txtImagesEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="אין תמונות להצגה"
+                    android:textColor="@color/text_secondary_dark"
+                    android:textSize="14sp"
+                    android:gravity="center"
+                    android:paddingBottom="8dp"
+                    android:visibility="gone"/>
 
-        <TextView
-            android:id="@+id/txtImagesEmpty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="אין תמונות להצגה"
-            android:visibility="gone"
-            android:gravity="center"
-            android:paddingBottom="8dp"/>
+                <!-- RecyclerView תמונות -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvImages"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvImages"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false"
-            android:overScrollMode="never"/>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

@@ -92,6 +92,24 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
 
         holder.viewPagerImages.setAdapter(pagerAdapter);
 
+        // נוודא שאין callback ישן לפני שמרשמים חדש
+        if (holder.pageChangeCallback != null) {
+            holder.viewPagerImages.unregisterOnPageChangeCallback(holder.pageChangeCallback);
+        }
+
+        holder.pageChangeCallback = new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int pos) {
+                super.onPageSelected(pos);
+                holder.updateDescriptionForPosition(section, pos);
+            }
+        };
+        holder.viewPagerImages.registerOnPageChangeCallback(holder.pageChangeCallback);
+
+        // עדכון ראשוני של ה-description לפי התמונה הראשונה/נוכחית
+        int current = holder.viewPagerImages.getCurrentItem();
+        holder.updateDescriptionForPosition(section, current);
+
         holder.btnAddImage.setOnClickListener(v -> {
             if (addImageListener != null) {
                 addImageListener.onAddImage(section);
@@ -104,21 +122,46 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
         return categories.size();
     }
 
-    /** רענון של קטגוריה מסוימת (למשל אחרי הוספה/מחיקה ב-Activity) */
+    /** רענון של קטגוריה מסוימת (למשל אחרי הוספה/מחיקה/סיווג ב-Activity) */
     public void notifyImageChanged(int categoryPosition) {
         notifyItemChanged(categoryPosition);
     }
 
     static class CategoryViewHolder extends RecyclerView.ViewHolder {
         TextView txtTitle;
+        TextView txtImageDescription;
         ViewPager2 viewPagerImages;
         Button btnAddImage;
+
+        ViewPager2.OnPageChangeCallback pageChangeCallback;
 
         CategoryViewHolder(@NonNull View itemView) {
             super(itemView);
             txtTitle = itemView.findViewById(R.id.txtCategoryTitle);
             viewPagerImages = itemView.findViewById(R.id.viewPagerImages);
             btnAddImage = itemView.findViewById(R.id.btnAddImage);
+            txtImageDescription = itemView.findViewById(R.id.txtImageDescription);
+        }
+
+        /**
+         * Updates the description TextView according to the currently visible image in the section.
+         */
+        void updateDescriptionForPosition(@NonNull ImageCategorySection section, int position) {
+            if (section.images == null || section.images.isEmpty()
+                    || position < 0 || position >= section.images.size()) {
+                txtImageDescription.setText("");
+                txtImageDescription.setVisibility(View.GONE);
+                return;
+            }
+
+            String desc = section.images.get(position).getDescription();
+            if (desc == null || desc.trim().isEmpty()) {
+                txtImageDescription.setText("");
+                txtImageDescription.setVisibility(View.GONE);
+            } else {
+                txtImageDescription.setVisibility(View.VISIBLE);
+                txtImageDescription.setText(desc);
+            }
         }
     }
 }
