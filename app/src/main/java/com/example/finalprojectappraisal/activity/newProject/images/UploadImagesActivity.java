@@ -65,6 +65,7 @@ public class UploadImagesActivity extends AppCompatActivity {
         vm = new ViewModelProvider(this).get(UploadImagesViewModel.class);
         vm.init(projectId);
 
+        // Categories, including "Other" without Gemini prompt
         categories = Arrays.asList(
                 new ImageCategorySection("דלת כניסה", Image.Category.ENTRANCE_DOOR, GeminiPrompts.ENTRANCE_DOOR_PROMPT),
                 new ImageCategorySection("מטבח", Image.Category.KITCHEN, GeminiPrompts.KITCHEN_PROMPT),
@@ -72,7 +73,8 @@ public class UploadImagesActivity extends AppCompatActivity {
                 new ImageCategorySection("חזית", Image.Category.EXTERIOR, "זהה מצב חזית הבית..."),
                 new ImageCategorySection("חדר רחצה", Image.Category.BATHROOM, GeminiPrompts.BATHROOM_PROMPT),
                 new ImageCategorySection("חדר שינה", Image.Category.BEDROOM, GeminiPrompts.BEDROOM_PROMPT),
-                new ImageCategorySection("נוף", Image.Category.VIEW, "זהה את הנוף מהדירה...")
+                new ImageCategorySection("נוף", Image.Category.VIEW, "זהה את הנוף מהדירה..."),
+                new ImageCategorySection("אחר", Image.Category.OTHER, null) // Free images, no auto classification
         );
 
         RecyclerView recyclerCategories = findViewById(R.id.recyclerCategories);
@@ -81,7 +83,7 @@ public class UploadImagesActivity extends AppCompatActivity {
                 categories,
                 this,
                 section -> {
-                    // במקום לפתוח ישר גלריה → בוחרים מקור
+                    // open source chooser instead of gallery directly
                     pendingSection = section;
                     showImageSourceDialog();
                 },
@@ -89,9 +91,18 @@ public class UploadImagesActivity extends AppCompatActivity {
         );
         recyclerCategories.setAdapter(categoriesAdapter);
 
-        // Observe existing images loaded by VM and inject them into sections
+        // Load existing images and place them in sections
         vm.getExisting().observe(this, list -> {
-            if (list == null || list.isEmpty()) return;
+            // Clear old images to avoid duplicates on reload
+            for (ImageCategorySection s : categories) {
+                s.images.clear();
+            }
+
+            if (list == null || list.isEmpty()) {
+                categoriesAdapter.notifyDataSetChanged();
+                return;
+            }
+
             java.util.Map<Image.Category, ImageCategorySection> byCat = new java.util.HashMap<>();
             for (ImageCategorySection s : categories) byCat.put(s.category, s);
             for (Image img : list) {
@@ -102,51 +113,72 @@ public class UploadImagesActivity extends AppCompatActivity {
             categoriesAdapter.notifyDataSetChanged();
         });
 
-        // When the VM finishes upload+save, we update UI and trigger classification
+        // When VM finishes upload+save, update UI and (if needed) trigger classification
         vm.getLastSavedImage().observe(this, img -> {
             if (img == null) return;
-            // Find the section and update its UI
+
             ImageCategorySection sec = findSection(img.getCategory());
-            if (sec != null) {
-                // Replace temp (content://) with final https if exists
-                for (int i = 0; i < sec.images.size(); i++) {
-                    Image it = sec.images.get(i);
-                    if (img.getId().equals(it.getId())) {
-                        sec.images.set(i, img);
-                        categoriesAdapter.notifyImageChanged(categories.indexOf(sec));
-                        break;
-                    }
+            if (sec == null) return;
+
+            // Replace temp (content://) with final https if exists
+            for (int i = 0; i < sec.images.size(); i++) {
+                Image it = sec.images.get(i);
+                if (img.getId().equals(it.getId())) {
+                    sec.images.set(i, img);
+                    categoriesAdapter.notifyImageChanged(categories.indexOf(sec));
+                    break;
                 }
-                // Trigger classification (updates the image document internally)
-                EnhancedGeminiHelper.classifyImageAndSave(
-                        this,
-                        Uri.parse(img.getLocalUri() != null ? img.getLocalUri() : img.getUrl()),
-                        projectId,
-                        img,
-                        sec.prompt,
-                        new EnhancedGeminiHelper.EnhancedClassificationCallback() {
-                            @Override public void onResult(String raw, Map<String, String> parsed) {
-                                runOnUiThread(() -> {
-                                    img.setDescription("סיווג הושלם");
-                                    categoriesAdapter.notifyImageChanged(categories.indexOf(sec));
-                                    showClassificationResult(img.getCategory(), parsed);
-                                });
-                            }
-                            @Override public void onError(String e) {
-                                runOnUiThread(() -> {
-                                    img.setDescription("שגיאה בסיווג: " + e);
-                                    categoriesAdapter.notifyImageChanged(categories.indexOf(sec));
-                                    toast("שגיאה בסיווג: " + e);
-                                });
-                            }
-                            @Override public void onSavedToDatabase() {
-                                runOnUiThread(() ->
-                                        toast("התמונה נשמרה והפרויקט עודכן!")
-                                );
-                            }
-                        }
-                );
             }
+
+            // "Other" category – no Gemini, only store simple description
+            if (sec.category == Image.Category.OTHER) {
+                img.setDescription("תמונה נוספת (ללא סיווג אוטומטי)");
+                categoriesAdapter.notifyImageChanged(categories.indexOf(sec));
+                toast("התמונה נשמרה (קטגוריה: אחר)");
+                return;
+            }
+
+            // Trigger classification (updates image document internally)
+            EnhancedGeminiHelper.classifyImageAndSave(
+                    this,
+                    Uri.parse(img.getLocalUri() != null ? img.getLocalUri() : img.getUrl()),
+                    projectId,
+                    img,
+                    sec.prompt,
+                    new EnhancedGeminiHelper.EnhancedClassificationCallback() {
+                        @Override
+                        public void onResult(String raw, Map<String, String> parsed) {
+                            runOnUiThread(() -> {
+                                // Build human-readable summary and put it into description
+                                String summary = buildClassificationSummary(img.getCategory(), parsed);
+                                if (summary == null || summary.trim().isEmpty()) {
+                                    img.setDescription("סיווג הושלם");
+                                } else {
+                                    img.setDescription(summary);
+                                }
+                                categoriesAdapter.notifyImageChanged(categories.indexOf(sec));
+                                // Optional toast with the same summary
+                                showClassificationResult(img.getCategory(), parsed);
+                            });
+                        }
+
+                        @Override
+                        public void onError(String e) {
+                            runOnUiThread(() -> {
+                                img.setDescription("שגיאה בסיווג: " + e);
+                                categoriesAdapter.notifyImageChanged(categories.indexOf(sec));
+                                toast("שגיאה בסיווג: " + e);
+                            });
+                        }
+
+                        @Override
+                        public void onSavedToDatabase() {
+                            runOnUiThread(() ->
+                                    toast("התמונה נשמרה והפרויקט עודכן!")
+                            );
+                        }
+                    }
+            );
         });
 
         vm.getLastDeleteOk().observe(this, ok -> {
@@ -158,7 +190,10 @@ public class UploadImagesActivity extends AppCompatActivity {
         btnSaveAndContinue.setOnClickListener(v -> {
             boolean hasImages = false;
             for (ImageCategorySection s : categories) {
-                if (!s.images.isEmpty()) { hasImages = true; break; }
+                if (!s.images.isEmpty()) {
+                    hasImages = true;
+                    break;
+                }
             }
             if (!hasImages) {
                 toast("יש להעלות לפחות תמונה אחת");
@@ -176,12 +211,56 @@ public class UploadImagesActivity extends AppCompatActivity {
         });
     }
 
+    // ============================
+    // Build classification summary
+    // ============================
+    private String buildClassificationSummary(Image.Category category,
+                                              Map<String, String> parsedDisplayKv) {
+        if (parsedDisplayKv == null || parsedDisplayKv.isEmpty()) return "";
+
+        StringBuilder message = new StringBuilder();
+        switch (category) {
+            case KITCHEN:
+                appendIf(message, "ארונות", parsedDisplayKv.get("ארונות"));
+                appendIf(message, "משטח", parsedDisplayKv.get("משטח עבודה"));
+                break;
+            case ENTRANCE_DOOR:
+                appendIf(message, "מספר דירה", parsedDisplayKv.get("מספר דירה"));
+                appendIf(message, "דלת", parsedDisplayKv.get("סוג דלת"));
+                break;
+            case LIVING_ROOM:
+            case BEDROOM:
+                appendIf(message, "ריצוף", parsedDisplayKv.get("ריצוף"));
+                appendIf(message, "מיזוג", parsedDisplayKv.get("מיזוג אוויר"));
+                appendIf(message, "חלונות", parsedDisplayKv.get("חלונות"));
+                appendIf(message, "סורגים", parsedDisplayKv.get("סורגים"));
+                appendIf(message, "מידת ריצוף", parsedDisplayKv.get("מידת ריצוף"));
+                appendIf(message, "דלתות פנים", parsedDisplayKv.get("דלתות פנים"));
+                break;
+            default:
+                for (Map.Entry<String, String> e : parsedDisplayKv.entrySet()) {
+                    if (message.length() > 0) message.append("\n");
+                    message.append(e.getKey()).append(": ").append(e.getValue());
+                }
+        }
+        return message.toString();
+    }
+
+    private void showClassificationResult(Image.Category category, Map<String, String> parsedDisplayKv) {
+        String message = buildClassificationSummary(category, parsedDisplayKv);
+        if (message == null || message.trim().isEmpty()) {
+            toast("סיווג הושלם");
+        } else {
+            toast(message);
+        }
+    }
+
     // ==================================
     // בחירה בין מצלמה לגלריה (MediaStore)
     // ==================================
 
     private void showImageSourceDialog() {
-        CharSequence[] options = new CharSequence[] { "גלריה", "מצלמה" };
+        CharSequence[] options = new CharSequence[]{"גלריה", "מצלמה"};
         new AlertDialog.Builder(this)
                 .setTitle("בחירת מקור תמונה")
                 .setItems(options, (dialog, which) -> {
@@ -205,7 +284,7 @@ public class UploadImagesActivity extends AppCompatActivity {
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
                     this,
-                    new String[]{ Manifest.permission.CAMERA },
+                    new String[]{Manifest.permission.CAMERA},
                     REQUEST_CAMERA_PERMISSION
             );
         } else {
@@ -214,10 +293,9 @@ public class UploadImagesActivity extends AppCompatActivity {
     }
 
     /**
-     * פותח מצלמה בלי FileProvider – ע"י יצירת Uri דרך MediaStore
+     * Opens camera using MediaStore Uri (no FileProvider).
      */
     private void openCamera() {
-        // יצירת Uri ריק במדיה – המצלמה תכתוב לתוכו
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.TITLE, "Appraisal_" + System.currentTimeMillis());
         values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
@@ -259,7 +337,7 @@ public class UploadImagesActivity extends AppCompatActivity {
     }
 
     // =======================
-    // onActivityResult משותף
+    // onActivityResult
     // =======================
 
     @Override
@@ -282,7 +360,7 @@ public class UploadImagesActivity extends AppCompatActivity {
     }
 
     /**
-     * לוגיקה משותפת לתמונה חדשה – מגלריה או מצלמה
+     * Shared logic for new image (from gallery or camera).
      */
     private void handleNewImageFromUri(Uri imageUri) {
         final ImageCategorySection pickedSection = pendingSection;
@@ -291,23 +369,23 @@ public class UploadImagesActivity extends AppCompatActivity {
             return;
         }
 
-        // תמונה זמנית ל-UI
+        // Temporary image for UI
         final Image temp = new Image();
         temp.setProjectId(projectId);
         temp.setCategory(pickedSection.category);
         temp.setLocalUri(imageUri.toString());
-        temp.setUrl(imageUri.toString()); // Glide מסתדר עם content://
+        temp.setUrl(imageUri.toString()); // Glide can handle content://
 
         pickedSection.images.add(temp);
         int sectionIndex = categories.indexOf(pickedSection);
         if (sectionIndex != -1) categoriesAdapter.notifyImageChanged(sectionIndex);
 
-        // העלאה ושמירה – ViewModel כמו שהיה
+        // Upload + save via ViewModel
         vm.uploadAndSave(imageUri, pickedSection.category, pickedSection.prompt);
     }
 
     // =======================
-    // מחיקה – כמו שהיה
+    // Delete
     // =======================
 
     private void onDeleteImageClicked(ImageCategorySection section, Image image, int sectionIndex, int imageIndex) {
@@ -317,7 +395,6 @@ public class UploadImagesActivity extends AppCompatActivity {
 
         vm.getLastDeleteOk().removeObservers(this);
         vm.getLastDeleteOk().observe(this, ok -> {
-            // If failed → rollback
             if (Boolean.FALSE.equals(ok)) {
                 section.images.add(imageIndex, removed);
                 categoriesAdapter.notifyImageChanged(sectionIndex);
@@ -332,44 +409,13 @@ public class UploadImagesActivity extends AppCompatActivity {
         return null;
     }
 
-    private void showClassificationResult(Image.Category category, Map<String, String> parsedDisplayKv) {
-        if (parsedDisplayKv == null || parsedDisplayKv.isEmpty()) {
-            toast("סיווג הושלם");
-            return;
-        }
-        StringBuilder message = new StringBuilder();
-        switch (category) {
-            case KITCHEN:
-                appendIf(message, "ארונות", parsedDisplayKv.get("ארונות"));
-                appendIf(message, "משטח", parsedDisplayKv.get("משטח עבודה"));
-                break;
-            case ENTRANCE_DOOR:
-                appendIf(message, "מספר דירה", parsedDisplayKv.get("מספר דירה"));
-                appendIf(message, "דלת", parsedDisplayKv.get("סוג דלת"));
-                break;
-            case LIVING_ROOM:
-            case BEDROOM:
-                appendIf(message, "ריצוף", parsedDisplayKv.get("ריצוף"));
-                appendIf(message, "מיזוג", parsedDisplayKv.get("מיזוג אוויר"));
-                appendIf(message, "חלונות", parsedDisplayKv.get("חלונות"));
-                appendIf(message, "סורגים", parsedDisplayKv.get("סורגים"));
-                appendIf(message, "מידת ריצוף", parsedDisplayKv.get("מידת ריצוף"));
-                appendIf(message, "דלתות פנים", parsedDisplayKv.get("דלתות פנים"));
-                break;
-            default:
-                for (Map.Entry<String, String> e : parsedDisplayKv.entrySet()) {
-                    if (message.length() > 0) message.append("\n");
-                    message.append(e.getKey()).append(": ").append(e.getValue());
-                }
-        }
-        if (message.length() > 0) toast(message.toString());
-    }
-
     private void appendIf(StringBuilder sb, String key, @Nullable String val) {
         if (val == null || val.trim().isEmpty()) return;
         if (sb.length() > 0) sb.append("\n");
         sb.append(key).append(": ").append(val);
     }
 
-    private void toast(String m) { Toast.makeText(this, m, Toast.LENGTH_SHORT).show(); }
+    private void toast(String m) {
+        Toast.makeText(this, m, Toast.LENGTH_SHORT).show();
+    }
 }

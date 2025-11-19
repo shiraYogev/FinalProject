@@ -17,6 +17,8 @@ import java.util.Map;
  * - Kitchen cabinets: combine all images into a single layout (upper/lower) + worktop.
  * - Bars in bedrooms/living rooms: "אין" / "יש" / "יש באופן חלקי".
  * - Interior doors (bedrooms): prefer any real value over "טרם הותקנו".
+ * - Flooring (living room / bedrooms): last meaningful flooring wins; "טרם רוצף"
+ *   never overrides an existing concrete flooring type.
  *
  * This class does NOT touch Firestore directly; it only returns a Map<String, Object>
  * with Firestore field names (keys from GeminiJsonParser.FirestoreKeys).
@@ -41,6 +43,7 @@ public final class ProjectImageAggregator {
         aggregateBars(images, updates);
         aggregateKitchen(images, updates);
         aggregateInteriorDoors(images, updates);
+        aggregateFlooring(images, updates);   // 🆕 flooring aggregation (last meaningful value wins)
 
         // אפשר להרחיב פה בעתיד לעוד שדות
         return updates;
@@ -139,7 +142,7 @@ public final class ProjectImageAggregator {
     // =========================================================
     // 3) Kitchen – cabinets + worktop aggregation
     //    using aiClassifications: CABINETS, WORKTOP
-    //    (no material type, only layout: עליונים/תחתונים/אין)
+    //    (layout only: עליונים/תחתונים/אין)
     // =========================================================
 
     private static void aggregateKitchen(@NonNull List<Image> images,
@@ -314,6 +317,75 @@ public final class ProjectImageAggregator {
         if (finalVal != null) {
             out.put(GeminiJsonParser.FirestoreKeys.INTERIOR_DOOR_CONDITION, finalVal);
         }
+    }
+
+    // =========================================================
+    // 5) Flooring – last meaningful flooring wins
+    //    across living rooms + bedrooms.
+    //    Source: description labels "ריצוף" + "מידת ריצוף".
+    //    Rule:
+    //      - Each new classification overrides the previous one (latest wins).
+    //      - But "טרם רוצף" will NOT override an existing concrete flooring type.
+    // =========================================================
+
+    private static void aggregateFlooring(@NonNull List<Image> images,
+                                          @NonNull Map<String, Object> out) {
+        String floorType = null;
+        String floorSize = null;
+        boolean hasAny = false;
+
+        for (Image img : images) {
+            if (img == null || img.getCategory() == null) continue;
+
+            switch (img.getCategory()) {
+                case LIVING_ROOM:
+                case BEDROOM: {
+                    String desc = img.getDescription();
+                    if (desc == null || desc.trim().isEmpty()) break;
+
+                    String newType = extractValueFromDescription(desc, "ריצוף");
+                    if (newType == null || newType.trim().isEmpty()) break;
+                    newType = newType.trim();
+
+                    String newSize = extractValueFromDescription(desc, "מידת ריצוף");
+                    if (newSize != null) newSize = newSize.trim();
+
+                    // If we already have a concrete flooring and the new one is "טרם רוצף",
+                    // do NOT override the existing one.
+                    if ("טרם רוצף".equals(newType)
+                            && floorType != null
+                            && !"טרם רוצף".equals(floorType)) {
+                        break;
+                    }
+
+                    // Accept this classification – "latest wins" semantics
+                    floorType = newType;
+                    if (newSize != null && !newSize.isEmpty()) {
+                        floorSize = newSize;
+                    }
+                    hasAny = true;
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+
+        if (!hasAny || floorType == null || floorType.trim().isEmpty()) {
+            return;
+        }
+
+        String combined;
+        if (floorSize != null && !floorSize.trim().isEmpty()) {
+            combined = floorType + " (" + floorSize + ")";
+        } else {
+            combined = floorType;
+        }
+
+        // ⚠️ אם השורה הזאת לא מתקמפלת, החליפי ל־APARTMENT_FLOORING או שם המפתח הנכון אצלך ב-FirestoreKeys.
+        out.put(GeminiJsonParser.FirestoreKeys.FLOORING_TYPE, combined);
+        // אם אין לך קבוע כזה, אפשר זמנית:
+        // out.put("apartment_flooring", combined);
     }
 
     // ---------------------------------------------------------
