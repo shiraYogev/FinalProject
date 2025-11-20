@@ -21,6 +21,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.activity.HomePageActivity;
+import com.example.finalprojectappraisal.activity.newProject.UploadTabuActivity;
 import com.example.finalprojectappraisal.activity.newProject.presenter.veiwmodel.PresenterDetailsViewModel;
 import com.example.finalprojectappraisal.database.auth.AuthRepository;
 import com.example.finalprojectappraisal.utils.FieldValidators;
@@ -125,8 +126,9 @@ public class PresenterDetailsActivity extends AppCompatActivity {
     }
 
     private void navigateHome() {
-        Intent intent = new Intent(this, HomePageActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        // במקום ללכת ישירות ל-Home, נעבור למסך הטאבו
+        Intent intent = new Intent(this, UploadTabuActivity.class);
+        intent.putExtra("projectId", projectId);
         startActivity(intent);
         finish();
     }

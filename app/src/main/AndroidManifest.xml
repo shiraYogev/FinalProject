@@ -85,6 +85,9 @@
             android:name=".activity.newProject.property.activity.AdditionalFacilitiesActivity"
             android:exported="false" />
         <activity
+            android:name=".activity.newProject.UploadTabuActivity"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".activity.newProject.property.activity.PropertyDescriptionActivity"
             android:exported="false" />
         <activity
