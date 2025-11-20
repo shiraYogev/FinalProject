@@ -1,9 +1,14 @@
 // file: app/src/main/java/com/example/finalprojectappraisal/activity/AllProjects/ProjectPreviewActivity.java
 package com.example.finalprojectappraisal.activity.AllProjects;
 
+import android.app.Dialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -71,7 +76,8 @@ public class ProjectPreviewActivity extends AppCompatActivity {
         rvImages.setAdapter(imagesAdapter);
 
         glm.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-            @Override public int getSpanSize(int position) {
+            @Override
+            public int getSpanSize(int position) {
                 int vt = imagesAdapter.getItemViewType(position);
                 return (vt == SectionedImagesAdapter.VT_HEADER) ? 3 : 1;
             }
@@ -123,13 +129,16 @@ public class ProjectPreviewActivity extends AppCompatActivity {
             notifyDataSetChanged();
         }
 
-        @NonNull @Override public H onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        @NonNull
+        @Override
+        public H onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View v = android.view.LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.item_kv_row, parent, false);
             return new H(v);
         }
 
-        @Override public void onBindViewHolder(@NonNull H h, int pos) {
+        @Override
+        public void onBindViewHolder(@NonNull H h, int pos) {
             ProjectPreviewViewModel.KV kv = data.get(pos);
 
             // RTL align
@@ -142,22 +151,33 @@ public class ProjectPreviewActivity extends AppCompatActivity {
                 h.key.setText(kv.key);
                 h.key.setTypeface(h.key.getTypeface(), android.graphics.Typeface.BOLD);
                 h.value.setText("");
-                h.itemView.setPadding(h.itemView.getPaddingLeft(),
+                h.itemView.setPadding(
+                        h.itemView.getPaddingLeft(),
                         (int) (h.itemView.getResources().getDisplayMetrics().density * 12),
                         h.itemView.getPaddingRight(),
-                        h.itemView.getPaddingBottom());
+                        h.itemView.getPaddingBottom()
+                );
             } else {
                 h.key.setTypeface(null, android.graphics.Typeface.NORMAL);
-                h.key.setText(kv.key + " :");
+                // kv.key כבר כולל נקודתיים אם צריך, לכן לא מוסיפים " :"
+                h.key.setText(kv.key);
                 h.value.setText(kv.value == null ? "—" : kv.value);
             }
         }
 
-        @Override public int getItemCount() { return data.size(); }
+        @Override
+        public int getItemCount() {
+            return data.size();
+        }
 
         static class H extends RecyclerView.ViewHolder {
             TextView key, value;
-            H(@NonNull View v) { super(v); key = v.findViewById(R.id.txtKey); value = v.findViewById(R.id.txtValue); }
+
+            H(@NonNull View v) {
+                super(v);
+                key = v.findViewById(R.id.txtKey);
+                value = v.findViewById(R.id.txtValue);
+            }
         }
     }
 
@@ -166,10 +186,11 @@ public class ProjectPreviewActivity extends AppCompatActivity {
      * Requires:
      * - res/layout/item_image_header.xml  (TextView id: @id/txtHeader)
      * - res/layout/item_image_square.xml  (ImageView id: @id/image)
+     * - res/layout/dialog_full_image.xml  (ImageView id: @id/fullImage, ImageButton id: @id/btnClose)
      */
     static class SectionedImagesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         static final int VT_HEADER = 10;
-        static final int VT_PHOTO  = 11;
+        static final int VT_PHOTO = 11;
 
         private final List<ProjectPreviewViewModel.UiImageItem> data = new ArrayList<>();
 
@@ -179,12 +200,15 @@ public class ProjectPreviewActivity extends AppCompatActivity {
             notifyDataSetChanged();
         }
 
-        @Override public int getItemViewType(int position) {
+        @Override
+        public int getItemViewType(int position) {
             ProjectPreviewViewModel.UiImageItem it = data.get(position);
             return (it.type == ProjectPreviewViewModel.UiImageItem.TYPE_HEADER) ? VT_HEADER : VT_PHOTO;
         }
 
-        @NonNull @Override public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        @NonNull
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             if (viewType == VT_HEADER) {
                 View v = android.view.LayoutInflater.from(parent.getContext())
                         .inflate(R.layout.item_image_header, parent, false);
@@ -196,32 +220,72 @@ public class ProjectPreviewActivity extends AppCompatActivity {
             }
         }
 
-        @Override public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        @Override
+        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
             ProjectPreviewViewModel.UiImageItem it = data.get(position);
+
             if (holder instanceof HeaderVH) {
                 HeaderVH hvh = (HeaderVH) holder;
                 hvh.title.setText(it.title == null ? "—" : it.title);
             } else if (holder instanceof PhotoVH) {
                 PhotoVH pvh = (PhotoVH) holder;
                 String url = (it.image != null) ? it.image.getUrl() : null;
+
                 if (url == null || url.trim().isEmpty()) {
                     pvh.img.setImageResource(android.R.drawable.ic_menu_report_image);
+                    pvh.img.setOnClickListener(null);
                 } else {
                     Glide.with(pvh.img.getContext()).load(url).into(pvh.img);
+
+                    // Open full-screen dialog on click
+                    pvh.img.setOnClickListener(v ->
+                            showFullImageDialog(v.getContext(), url)
+                    );
                 }
             }
         }
 
-        @Override public int getItemCount() { return data.size(); }
+        @Override
+        public int getItemCount() {
+            return data.size();
+        }
+
+        /** Shows the tapped image in a full-screen dialog. */
+        private void showFullImageDialog(Context context, String url) {
+            if (url == null || url.trim().isEmpty()) return;
+
+            Dialog dialog = new Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            dialog.setContentView(R.layout.dialog_full_image);
+
+            ImageView fullImage = dialog.findViewById(R.id.fullImage);
+            ImageButton btnClose = dialog.findViewById(R.id.btnClose);
+
+            Glide.with(context).load(url).into(fullImage);
+
+            View.OnClickListener closeListener = v -> dialog.dismiss();
+            btnClose.setOnClickListener(closeListener);
+            fullImage.setOnClickListener(closeListener);
+
+            dialog.show();
+        }
 
         static class HeaderVH extends RecyclerView.ViewHolder {
             TextView title;
-            HeaderVH(@NonNull View v) { super(v); title = v.findViewById(R.id.txtHeader); }
+
+            HeaderVH(@NonNull View v) {
+                super(v);
+                title = v.findViewById(R.id.txtHeader);
+            }
         }
 
         static class PhotoVH extends RecyclerView.ViewHolder {
-            android.widget.ImageView img;
-            PhotoVH(@NonNull View v) { super(v); img = v.findViewById(R.id.image); }
+            ImageView img;
+
+            PhotoVH(@NonNull View v) {
+                super(v);
+                img = v.findViewById(R.id.image);
+            }
         }
     }
 }
