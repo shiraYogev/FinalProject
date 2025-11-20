@@ -31,6 +31,7 @@ import com.example.finalprojectappraisal.model.Appraiser;
 import com.example.finalprojectappraisal.model.Project;
 import com.example.finalprojectappraisal.utils.FilterPrefs;
 import com.google.android.material.chip.ChipGroup;
+import com.example.finalprojectappraisal.activity.newProject.client.ClientDetailsActivity;
 
 import android.app.AlertDialog;
 
@@ -222,6 +223,15 @@ public class MyProjectsActivity extends AppCompatActivity
             Log.d(TAG_PREF, "Open FiltersBottomSheetDialogFragment");
             new FiltersBottomSheetDialogFragment(vm.getCurrentFilter(), this)
                     .show(getSupportFragmentManager(), "filters");
+        });
+
+        findViewById(R.id.btnNewProject).setOnClickListener(v -> {
+            Log.d(TAG_ACT, "User tapped 'New Project' button. Starting ClientDetailsActivity.");
+
+            // יצירת Intent המפנה למסך פרטי הלקוח
+            Intent intent = new Intent(MyProjectsActivity.this,
+                    com.example.finalprojectappraisal.activity.newProject.client.ClientDetailsActivity.class);
+            startActivity(intent);
         });
 
         // User switching
