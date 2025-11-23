@@ -667,7 +667,7 @@ public class ProjectPreviewViewModel extends ViewModel {
                     new FieldSpec("תקציר נכס",                "property_details.property_summary")
             )),
             new SectionSpec("מאפייני סביבה ומבנה", Arrays.asList(
-                    new FieldSpec("מאפייני סביבה",       "environment_characteristics"),
+                    new FieldSpec("מאפייני סביבה",       "property_details.environment_characteristics"),
                     new FieldSpec("מיקום הנכס",          "property_details.property_location"),
                     new FieldSpec("סוג בניין",            "property_details.building_type"),
                     new FieldSpec("מצב הבניין",          "property_details.physical_condition"),
