@@ -1,7 +1,9 @@
+// file: app/src/main/java/com/example/finalprojectappraisal/activity/newProject/images/UploadImagesActivity.java
 package com.example.finalprojectappraisal.activity.newProject.images;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -9,7 +11,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.View;
+import android.view.Window;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -21,6 +27,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.activity.newProject.images.viewmodel.UploadImagesViewModel;
 import com.example.finalprojectappraisal.activity.newProject.property.activity.ApartmentDetailsActivity;
@@ -83,11 +90,12 @@ public class UploadImagesActivity extends AppCompatActivity {
                 categories,
                 this,
                 section -> {
-                    // open source chooser instead of gallery directly
+                    // Open source chooser (gallery/camera)
                     pendingSection = section;
                     showImageSourceDialog();
                 },
-                this::onDeleteImageClicked
+                this::onDeleteImageClicked,
+                this::onImageClicked // NEW: full image preview callback
         );
         recyclerCategories.setAdapter(categoriesAdapter);
 
@@ -403,6 +411,52 @@ public class UploadImagesActivity extends AppCompatActivity {
 
         vm.deleteImage(image);
     }
+
+    // =======================
+    // Full-screen preview
+    // =======================
+
+    private void onImageClicked(@NonNull ImageCategorySection section,
+                                @NonNull Image image,
+                                int sectionIndex,
+                                int imageIndex) {
+        String url = image.getUrl();
+        if ((url == null || url.trim().isEmpty()) && image.getLocalUri() != null) {
+            url = image.getLocalUri();
+        }
+        if (url == null || url.trim().isEmpty()) {
+            toast("לא ניתן להציג תמונה");
+            return;
+        }
+        showFullImageDialog(this, url);
+    }
+
+    /**
+     * Shows the tapped image in a full-screen dialog using dialog_full_image.xml.
+     */
+    private void showFullImageDialog(android.content.Context context, String url) {
+        if (url == null || url.trim().isEmpty()) return;
+
+        Dialog dialog = new Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_full_image);
+
+        ImageView fullImage = dialog.findViewById(R.id.fullImage);
+        ImageButton btnClose = dialog.findViewById(R.id.btnClose);
+
+        Glide.with(context)
+                .load(url)
+                .placeholder(R.drawable.item_image_thumbnail)
+                .into(fullImage);
+
+        View.OnClickListener closeListener = v -> dialog.dismiss();
+        btnClose.setOnClickListener(closeListener);
+        fullImage.setOnClickListener(closeListener);
+
+        dialog.show();
+    }
+
+    // =======================
 
     private ImageCategorySection findSection(Image.Category c) {
         for (ImageCategorySection s : categories) if (s.category == c) return s;

@@ -1,3 +1,4 @@
+// file: app/src/main/java/com/example/finalprojectappraisal/adapter/ImageCategoriesAdapter.java
 package com.example.finalprojectappraisal.adapter;
 
 import android.content.Context;
@@ -23,7 +24,7 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
         void onAddImage(@NonNull ImageCategorySection section);
     }
 
-    /** Callback למחיקת תמונה – מועבר ל-Activity/Fragment כדי לבצע מחיקה מה-DB */
+    /** Callback למחיקת תמונה – Activity/Fragment מבצע מחיקה מה-DB */
     public interface OnImageDeleteListener {
         void onDelete(@NonNull ImageCategorySection section,
                       @NonNull Image image,
@@ -31,19 +32,30 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
                       int imageIndex);
     }
 
+    /** Callback when user taps an image (for full-screen preview). */
+    public interface OnImageClickListener {
+        void onImageClick(@NonNull ImageCategorySection section,
+                          @NonNull Image image,
+                          int sectionIndex,
+                          int imageIndex);
+    }
+
     private final List<ImageCategorySection> categories;
     private final Context context;
     private final OnAddImageListener addImageListener;
     private final OnImageDeleteListener deleteListener;
+    private final OnImageClickListener imageClickListener;
 
     public ImageCategoriesAdapter(@NonNull List<ImageCategorySection> categories,
                                   @NonNull Context context,
                                   @NonNull OnAddImageListener addImageListener,
-                                  @NonNull OnImageDeleteListener deleteListener) {
+                                  @NonNull OnImageDeleteListener deleteListener,
+                                  @NonNull OnImageClickListener imageClickListener) {
         this.categories = categories;
         this.context = context;
         this.addImageListener = addImageListener;
         this.deleteListener = deleteListener;
+        this.imageClickListener = imageClickListener;
     }
 
     @NonNull
@@ -64,7 +76,7 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
                 new ImagePagerAdapter.OnImageActionListener() {
                     @Override
                     public void onDelete(int imagePosition) {
-                        // אל תמחוק כאן מה-UI: מעבירים ל-Activity שיטפל (כולל DB + Rollback)
+                        // Delegate delete to Activity (DB + rollback if needed)
                         int sectionIndex = holder.getAdapterPosition();
                         if (sectionIndex == RecyclerView.NO_POSITION) return;
                         if (imagePosition < 0 || imagePosition >= section.images.size()) return;
@@ -79,20 +91,27 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
                     public void onDescriptionChanged(int imagePosition, String newText) {
                         if (imagePosition >= 0 && imagePosition < section.images.size()) {
                             section.images.get(imagePosition).setDescription(newText);
-                            // אם תרצי לשמור ל-DB, תעשי זאת ב-Activity דרך callback נפרד
+                            // If you want to persist description to DB, do it via Activity callback.
                         }
                     }
 
                     @Override
                     public void onImageClick(int imagePosition) {
-                        // פתיחת תצוגה מורחבת/דיאלוג – אם תרצי, תעשי זאת ב-Activity דרך callback נוסף
+                        int sectionIndex = holder.getAdapterPosition();
+                        if (sectionIndex == RecyclerView.NO_POSITION) return;
+                        if (imagePosition < 0 || imagePosition >= section.images.size()) return;
+
+                        if (imageClickListener != null) {
+                            Image image = section.images.get(imagePosition);
+                            imageClickListener.onImageClick(section, image, sectionIndex, imagePosition);
+                        }
                     }
                 }
         );
 
         holder.viewPagerImages.setAdapter(pagerAdapter);
 
-        // נוודא שאין callback ישן לפני שמרשמים חדש
+        // Clear old callback before registering new one
         if (holder.pageChangeCallback != null) {
             holder.viewPagerImages.unregisterOnPageChangeCallback(holder.pageChangeCallback);
         }
@@ -106,7 +125,7 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
         };
         holder.viewPagerImages.registerOnPageChangeCallback(holder.pageChangeCallback);
 
-        // עדכון ראשוני של ה-description לפי התמונה הראשונה/נוכחית
+        // Initial description for current image
         int current = holder.viewPagerImages.getCurrentItem();
         holder.updateDescriptionForPosition(section, current);
 
@@ -122,7 +141,7 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
         return categories.size();
     }
 
-    /** רענון של קטגוריה מסוימת (למשל אחרי הוספה/מחיקה/סיווג ב-Activity) */
+    /** Refresh single category (after add/delete/classification). */
     public void notifyImageChanged(int categoryPosition) {
         notifyItemChanged(categoryPosition);
     }
