@@ -251,110 +251,242 @@ public class ProjectPreviewViewModel extends ViewModel {
         logD("loadImages: projectId=" + projectId);
         long t0 = System.nanoTime();
 
-        repo.loadAllImagesForProject(projectId, task -> {
-            long dtMs = (System.nanoTime() - t0) / 1_000_000;
-            loadingImages.setValue(false);
+        // קודם נטען את הפרויקט רק כדי להביא את tabu_crop_image (אם קיים)
+        repo.getProject(projectId, taskProj -> {
+            String tabuUrl = null;
 
-            List<Image> list = (task.isSuccessful() && task.getResult() != null)
-                    ? task.getResult() : new ArrayList<>();
-            logD("loadImages: got " + (list == null ? 0 : list.size()) + " images in " + dtMs + "ms");
+            if (taskProj.isSuccessful() && taskProj.getResult() != null && taskProj.getResult().exists()) {
+                Object tabuField = taskProj.getResult().get("tabu_crop_image");
+                if (tabuField != null) {
+                    tabuUrl = String.valueOf(tabuField).trim();
+                    if (tabuUrl.isEmpty()) {
+                        tabuUrl = null;
+                    }
+                } else {
+                    logD("loadImages: no tabu_crop_image field on project");
+                }
+            } else {
+                logW("loadImages: failed to load project for tabu_crop_image");
+            }
 
-            images.setValue(list); // keep plain list
-            List<UiImageItem> sectioned = buildSectionedImages(list); // build headers + photos
-            sectionedImages.setValue(sectioned);
-            logD("buildSectionedImages: flatItems=" + sectioned.size());
+            final String finalTabuUrl = tabuUrl; // לשימוש ב־lambda הפנימי
+
+            // עכשיו נטען את רשימת התמונות הרגילות כמו קודם
+            repo.loadAllImagesForProject(projectId, taskImg -> {
+                long dtMs = (System.nanoTime() - t0) / 1_000_000;
+                loadingImages.setValue(false);
+
+                List<Image> list = (taskImg.isSuccessful() && taskImg.getResult() != null)
+                        ? taskImg.getResult() : new ArrayList<>();
+                if (list == null) list = new ArrayList<>();
+
+                logD("loadImages: got " + list.size() + " images in " + dtMs + "ms; tabuUrl=" + finalTabuUrl);
+
+                images.setValue(list); // נשמור את הרשימה הפשוטה
+                List<UiImageItem> sectioned = buildSectionedImages(list, finalTabuUrl); // נבנה כותרות + תמונות
+                sectionedImages.setValue(sectioned);
+                logD("buildSectionedImages: flatItems=" + sectioned.size());
+            });
         });
     }
 
-    /** Build a flat list: [Header, Photo, Photo, Header, Photo, ...] by category. */
-    private List<UiImageItem> buildSectionedImages(@NonNull List<Image> all) {
+
+    /** Build a flat list: [Header, Photo, Photo, Header, Photo, ...] by category + optional Tabu image. */
+    private List<UiImageItem> buildSectionedImages(@NonNull List<Image> all, @Nullable String tabuUrl) {
         List<UiImageItem> out = new ArrayList<>();
-        if (all.isEmpty()) return out;
-
-        // Desired category order
-        List<String> desiredOrder = Arrays.asList(
-                "FRONT",        // חזית / בניין
-                "LIVING_ROOM",  // סלון
-                "KITCHEN",      // מטבח
-                "BATHROOM",     // חדר רחצה
-                "BEDROOM",      // חדרי שינה
-                "VIEW",         // נוף
-                "DOCUMENT",     // מסמכים
-                "OTHER"         // אחר
-        );
-
-        // Group by category with stable insertion order
-        Map<String, List<Image>> byCategory = new LinkedHashMap<>();
-        for (String key : desiredOrder) byCategory.put(key, new ArrayList<>());
-
-        // Distribute images to buckets
-        for (Image im : all) {
-            String key = safeCategory(im);
-            if (!byCategory.containsKey(key)) {
-                byCategory.put(key, new ArrayList<>()); // accommodate unexpected categories
-            }
-            byCategory.get(key).add(im);
+        if (all.isEmpty() && (tabuUrl == null || tabuUrl.trim().isEmpty())) {
+            return out;
         }
 
-        // Emit only non-empty buckets, in desired order first, then extras
+        // סדר קטגוריות קבוע (מהתשובה הקודמת, כולל דלת כניסה)
+        List<String> desiredOrder = Arrays.asList(
+                "FRONT",         // חזית / בניין
+                "ENTRANCE_DOOR", // דלת כניסה
+                "LIVING_ROOM",   // סלון
+                "KITCHEN",       // מטבח
+                "BATHROOM",      // חדר רחצה
+                "BEDROOM",       // חדרי שינה
+                "VIEW",          // נוף
+                "DOCUMENT",      // מסמכים
+                "OTHER"          // אחר
+        );
+
+        // יצירת באקטים ריקים מראש, כדי לשמור על סדר יציב
+        Map<String, List<Image>> byCategory = new LinkedHashMap<>();
+        for (String key : desiredOrder) {
+            byCategory.put(key, new ArrayList<>());
+        }
+
+        // פיזור התמונות לבאקטים לפי safeCategory
+        for (Image im : all) {
+            String key = safeCategory(im); // תמיד מחזיר אחת מהקטגוריות למעלה
+            List<Image> bucket = byCategory.get(key);
+            if (bucket == null) {
+                bucket = new ArrayList<>();
+                byCategory.put(key, bucket);
+            }
+            bucket.add(im);
+        }
+
+        int buckets = 0, headers = 0, photos = 0;
+
+        // מוציאים רק באקטים לא ריקים, בסדר הרצוי
         for (String key : desiredOrder) {
             List<Image> bucket = byCategory.get(key);
             if (bucket == null || bucket.isEmpty()) continue;
+
+            buckets++;
             out.add(UiImageItem.header(heTitle(key)));
-            for (Image im : bucket) out.add(UiImageItem.photo(im));
-        }
-        for (Map.Entry<String, List<Image>> e : byCategory.entrySet()) {
-            String key = e.getKey();
-            if (desiredOrder.contains(key)) continue;
-            List<Image> bucket = e.getValue();
-            if (bucket == null || bucket.isEmpty()) continue;
-            out.add(UiImageItem.header(heTitle(key)));
-            for (Image im : bucket) out.add(UiImageItem.photo(im));
+            headers++;
+
+            for (Image im : bucket) {
+                out.add(UiImageItem.photo(im));
+                photos++;
+            }
         }
 
-        // Diagnostics
-        int buckets = 0, photos = 0, headers = 0;
-        for (String k : byCategory.keySet()) {
-            List<Image> b = byCategory.get(k);
-            if (b != null && !b.isEmpty()) buckets++;
+        // --- הוספת תמונת הטאבו (אם יש URL) ---
+        if (tabuUrl != null && !tabuUrl.trim().isEmpty()) {
+            logD("buildSectionedImages: adding TABU image section with url=" + tabuUrl);
+
+            out.add(UiImageItem.header("טאבו"));
+
+            // ניצור אובייקט Image "וירטואלי" רק לצורך התצוגה
+            Image tabuImage = new Image();
+            // בהנחה שיש setter לכתובת; אם השם אצלך שונה – פשוט לשנות כאן.
+            tabuImage.setUrl(tabuUrl.trim());
+
+            out.add(UiImageItem.photo(tabuImage));
+            headers++;
+            photos++;
+            buckets++; // אפשרי לספירה סטטיסטית
         }
-        for (UiImageItem it : out) {
-            if (it.type == UiImageItem.TYPE_HEADER) headers++; else photos++;
-        }
+
         logD("sectioned: buckets=" + buckets + " | headers=" + headers + " | photos=" + photos);
-
         return out;
     }
 
-    /** Normalize category from model to an uppercase key that matches desiredOrder. */
+
+    /** Normalize category from model into one of the canonical keys in desiredOrder. */
     private String safeCategory(@Nullable Image im) {
         if (im == null) return "OTHER";
+
         try {
             Object catObj = im.getCategory(); // Enum or String
-            if (catObj == null) return "OTHER";
-            String s = String.valueOf(catObj).trim();
-            if (s.isEmpty()) return "OTHER";
-            s = s.toUpperCase(Locale.ROOT)
+            String raw = (catObj == null) ? "" : String.valueOf(catObj).trim();
+            if (raw.isEmpty()) {
+                logD("safeCategory: empty -> OTHER");
+                return "OTHER";
+            }
+
+            String norm = raw.toUpperCase(Locale.ROOT)
                     .replace(' ', '_')
                     .replace('-', '_')
                     .replace('/', '_');
-            return s.isEmpty() ? "OTHER" : s;
+
+            String resultKey;
+
+            // 1. Exact / common variants
+            switch (norm) {
+                case "FRONT":
+                case "FRONT_VIEW":
+                case "EXTERIOR":
+                case "FACADE":
+                case "BUILDING_FRONT":
+                    resultKey = "FRONT";
+                    break;
+
+                case "ENTRANCE_DOOR":
+                case "MAIN_ENTRANCE":
+                case "ENTRANCE":
+                    resultKey = "ENTRANCE_DOOR";
+                    break;
+
+                case "LIVING_ROOM":
+                case "SALON":
+                    resultKey = "LIVING_ROOM";
+                    break;
+
+                case "KITCHEN":
+                    resultKey = "KITCHEN";
+                    break;
+
+                case "BATHROOM":
+                case "BATH":
+                case "TOILET":
+                case "RESTROOM":
+                    resultKey = "BATHROOM";
+                    break;
+
+                case "BEDROOM":
+                case "MASTER_BEDROOM":
+                case "KIDS_BEDROOM":
+                    resultKey = "BEDROOM";
+                    break;
+
+                case "VIEW":
+                case "BALCONY_VIEW":
+                case "WINDOW_VIEW":
+                    resultKey = "VIEW";
+                    break;
+
+                case "DOCUMENT":
+                case "DOC":
+                case "PDF":
+                    resultKey = "DOCUMENT";
+                    break;
+
+                case "OTHER":
+                    resultKey = "OTHER";
+                    break;
+
+                default:
+                    // 2. Fuzzy matching by substrings
+                    if (norm.contains("FRONT") || norm.contains("FACADE") || norm.contains("EXTERIOR")) {
+                        resultKey = "FRONT";
+                    } else if (norm.contains("ENTRANCE") || (norm.contains("DOOR") && !norm.contains("INTERIOR"))) {
+                        resultKey = "ENTRANCE_DOOR";
+                    } else if (norm.contains("LIVING") || norm.contains("SALON")) {
+                        resultKey = "LIVING_ROOM";
+                    } else if (norm.contains("KITCHEN")) {
+                        resultKey = "KITCHEN";
+                    } else if (norm.contains("BATH") || norm.contains("TOILET") || norm.contains("WC")) {
+                        resultKey = "BATHROOM";
+                    } else if (norm.contains("BEDROOM") || norm.contains("ROOM")) {
+                        resultKey = "BEDROOM";
+                    } else if (norm.contains("VIEW") || norm.contains("BALCONY") || norm.contains("WINDOW")) {
+                        resultKey = "VIEW";
+                    } else if (norm.contains("DOC") || norm.contains("FORM") || norm.contains("SIGNATURE")) {
+                        resultKey = "DOCUMENT";
+                    } else {
+                        // 3. Anything else – treat as true "Other".
+                        resultKey = "OTHER";
+                    }
+                    break;
+            }
+
+            logD("safeCategory: raw=" + raw + " | norm=" + norm + " | resultKey=" + resultKey);
+            return resultKey;
+
         } catch (Throwable t) {
+            logE("safeCategory: failed, default OTHER", t);
             return "OTHER";
         }
     }
 
+
     /** Hebrew title per normalized category key. */
     private String heTitle(String key) {
         switch (key) {
-            case "FRONT":        return "חזית / בניין";
-            case "LIVING_ROOM":  return "סלון";
-            case "KITCHEN":      return "מטבח";
-            case "BATHROOM":     return "חדר רחצה";
-            case "BEDROOM":      return "חדרי שינה";
-            case "VIEW":         return "נוף";
-            case "DOCUMENT":     return "מסמכים";
-            default:             return "אחר";
+            case "FRONT":         return "חזית / בניין";
+            case "ENTRANCE_DOOR": return "דלת כניסה";
+            case "LIVING_ROOM":   return "סלון";
+            case "KITCHEN":       return "מטבח";
+            case "BATHROOM":      return "חדר רחצה";
+            case "BEDROOM":       return "חדרי שינה";
+            case "VIEW":          return "נוף";
+            case "DOCUMENT":      return "מסמכים";
+            default:              return "אחר";
         }
     }
 
