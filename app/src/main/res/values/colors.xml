@@ -155,4 +155,8 @@
 
     <color name="fp_divider_light">#F0F0F0</color>
 
+    <!-- צבעים ל-Progress Stepper -->
+    <color name="step_inactive">#4DFFFFFF</color>
+    <color name="step_completed">#10B981</color>
+
 </resources>

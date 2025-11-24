@@ -36,28 +36,28 @@
                 android:id="@+id/title_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
                 android:gravity="end"
-                android:layout_marginStart="48dp"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent">
+                app:layout_constraintTop_toTopOf="parent">
 
                 <!-- אייקון + כותרת (כיתוב בצד ימין) -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
                     android:layout_gravity="end"
-                    android:layoutDirection="rtl">
+                    android:gravity="center_vertical"
+                    android:layoutDirection="rtl"
+                    android:orientation="horizontal">
 
                     <!-- אייקון בנק -->
                     <androidx.appcompat.widget.AppCompatImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         app:srcCompat="@drawable/ic_bank"
-                        app:tint="#E0FFFFFF"/>
+                        app:tint="#E0FFFFFF" />
 
                     <!-- נקודה -->
                     <View
@@ -66,23 +66,23 @@
                         android:layout_marginStart="12dp"
                         android:layout_marginEnd="12dp"
                         android:background="@drawable/dot_indicator"
-                        android:backgroundTint="#80FFFFFF"/>
+                        android:backgroundTint="#80FFFFFF" />
 
                     <!-- כותרת ראשית - משתמשת ב-id המקורי txtTitle -->
                     <TextView
                         android:id="@+id/txtTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="פרטי בנק"
-                        android:textColor="@android:color/white"
-                        android:textSize="28sp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.01"
                         android:shadowColor="#40000000"
                         android:shadowDx="0"
                         android:shadowDy="2"
                         android:shadowRadius="8"
-                        android:textAlignment="viewEnd"/>
+                        android:text="פרטי בנק"
+                        android:textAlignment="viewEnd"
+                        android:textColor="@android:color/white"
+                        android:textSize="28sp" />
                 </LinearLayout>
 
                 <!-- תת כותרת מעוצבת -->
@@ -90,79 +90,24 @@
                     android:id="@+id/subtitle_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="ייבוא אוטומטי או עריכה ידנית של פרטי הבנק"
-                    android:textColor="#CCFFFFFF"
-                    android:textSize="14sp"
+                    android:layout_gravity="end"
                     android:layout_marginTop="6dp"
                     android:fontFamily="sans-serif"
-                    android:letterSpacing="0.02"
                     android:gravity="end"
+                    android:letterSpacing="0.02"
+                    android:text="ייבוא אוטומטי או עריכה ידנית של פרטי הבנק"
                     android:textAlignment="viewEnd"
-                    android:layout_gravity="end"/>
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="14sp" />
 
-                <!-- מחוון התקדמות חזותי – 7 קווים, השישי משמאל מודגש -->
-                <LinearLayout
+                <!-- מחוון התקדמות חדש! -->
+                <include
+                    layout="@layout/progress_stepper"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="16dp"
-                    android:layout_gravity="end">
+                    android:layout_gravity="end"
+                    android:layout_marginTop="16dp" />
 
-                    <!-- 1 (ימני ביותר, 7 משמאל) -->
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="3dp"
-                        android:background="@drawable/progress_indicator"
-                        android:backgroundTint="#4DFFFFFF"
-                        android:layout_marginEnd="6dp"/>
-
-                    <!-- 2 (6 משמאל – מודגש) -->
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="3dp"
-                        android:background="@drawable/progress_indicator"
-                        android:backgroundTint="@android:color/white"
-                        android:layout_marginEnd="6dp"/>
-
-                    <!-- 3 -->
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="3dp"
-                        android:background="@drawable/progress_indicator"
-                        android:backgroundTint="#4DFFFFFF"
-                        android:layout_marginEnd="6dp"/>
-
-                    <!-- 4 -->
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="3dp"
-                        android:background="@drawable/progress_indicator"
-                        android:backgroundTint="#4DFFFFFF"
-                        android:layout_marginEnd="6dp"/>
-
-                    <!-- 5 -->
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="3dp"
-                        android:background="@drawable/progress_indicator"
-                        android:backgroundTint="#4DFFFFFF"
-                        android:layout_marginEnd="6dp"/>
-
-                    <!-- 6 -->
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="3dp"
-                        android:background="@drawable/progress_indicator"
-                        android:backgroundTint="#4DFFFFFF"
-                        android:layout_marginEnd="6dp"/>
-
-                    <!-- 7 (שמאלי ביותר, 1 משמאל) -->
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="3dp"
-                        android:background="@drawable/progress_indicator"
-                        android:backgroundTint="#4DFFFFFF"/>
-                </LinearLayout>
 
             </LinearLayout>
 

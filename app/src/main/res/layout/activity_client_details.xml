@@ -34,28 +34,28 @@
                 android:id="@+id/title_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
                 android:gravity="end"
-                android:layout_marginStart="48dp"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent">
+                app:layout_constraintTop_toTopOf="parent">
 
                 <!-- אייקון + כותרת (כיתוב בצד ימין) -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
                     android:layout_gravity="end"
-                    android:layoutDirection="rtl">
+                    android:gravity="center_vertical"
+                    android:layoutDirection="rtl"
+                    android:orientation="horizontal">
 
                     <!-- אייקון -->
                     <androidx.appcompat.widget.AppCompatImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         app:srcCompat="@drawable/ic_user"
-                        app:tint="#E0FFFFFF"/>
+                        app:tint="#E0FFFFFF" />
 
                     <!-- נקודה -->
                     <View
@@ -64,23 +64,23 @@
                         android:layout_marginStart="12dp"
                         android:layout_marginEnd="12dp"
                         android:background="@drawable/dot_indicator"
-                        android:backgroundTint="#80FFFFFF"/>
+                        android:backgroundTint="#80FFFFFF" />
 
                     <!-- כותרת - מיושרת לימין -->
                     <TextView
                         android:id="@+id/title_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="פרטי לקוח"
-                        android:textColor="@android:color/white"
-                        android:textSize="28sp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.01"
                         android:shadowColor="#40000000"
                         android:shadowDx="0"
                         android:shadowDy="2"
                         android:shadowRadius="8"
-                        android:textAlignment="viewEnd"/>
+                        android:text="פרטי לקוח"
+                        android:textAlignment="viewEnd"
+                        android:textColor="@android:color/white"
+                        android:textSize="28sp" />
                 </LinearLayout>
 
                 <!-- תת כותרת מעוצבת - ימין -->
@@ -88,79 +88,23 @@
                     android:id="@+id/subtitle_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="מילוי ועדכון פרטי לקוח "
-                    android:textColor="#CCFFFFFF"
-                    android:textSize="14sp"
+                    android:layout_gravity="end"
                     android:layout_marginTop="6dp"
                     android:fontFamily="sans-serif"
-                    android:letterSpacing="0.02"
                     android:gravity="end"
+                    android:letterSpacing="0.02"
+                    android:text="מילוי ועדכון פרטי לקוח "
                     android:textAlignment="viewEnd"
-                    android:layout_gravity="end"/>
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="14sp" />
 
-                <!-- מחוון התקדמות חזותי -->
-                <LinearLayout
+                <!-- מחוון התקדמות חדש! -->
+                <include
+                    layout="@layout/progress_stepper"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="16dp"
                     android:layout_gravity="end"
-                    android:layoutDirection="ltr">
-
-                    <!-- קו 1 – מודגש (משמאל) -->
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="3dp"
-                        android:background="@drawable/progress_indicator"
-                        android:backgroundTint="@android:color/white"
-                        android:layout_marginEnd="6dp"/>
-
-                    <!-- קו 2 -->
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="3dp"
-                        android:background="@drawable/progress_indicator"
-                        android:backgroundTint="#4DFFFFFF"
-                        android:layout_marginEnd="6dp"/>
-
-                    <!-- קו 3 -->
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="3dp"
-                        android:background="@drawable/progress_indicator"
-                        android:backgroundTint="#4DFFFFFF"
-                        android:layout_marginEnd="6dp"/>
-
-                    <!-- קו 4 -->
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="3dp"
-                        android:background="@drawable/progress_indicator"
-                        android:backgroundTint="#4DFFFFFF"
-                        android:layout_marginEnd="6dp"/>
-
-                    <!-- קו 5 -->
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="3dp"
-                        android:background="@drawable/progress_indicator"
-                        android:backgroundTint="#4DFFFFFF"
-                        android:layout_marginEnd="6dp"/>
-
-                    <!-- קו 6 -->
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="3dp"
-                        android:background="@drawable/progress_indicator"
-                        android:backgroundTint="#4DFFFFFF"/>
-
-                    <!-- 7 משמאל (ימני ביותר) - בהיר -->
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="3dp"
-                        android:background="@drawable/progress_indicator"
-                        android:backgroundTint="#4DFFFFFF"/>
-                </LinearLayout>
+                    android:layout_marginTop="16dp" />
 
             </LinearLayout>
 
