@@ -20,7 +20,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/header_section" />
 
-    <!-- ===== Header with gradient, title, subtitle ===== -->
+    <!-- ===== Header with gradient, title, icon, back button ===== -->
     <LinearLayout
         android:id="@+id/header_section"
         android:layout_width="0dp"
@@ -39,38 +39,65 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingHorizontal="40dp"
-            android:paddingTop="24dp"
-            android:paddingBottom="16dp">
+            android:paddingTop="32dp"
+            android:paddingBottom="24dp"
+            android:layoutDirection="rtl">
 
+            <!-- Title Section (ימין) -->
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="end">
+                android:orientation="horizontal"
+                android:gravity="end|center_vertical">
 
-                <TextView
-                    android:id="@+id/title"
+                <!-- Icon Card (ימין) -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_marginEnd="16dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="#E8EAF6">
+
+                    <ImageView
+                        android:id="@+id/all_projects_icon"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_folder"
+                        app:tint="#3F51B5"
+                        android:contentDescription="@string/cd_all_projects"/>
+                </androidx.cardview.widget.CardView>
+
+                <!-- טקסט הכותרת -->
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="כל הפרויקטים"
-                    android:textColor="@android:color/white"
-                    android:textSize="26sp"
-                    android:fontFamily="sans-serif-medium"/>
+                    android:orientation="vertical"
+                    android:gravity="end">
 
-                <TextView
-                    android:id="@+id/subtitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="צפייה בכלל הפרויקטים במשרד"
-                    android:textColor="#B3FFFFFF"
-                    android:textSize="13sp"
-                    android:layout_marginTop="2dp"
-                    android:fontFamily="sans-serif"/>
+                    <TextView
+                        android:id="@+id/title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="כל הפרויקטים"
+                        android:textColor="@android:color/white"
+                        android:textSize="26sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:gravity="end"
+                        android:textAlignment="viewStart"/>
+                </LinearLayout>
             </LinearLayout>
 
-            <!-- Decorative icon -->
+            <!-- מרחיב -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+
+            <!-- Back Button (בשמאל) -->
             <androidx.cardview.widget.CardView
+                android:id="@+id/card_back"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 app:cardCornerRadius="14dp"
@@ -78,12 +105,15 @@
                 app:cardBackgroundColor="#1AFFFFFF">
 
                 <ImageView
+                    android:id="@+id/btn_back"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_gravity="center"
-                    android:src="@drawable/ic_folder"
+                    android:src="@drawable/ic_arrow_back"
                     app:tint="@android:color/white"
-                    android:contentDescription="@string/cd_all_projects"/>
+                    android:contentDescription="חזרה"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:rotation="180"/>
             </androidx.cardview.widget.CardView>
         </LinearLayout>
 

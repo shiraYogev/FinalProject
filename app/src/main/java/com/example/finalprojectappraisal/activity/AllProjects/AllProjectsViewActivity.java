@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.activity.AllProjects.viewmodel.AllProjectsViewModel;
+import com.example.finalprojectappraisal.activity.AllProjects.ProjectPreviewActivity;
 import com.example.finalprojectappraisal.activity.myProjects.filter.FiltersBottomSheetDialogFragment;
 import com.example.finalprojectappraisal.activity.myProjects.filter.ProjectFilter;
 import com.example.finalprojectappraisal.activity.myProjects.filter.ui.FilterChipsController;
@@ -69,6 +70,12 @@ public class AllProjectsViewActivity extends AppCompatActivity
                 overlay.requestLayout();
                 return insets;
             });
+        }
+
+        // Back button from header
+        View backBtn = findViewById(R.id.btn_back);
+        if (backBtn != null) {
+            backBtn.setOnClickListener(v -> onBackPressed());
         }
 
         setTitle("כל הפרויקטים (צפייה)");
