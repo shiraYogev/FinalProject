@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ImageView; // <<< NEW
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -67,6 +68,15 @@ public class MyProjectsActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my_projects);
+
+        // ===== Back button (header) =====
+        ImageView btnBack = findViewById(R.id.btn_back);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                // חוזר למסך הקודם (בדרך כלל מסך הבית)
+                finish();
+            });
+        }
 
         vm = new ViewModelProvider(this).get(MyProjectsViewModel.class);
 
