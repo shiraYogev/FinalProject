@@ -125,7 +125,8 @@ public class UploadImagesActivity extends AppCompatActivity {
                     pendingSection = section;
                     showImageSourceDialog();
                 },
-                this::onDeleteImageClicked
+                this::onDeleteImageClicked,
+                this::onImageClicked // ⬅️ הוספת ה-OnImageClickListener
         );
 
         recyclerCategories.setAdapter(categoriesAdapter);
@@ -209,6 +210,18 @@ public class UploadImagesActivity extends AppCompatActivity {
                 projectId
         );
         progressHelper.initialize();
+    }
+
+    private void onImageClicked(@NonNull ImageCategorySection section,
+                                @NonNull Image image,
+                                int sectionIndex,
+                                int imageIndex) {
+        // 🚨 לוגיקה לפתיחת תצוגה מקדימה במסך מלא או דיאלוג
+        Log.d("UploadImagesActivity", "Image Clicked: " + image.getId() + " in section: " + section.title);
+        // דוגמה:
+        // Intent previewIntent = new Intent(this, ImagePreviewActivity.class);
+        // previewIntent.putExtra("imageUri", image.getLocalUri());
+        // startActivity(previewIntent);
     }
 
     /**
