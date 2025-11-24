@@ -1,9 +1,7 @@
-// file: app/src/main/java/com/example/finalprojectappraisal/activity/newProject/images/UploadImagesActivity.java
 package com.example.finalprojectappraisal.activity.newProject.images;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.Dialog;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -12,10 +10,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
-import android.view.Window;
 import android.widget.Button;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -27,14 +22,15 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper;
 import com.example.finalprojectappraisal.activity.newProject.images.viewmodel.UploadImagesViewModel;
 import com.example.finalprojectappraisal.activity.newProject.property.activity.ApartmentDetailsActivity;
 import com.example.finalprojectappraisal.adapter.ImageCategoriesAdapter;
 import com.example.finalprojectappraisal.classifer.ImageCategorySection;
 import com.example.finalprojectappraisal.classifer.gemini.EnhancedGeminiHelper;
 import com.example.finalprojectappraisal.classifer.gemini.GeminiPrompts;
+import com.example.finalprojectappraisal.databinding.ActivityUploadImagesBinding;
 import com.example.finalprojectappraisal.model.Image;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -57,10 +53,15 @@ public class UploadImagesActivity extends AppCompatActivity {
     private Uri pendingCameraUri;                // Uri where camera will save image
     private String projectId;
 
+    private ActivityUploadImagesBinding binding;
+    private ProgressStepperHelper progressHelper;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_upload_images);
+        binding =ActivityUploadImagesBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
         projectId = getIntent().getStringExtra("projectId");
         if (projectId == null) {
@@ -84,18 +85,18 @@ public class UploadImagesActivity extends AppCompatActivity {
                 new ImageCategorySection("אחר", Image.Category.OTHER, null) // Free images, no auto classification
         );
 
-        RecyclerView recyclerCategories = findViewById(R.id.recyclerCategories);
+        // --- תיקון: גישה ל-RecyclerView דרך Binding ---
+        RecyclerView recyclerCategories = binding.recyclerCategories;
         recyclerCategories.setLayoutManager(new LinearLayoutManager(this));
         categoriesAdapter = new ImageCategoriesAdapter(
                 categories,
                 this,
                 section -> {
-                    // Open source chooser (gallery/camera)
+                    // open source chooser instead of gallery directly
                     pendingSection = section;
                     showImageSourceDialog();
                 },
-                this::onDeleteImageClicked,
-                this::onImageClicked // NEW: full image preview callback
+                this::onDeleteImageClicked
         );
         recyclerCategories.setAdapter(categoriesAdapter);
 
@@ -194,7 +195,8 @@ public class UploadImagesActivity extends AppCompatActivity {
             if (!ok) toast("מחיקת תמונה נכשלה או ניקוי מערך נכשל");
         });
 
-        Button btnSaveAndContinue = findViewById(R.id.btnSaveAndContinue);
+        // --- הושאר ה-Listener הנכון והמלא (עם בדיקות) ---
+        Button btnSaveAndContinue = binding.btnSaveAndContinue;
         btnSaveAndContinue.setOnClickListener(v -> {
             boolean hasImages = false;
             for (ImageCategorySection s : categories) {
@@ -208,15 +210,48 @@ public class UploadImagesActivity extends AppCompatActivity {
                 return;
             }
             try {
+                // ניווט לשלב הבא והעברת projectId
                 Intent intent = new Intent(this, ApartmentDetailsActivity.class);
                 intent.putExtra("projectId", projectId);
                 startActivity(intent);
                 finish();
+
+                // הערה: progressHelper.moveToNextStep() לא שימושי כאן כי צריך להעביר projectId
+                // וצריך לקרוא ל-finish()
+
             } catch (Exception e) {
                 toast("שגיאה במעבר: " + e.getMessage());
                 Log.e("UploadImagesActivity", "Navigation error", e);
             }
         });
+        // -----------------------------------------------------------------
+
+        setupProgressStepper();
+        setupListeners();
+    }
+
+    // =======================================================
+    // --- הועבר לתוך הקלאס לצורך קומפילציה תקינה ---
+    // =======================================================
+
+    private void setupProgressStepper() {
+        progressHelper = new ProgressStepperHelper(
+                this,
+                ProgressStepperHelper.STEP_IMAGE_UPLOAD,
+                binding.getRoot(),
+                projectId
+        );
+        progressHelper.initialize();
+    }
+
+    private void setupListeners() {
+        binding.btnBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                progressHelper.moveToPreviousStep(); // → חזרה לשלב 1
+            }
+        });
+
     }
 
     // ============================
@@ -411,52 +446,6 @@ public class UploadImagesActivity extends AppCompatActivity {
 
         vm.deleteImage(image);
     }
-
-    // =======================
-    // Full-screen preview
-    // =======================
-
-    private void onImageClicked(@NonNull ImageCategorySection section,
-                                @NonNull Image image,
-                                int sectionIndex,
-                                int imageIndex) {
-        String url = image.getUrl();
-        if ((url == null || url.trim().isEmpty()) && image.getLocalUri() != null) {
-            url = image.getLocalUri();
-        }
-        if (url == null || url.trim().isEmpty()) {
-            toast("לא ניתן להציג תמונה");
-            return;
-        }
-        showFullImageDialog(this, url);
-    }
-
-    /**
-     * Shows the tapped image in a full-screen dialog using dialog_full_image.xml.
-     */
-    private void showFullImageDialog(android.content.Context context, String url) {
-        if (url == null || url.trim().isEmpty()) return;
-
-        Dialog dialog = new Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.dialog_full_image);
-
-        ImageView fullImage = dialog.findViewById(R.id.fullImage);
-        ImageButton btnClose = dialog.findViewById(R.id.btnClose);
-
-        Glide.with(context)
-                .load(url)
-                .placeholder(R.drawable.item_image_thumbnail)
-                .into(fullImage);
-
-        View.OnClickListener closeListener = v -> dialog.dismiss();
-        btnClose.setOnClickListener(closeListener);
-        fullImage.setOnClickListener(closeListener);
-
-        dialog.show();
-    }
-
-    // =======================
 
     private ImageCategorySection findSection(Image.Category c) {
         for (ImageCategorySection s : categories) if (s.category == c) return s;
