@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.util.Log;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -16,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper; // ⬅️ ייבוא נדרש
 import com.example.finalprojectappraisal.adapter.PropertyDetailsAdapter;
 import com.example.finalprojectappraisal.activity.newProject.property.activity.PropertyDetailsActivity.FieldItem;
 import com.example.finalprojectappraisal.activity.newProject.property.activity.PropertyDetailsActivity.ListItem;
@@ -23,6 +25,7 @@ import com.example.finalprojectappraisal.activity.newProject.property.activity.P
 import com.example.finalprojectappraisal.activity.newProject.property.common.utils.Choices;
 import com.example.finalprojectappraisal.activity.newProject.property.common.utils.OtherOptionFieldHelper;
 import com.example.finalprojectappraisal.database.repository.ProjectRepository;
+import com.example.finalprojectappraisal.databinding.ActivityPropertyDetailsBinding; // ⬅️ ייבוא נדרש
 import com.example.finalprojectappraisal.model.Project;
 import com.google.firebase.firestore.DocumentSnapshot;
 
@@ -42,6 +45,10 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
     private final List<ListItem> items = new ArrayList<>();
     private PropertyDetailsAdapter adapter;
     private ProjectRepository repo;
+
+    // ⬅️ הוספת משתנים עבור Stepper ו-Binding
+    private ActivityPropertyDetailsBinding binding;
+    private ProgressStepperHelper progressHelper;
 
     // ---------- small log helpers ----------
     private void logVal(String key, Object val) {
@@ -70,10 +77,13 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_property_details);
+        // ⬅️ שימוש ב-Binding במקום findViewById
+        binding = ActivityPropertyDetailsBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
         Log.d(TAG, "onCreate: started");
 
-        recycler = findViewById(R.id.recyclerDetails);
+        // ⬅️ גישה ל-RecyclerView דרך Binding
+        recycler = binding.recyclerDetails;
         recycler.setLayoutManager(new LinearLayoutManager(this));
 
         projectId = getIntent() != null ? getIntent().getStringExtra("projectId") : null;
@@ -89,14 +99,44 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
         repo = ProjectRepository.getInstance();
         loadProject();
 
-        findViewById(R.id.btnSaveAll).setOnClickListener(v -> {
+        // ⬅️ שימוש ב-Binding עבור ה-Button
+        binding.btnSaveAll.setOnClickListener(v -> {
             Log.d(TAG, "btnSaveAll clicked");
             saveToDb();
         });
+
+        // ⬅️ הפעלת הסטפר וה-Listeners הכלליים
+        setupProgressStepper();
+        setupListeners();
     }
 
+    // ⬅️ הוספת פונקציות ה-Stepper וה-Listeners
+    private void setupProgressStepper() {
+        progressHelper = new ProgressStepperHelper(
+                this,
+                ProgressStepperHelper.STEP_PROPERTY_DETAILS,
+                binding.getRoot(),
+                projectId
+        );
+        progressHelper.initialize();
+    }
+
+    private void setupListeners() {
+        binding.btnBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                progressHelper.moveToPreviousStep(); // → חזרה לשלב 3
+            }
+        });
+
+        // הערה: ה-Listener של btnSaveAll כבר הוגדר ב-onCreate לקרוא ל-saveToDb()
+        // שבתורו קורא ל-goToNextScreen() שמשתמש ב-progressHelper.moveToNextStep().
+    }
+    // ----------------------------------------------------
+
     private void loadProject() {
-        android.view.View progress = findViewById(R.id.progress);
+        // ⬅️ גישה ל-Progress View דרך Binding
+        android.view.View progress = binding.progress;
         if (progress != null) progress.setVisibility(android.view.View.VISIBLE);
 
         repo.getProject(projectId, task -> {
@@ -270,7 +310,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
 
     /**
      * Parse environment_characteristics, expected format:
-     *   "מגורים – תיאור חופשי"
+     * "מגורים – תיאור חופשי"
      * or only "מגורים" / only description.
      * If not in this format, whole string goes to description only.
      */
@@ -560,11 +600,12 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
         adapter.notifyItemChanged(pos);
     }
 
+    // ⬅️ שינוי: שימוש ב-progressHelper למעבר לשלב הבא
     private void goToNextScreen() {
-        Log.d(TAG, "goToNextScreen: navigating to PropertyDescriptionActivity");
-        Intent intent = new Intent(this, PropertyDescriptionActivity.class);
-        intent.putExtra("projectId", projectId);
-        startActivity(intent);
+        Log.d(TAG, "goToNextScreen: navigating to PropertyDescriptionActivity via Stepper");
+        // ה-progressHelper מטפל בניווט ל-Activity הבא (שלב 5)
+        progressHelper.moveToNextStep();
+        // אין צורך ב-Intent מפורש או ב-finish() כאן אם הסטפר מטפל בזה.
     }
 
     // ====== Save to DB ======
@@ -623,7 +664,8 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
             if (task.isSuccessful()) {
                 Toast.makeText(this, "נשמר בהצלחה", Toast.LENGTH_SHORT).show();
                 goToNextScreen();
-                finish();
+                // ⬅️ הסרנו את ה-finish() מכאן, כיוון שה-progressHelper אחראי על המעבר והוא יקרא ל-finish()
+                // או ישלוט במחסנית ה-Activities
             } else {
                 Exception e = task.getException();
                 Toast.makeText(this, "שמירה נכשלה: " + (e != null ? e.getMessage() : ""), Toast.LENGTH_LONG).show();

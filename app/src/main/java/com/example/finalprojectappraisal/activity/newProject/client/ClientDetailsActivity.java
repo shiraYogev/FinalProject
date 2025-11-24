@@ -2,6 +2,7 @@ package com.example.finalprojectappraisal.activity.newProject.client;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -10,8 +11,10 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper;
 import com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity;
 import com.example.finalprojectappraisal.database.repository.ProjectRepository;
+import com.example.finalprojectappraisal.databinding.ActivityClientDetailsBinding;
 import com.example.finalprojectappraisal.model.Client;
 import com.example.finalprojectappraisal.model.Project;
 
@@ -41,6 +44,10 @@ public class ClientDetailsActivity extends AppCompatActivity {
     private EditText fullAddressEditText;
     private Button saveClientButton;
 
+    private ProgressStepperHelper progressHelper;
+
+    private ActivityClientDetailsBinding binding;
+
     private @Nullable String projectId; // null = create mode, not null = edit mode
 
     // קבוע לבקשת Intent של Autocomplete
@@ -49,14 +56,18 @@ public class ClientDetailsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_client_details);
 
-        clientIdEditText    = findViewById(R.id.clientIdEditText);
-        fullNameEditText    = findViewById(R.id.fullNameEditText);
-        emailEditText       = findViewById(R.id.emailEditText);
-        phoneNumberEditText = findViewById(R.id.phoneNumberEditText);
-        fullAddressEditText = findViewById(R.id.fullAddressEditText);
-        saveClientButton    = findViewById(R.id.saveClientButton);
+        // --- תיקון 1: שימוש נכון ב-Binding להגדרת Layout ורכיבים ---
+        binding = ActivityClientDetailsBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        clientIdEditText    = binding.clientIdEditText;
+        fullNameEditText    = binding.fullNameEditText;
+        emailEditText       = binding.emailEditText;
+        phoneNumberEditText = binding.phoneNumberEditText;
+        fullAddressEditText = binding.fullAddressEditText;
+        saveClientButton    = binding.saveClientButton;
+        // -----------------------------------------------------------
 
         // 1. אתחול Google Places SDK
         if (!Places.isInitialized()) {
@@ -76,14 +87,85 @@ public class ClientDetailsActivity extends AppCompatActivity {
             setTitle("יצירת פרויקט חדש - פרטי לקוח");
         }
 
-        saveClientButton.setOnClickListener(v -> {
-            if (projectId != null && !projectId.trim().isEmpty()) {
-                updateClientForExistingProject(projectId);
-            } else {
-                createProjectWithClient();
+
+        setupProgressStepper();
+        setupListeners();
+    }
+
+    private void setupProgressStepper() {
+        // מציאת Root View נכונה עבור ProgressStepperHelper
+        // אם משתמשים ב-Binding, Root View היא binding.getRoot()
+        progressHelper = new ProgressStepperHelper(
+                this,
+                ProgressStepperHelper.STEP_CLIENT_DETAILS, // שלב 1 - פרטי לקוח
+                binding.getRoot(),
+                projectId
+        );
+        progressHelper.initialize();
+    }
+
+    private void setupListeners() {
+        // כפתור חזור - אם זה שלב 1, חזור למסך הקודם
+        binding.btnBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (progressHelper.isFirstStep()) {
+                    finish(); // חזור למסך ראשי
+                } else {
+                    progressHelper.moveToPreviousStep();
+                }
+            }
+        });
+
+        // כפתור שמירה והמשך - מאחד את הלוגיקה ליצירה/עדכון ומעבר לשלב הבא
+        binding.saveClientButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (validateInputs()) {
+                    saveAndContinue();
+                }
             }
         });
     }
+
+    /**
+     * פונקציה לבדיקת תקינות הקלט.
+     * הערה: נדרש להוספה כחלק מהתיקון.
+     */
+    private boolean validateInputs() {
+        String clientId = clientIdEditText.getText().toString().trim();
+        String fullName = fullNameEditText.getText().toString().trim();
+        String fullAddress = fullAddressEditText.getText().toString().trim();
+
+        if (clientId.isEmpty()) {
+            clientIdEditText.setError("חובה למלא תעודת זהות");
+            return false;
+        }
+        if (fullName.isEmpty()) {
+            fullNameEditText.setError("חובה למלא שם מלא");
+            return false;
+        }
+        // דורשים כתובת רק במצב יצירה (כי במצב עריכה הכתובת כבר קיימת)
+        if (projectId == null && fullAddress.isEmpty()) {
+            fullAddressEditText.setError("חובה למלא כתובת");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * מאחדת את הלוגיקה של יצירה או עדכון, ושומרת את הנתונים, ואז עוברת לשלב הבא.
+     */
+    private void saveAndContinue() {
+        if (projectId != null && !projectId.trim().isEmpty()) {
+            // מצב עריכה
+            updateClientForExistingProjectAndContinue(projectId);
+        } else {
+            // מצב יצירה
+            createProjectWithClientAndContinue();
+        }
+    }
+
 
     /**
      * מפעיל את ה-Intent המובנה של Autocomplete של גוגל
@@ -106,6 +188,7 @@ public class ClientDetailsActivity extends AppCompatActivity {
 
         startActivityForResult(intent, AUTOCOMPLETE_REQUEST_CODE);
     }
+
     /**
      * מטפל בתוצאה החוזרת מה-Autocomplete Intent
      */
@@ -163,18 +246,13 @@ public class ClientDetailsActivity extends AppCompatActivity {
         });
     }
 
-    /** מצב עריכה: מעדכן את פרטי הלקוח בפרויקט קיים */
-    private void updateClientForExistingProject(String projectId) {
+    /** מצב עריכה: מעדכן את פרטי הלקוח בפרויקט קיים וממשיך לשלב הבא */
+    private void updateClientForExistingProjectAndContinue(String projectId) {
         String clientId     = clientIdEditText.getText().toString().trim();
         String fullName     = fullNameEditText.getText().toString().trim();
         String email        = emailEditText.getText().toString().trim();
         String phoneNumber  = phoneNumberEditText.getText().toString().trim();
         String fullAddress  = fullAddressEditText.getText().toString().trim();
-
-        if (clientId.isEmpty() || fullName.isEmpty()) {
-            Toast.makeText(this, "יש למלא לפחות תעודת זהות ושם מלא", Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         Client client = new Client(clientId, fullName, email, phoneNumber, null);
 
@@ -191,28 +269,31 @@ public class ClientDetailsActivity extends AppCompatActivity {
                 fields.put("fullAddress", fullAddress);
                 ProjectRepository.getInstance().updateMultipleFields(projectId, fields, t2 -> {
                     // לא קריטי אם נכשל – נתקדם
-                    Toast.makeText(this, "פרטי הלקוח נשמרו", Toast.LENGTH_SHORT).show();
-                    finish(); // חוזרים לרשימת הפרויקטים
+                    Toast.makeText(this, "פרטי הלקוח נשמרו בהצלחה!", Toast.LENGTH_SHORT).show();
+                    progressHelper.moveToNextStep(); // → מעבר לשלב הבא
                 });
             } else {
-                Toast.makeText(this, "פרטי הלקוח נשמרו", Toast.LENGTH_SHORT).show();
-                finish();
+                Toast.makeText(this, "פרטי הלקוח נשמרו בהצלחה!", Toast.LENGTH_SHORT).show();
+                progressHelper.moveToNextStep(); // → מעבר לשלב הבא
             }
         });
     }
 
-    /** מצב יצירה: יוצר פרויקט חדש (ההתנהגות הישנה שלך) */
-    private void createProjectWithClient() {
+    /**
+     * הערה: הפונקציה המקורית updateClientForExistingProject הוסרה כי היא קראה ל-finish() במקום להמשיך.
+     * הלוגיקה המעודכנת נמצאת ב-updateClientForExistingProjectAndContinue.
+     */
+
+
+    /** מצב יצירה: יוצר פרויקט חדש וממשיך לשלב הבא בזרימה */
+    private void createProjectWithClientAndContinue() {
         String clientId     = clientIdEditText.getText().toString().trim();
         String fullName     = fullNameEditText.getText().toString().trim();
         String email        = emailEditText.getText().toString().trim();
         String phoneNumber  = phoneNumberEditText.getText().toString().trim();
         String fullAddress  = fullAddressEditText.getText().toString().trim();
 
-        if (clientId.isEmpty() || fullName.isEmpty() || fullAddress.isEmpty()) {
-            Toast.makeText(this, "יש למלא לפחות תעודת זהות, שם מלא וכתובת", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // בדיקות הקלט כבר בוצעו ב-validateInputs()
 
         Client client = new Client(clientId, fullName, email, phoneNumber, null);
         Project project = new Project();
@@ -242,11 +323,12 @@ public class ClientDetailsActivity extends AppCompatActivity {
 
             Toast.makeText(this, "הפרויקט נשמר בהצלחה!", Toast.LENGTH_SHORT).show();
 
-            // מעבר למסך הבא בזרימה שלך
+            // מעבר למסך הבא בזרימה שלך (שלב 2)
             Intent intent = new Intent(ClientDetailsActivity.this, UploadImagesActivity.class);
             intent.putExtra("projectId", newProjectId);
             startActivity(intent);
             finish();
+
         });
     }
 }

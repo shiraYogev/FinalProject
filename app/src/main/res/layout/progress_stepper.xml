@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    progress_stepper.xml
+    מחוון התקדמות עם 9 שלבים ממוספרים
+-->
+<HorizontalScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:scrollbars="none"
+    android:layoutDirection="rtl">
+
+    <LinearLayout
+        android:id="@+id/progress_stepper_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layoutDirection="rtl"
+        android:gravity="center">
+
+        <!-- ========================================== -->
+        <!-- שלב 9: פרטי שמאי ומוסר (שמאלי ביותר) -->
+        <!-- ========================================== -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/step_9"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#4DFFFFFF"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <TextView
+                    android:id="@+id/step_9_number"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="9"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"/>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- קו חיבור בין 8 ל-9 -->
+            <View
+                android:id="@+id/line_8_9"
+                android:layout_width="20dp"
+                android:layout_height="2dp"
+                android:background="#4DFFFFFF"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"/>
+        </LinearLayout>
+
+        <!-- ========================================== -->
+        <!-- שלב 8: תמונת טאבו -->
+        <!-- ========================================== -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/step_8"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#4DFFFFFF"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <TextView
+                    android:id="@+id/step_8_number"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="8"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"/>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- קו חיבור בין 7 ל-8 -->
+            <View
+                android:id="@+id/line_7_8"
+                android:layout_width="20dp"
+                android:layout_height="2dp"
+                android:background="#4DFFFFFF"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"/>
+        </LinearLayout>
+
+        <!-- ========================================== -->
+        <!-- שלב 7: עריכת פרטי בנק -->
+        <!-- ========================================== -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/step_7"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#4DFFFFFF"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <TextView
+                    android:id="@+id/step_7_number"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="7"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"/>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- קו חיבור בין 6 ל-7 -->
+            <View
+                android:id="@+id/line_6_7"
+                android:layout_width="20dp"
+                android:layout_height="2dp"
+                android:background="#4DFFFFFF"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"/>
+        </LinearLayout>
+
+        <!-- ========================================== -->
+        <!-- שלב 6: פרטי בנק -->
+        <!-- ========================================== -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/step_6"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#4DFFFFFF"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <TextView
+                    android:id="@+id/step_6_number"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="6"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"/>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- קו חיבור בין 5 ל-6 -->
+            <View
+                android:id="@+id/line_5_6"
+                android:layout_width="20dp"
+                android:layout_height="2dp"
+                android:background="#4DFFFFFF"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"/>
+        </LinearLayout>
+
+        <!-- ========================================== -->
+        <!-- שלב 5: תיאור הנכס -->
+        <!-- ========================================== -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/step_5"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#4DFFFFFF"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <TextView
+                    android:id="@+id/step_5_number"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="5"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"/>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- קו חיבור בין 4 ל-5 -->
+            <View
+                android:id="@+id/line_4_5"
+                android:layout_width="20dp"
+                android:layout_height="2dp"
+                android:background="#4DFFFFFF"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"/>
+        </LinearLayout>
+
+        <!-- ========================================== -->
+        <!-- שלב 4: פרטי הנכס -->
+        <!-- ========================================== -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/step_4"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#4DFFFFFF"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <TextView
+                    android:id="@+id/step_4_number"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="4"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"/>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- קו חיבור בין 3 ל-4 -->
+            <View
+                android:id="@+id/line_3_4"
+                android:layout_width="20dp"
+                android:layout_height="2dp"
+                android:background="#4DFFFFFF"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"/>
+        </LinearLayout>
+
+        <!-- ========================================== -->
+        <!-- שלב 3: פרטי הדירה -->
+        <!-- ========================================== -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/step_3"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#4DFFFFFF"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <TextView
+                    android:id="@+id/step_3_number"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="3"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"/>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- קו חיבור בין 2 ל-3 -->
+            <View
+                android:id="@+id/line_2_3"
+                android:layout_width="20dp"
+                android:layout_height="2dp"
+                android:background="#4DFFFFFF"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"/>
+        </LinearLayout>
+
+        <!-- ========================================== -->
+        <!-- שלב 2: העלאת תמונות נכס -->
+        <!-- ========================================== -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/step_2"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#4DFFFFFF"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <TextView
+                    android:id="@+id/step_2_number"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="2"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"/>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- קו חיבור בין 1 ל-2 -->
+            <View
+                android:id="@+id/line_1_2"
+                android:layout_width="20dp"
+                android:layout_height="2dp"
+                android:background="#4DFFFFFF"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"/>
+        </LinearLayout>
+
+        <!-- ========================================== -->
+        <!-- שלב 1: פרטי לקוח (ימני ביותר) -->
+        <!-- ========================================== -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/step_1"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@android:color/white"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
+
+            <TextView
+                android:id="@+id/step_1_number"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="1"
+                android:textColor="@color/primary_blue"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"/>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+</HorizontalScrollView>

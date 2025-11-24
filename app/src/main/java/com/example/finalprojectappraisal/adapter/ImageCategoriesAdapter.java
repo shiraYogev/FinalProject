@@ -49,8 +49,7 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
     public ImageCategoriesAdapter(@NonNull List<ImageCategorySection> categories,
                                   @NonNull Context context,
                                   @NonNull OnAddImageListener addImageListener,
-                                  @NonNull OnImageDeleteListener deleteListener,
-                                  @NonNull OnImageClickListener imageClickListener) {
+                                  @NonNull OnImageDeleteListener deleteListener) {
         this.categories = categories;
         this.context = context;
         this.addImageListener = addImageListener;

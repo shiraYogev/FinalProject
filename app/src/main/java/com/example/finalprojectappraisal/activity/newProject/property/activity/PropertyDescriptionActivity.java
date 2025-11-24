@@ -1,3 +1,4 @@
+// file: app/src/main/java/com/example/finalprojectappraisal/activity/newProject/property/activity/PropertyDescriptionActivity.java
 package com.example.finalprojectappraisal.activity.newProject.property.activity;
 
 import android.net.Uri;
@@ -12,6 +13,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper; // ⬅️ ייבוא נדרש
+import com.example.finalprojectappraisal.databinding.ActivityPropertyDescriptionBinding; // ⬅️ ייבוא ה-Binding המתאים לשם ה-Activity (הנחתי שהשם הוא: ActivityPropertyDescriptionBinding)
 import com.example.finalprojectappraisal.utils.RepresentativePicker;
 import com.example.finalprojectappraisal.classifer.gemini.GeminiSummaryParser;
 import com.example.finalprojectappraisal.classifer.gemini.GeminiSummaryService;
@@ -27,9 +30,9 @@ import java.util.Map;
 
 /**
  * מסך "תיאור כללי של הנכס":
- *  - apartment_includes (מה כלול בדירה + שיפוצים)
- *  - renovations (שדה פנימי למסך – נשמר כחלק מ-apartment_includes)
- *  - property_summary (תיאור כללי, עם AI)
+ * - apartment_includes (מה כלול בדירה + שיפוצים)
+ * - renovations (שדה פנימי למסך – נשמר כחלק מ-apartment_includes)
+ * - property_summary (תיאור כללי, עם AI)
  *
  * טוען ערכים קיימים מ-property_details (עם נפילה לשורש אם צריך),
  * ושומר חזרה ל-property_details.
@@ -39,6 +42,10 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
     private static final String TAG = "PropertyDescriptionAct";
 
     private String projectId;
+
+    // ⬅️ משתנים חדשים ל-Binding ול-Stepper
+    private ActivityPropertyDescriptionBinding binding;
+    private ProgressStepperHelper progressHelper;
 
     // NOTE: edtMaintenance משמש כאן בתור שדה "שיפוצים" בפועל
     private EditText edtMaintenance;
@@ -54,23 +61,32 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_property_description);
+
+        // ⬅️ שימוש ב-Binding
+        binding = ActivityPropertyDescriptionBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
         projectId = getIntent() != null ? getIntent().getStringExtra("projectId") : null;
 
-        progress       = findViewById(R.id.progress);
-        edtMaintenance = findViewById(R.id.edtMaintenance);        // כאן נכתוב את השיפוצים
-        edtIncludes    = findViewById(R.id.edtApartmentIncludes);  // כאן "מה כלול בדירה"
-        edtSummary     = findViewById(R.id.edtPropertySummary);
+        // ⬅️ גישה לרכיבים דרך Binding
+        progress       = binding.progress;
+        edtMaintenance = binding.edtMaintenance;        // כאן נכתוב את השיפוצים
+        edtIncludes    = binding.edtApartmentIncludes;  // כאן "מה כלול בדירה"
+        edtSummary     = binding.edtPropertySummary;
 
-        btnSave        = findViewById(R.id.btnSaveSummary);
-        btnSkip        = findViewById(R.id.btnSkip);
-        btnAiSummary   = findViewById(R.id.btnAiSummary);
-        btnAiRegenerate= findViewById(R.id.btnAiRegenerate);
-        btnAiRefine    = findViewById(R.id.btnAiRefine);
+        btnSave        = binding.btnSaveSummary;
+        btnSkip        = binding.btnSkip;
+        btnAiSummary   = binding.btnAiSummary;
+        btnAiRegenerate= binding.btnAiRegenerate;
+        btnAiRefine    = binding.btnAiRefine;
 
+        // ⬅️ הוספת ה-Stepper וה-Listeners הכלליים
+        setupProgressStepper();
+        setupListeners();
+
+        // ה-Listeners שהיו קיימים
         btnSave.setOnClickListener(v -> saveFields());
-        btnSkip.setOnClickListener(v -> goToNextPage());
+        // btnSkip.setOnClickListener(v -> goToNextPage()); // יטופל ב-setupListeners
 
         btnAiSummary.setOnClickListener(v -> runSummary(null));
         if (btnAiRegenerate != null) btnAiRegenerate.setOnClickListener(v -> runSummary(null));
@@ -82,6 +98,40 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
         // ← טעינת ערכים קיימים מה-DB למסך
         loadExistingFields();
     }
+
+    // ⬅️ הטמעת ProgressStepperHelper
+    private void setupProgressStepper() {
+        progressHelper = new ProgressStepperHelper(
+                this,
+                ProgressStepperHelper.STEP_PROPERTY_SUMMARY, // שלב 5 (תיאור הנכס)
+                binding.getRoot(),
+                projectId
+        );
+        progressHelper.initialize();
+    }
+
+    // ⬅️ הגדרת כפתורי ניווט גנריים
+    private void setupListeners() {
+        // ניווט אחורה (כפתור חזור)
+        binding.btnBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                progressHelper.moveToPreviousStep(); // → חזרה לשלב 4
+            }
+        });
+
+        // ניווט קדימה (כפתור דילוג)
+        binding.btnSkip.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // דילוג בלי שמירה, אבל מעבר לשלב הבא דרך הסטפר
+                goToNextPage(); // קורא ל-progressHelper.moveToNextStep()
+            }
+        });
+
+        // כפתור שמירה: מטופל ב-saveFields() שקורא ל-goToNextPage() אם הצליח
+    }
+
 
     /** שליפת הערכים למסך מתוך property_details, עם נפילה לשורש (בעיקר לשמירה על תאימות לאחור). */
     private void loadExistingFields() {
@@ -233,23 +283,23 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
 
     private void setBusy(boolean busy) {
         if (progress != null) progress.setVisibility(busy ? View.VISIBLE : View.GONE);
-        if (btnAiSummary != null) btnAiSummary.setEnabled(!busy);
-        if (btnAiRegenerate != null) btnAiRegenerate.setEnabled(!busy);
-        if (btnAiRefine != null) btnAiRefine.setEnabled(!busy);
-        if (btnSave != null) btnSave.setEnabled(!busy);
-        if (btnSkip != null) btnSkip.setEnabled(!busy);
+        // ⬅️ גישה לרכיבים דרך Binding
+        if (binding.btnAiSummary != null) binding.btnAiSummary.setEnabled(!busy);
+        if (binding.btnAiRegenerate != null) binding.btnAiRegenerate.setEnabled(!busy);
+        if (binding.btnAiRefine != null) binding.btnAiRefine.setEnabled(!busy);
+        if (binding.btnSaveSummary != null) binding.btnSaveSummary.setEnabled(!busy);
+        if (binding.btnSkip != null) binding.btnSkip.setEnabled(!busy);
     }
 
+    // ⬅️ התיקון: שימוש ב-progressHelper למעבר לשלב הבא
     private void goToNextPage() {
         if (projectId == null || projectId.trim().isEmpty()) {
             Toast.makeText(this, "חסר projectId", Toast.LENGTH_SHORT).show();
             return;
         }
-        Intent i = new Intent(this, com.example.finalprojectappraisal.activity.newProject.bank.BankDetailsActivity.class);
-        i.putExtra("projectId", projectId);
-        startActivity(i);
-        overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
-        finish();
+        // מעבר גנרי לשלב 6 (BankDetailsActivity)
+        progressHelper.moveToNextStep();
+        // ה-progressHelper אחראי כעת על ה-finish() וה-Intent המפורש
     }
 
     private String askForRefineHint() {
@@ -277,11 +327,11 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
     /**
      * Parse ל-apartment_includes.
      * פורמט צפוי:
-     *   "<כולל בדירה> | שיפוצים: <טקסט>"
+     * "<כולל בדירה> | שיפוצים: <טקסט>"
      * או:
-     *   "שיפוצים: <טקסט>"
+     * "שיפוצים: <טקסט>"
      * או רק:
-     *   "<כולל בדירה>"
+     * "<כולל בדירה>"
      */
     private IncludesParts parseApartmentIncludes(String combined) {
         IncludesParts res = new IncludesParts();

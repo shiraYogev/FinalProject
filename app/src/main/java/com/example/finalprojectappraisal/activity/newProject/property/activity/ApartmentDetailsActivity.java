@@ -3,6 +3,7 @@ package com.example.finalprojectappraisal.activity.newProject.property.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -12,9 +13,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper;
 import com.example.finalprojectappraisal.adapter.ApartmentDetailsAdapter;
 import com.example.finalprojectappraisal.classifer.gemini.GeminiJsonParser;
 import com.example.finalprojectappraisal.database.repository.ProjectRepository;
+import com.example.finalprojectappraisal.databinding.ActivityApartmentDetailsBinding;
 import com.example.finalprojectappraisal.model.Project;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.example.finalprojectappraisal.activity.newProject.property.common.utils.Choices;
@@ -55,10 +58,14 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
     private static final String VKEY_FLOORING_TYPE = "__ui_flooring_type";
     private static final String VKEY_FLOORING_SIZE = "__ui_flooring_size";
 
+    private ActivityApartmentDetailsBinding binding;
+    private ProgressStepperHelper progressHelper;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_apartment_details);
+        binding = ActivityApartmentDetailsBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
         projectId = getIntent().getStringExtra(EXTRA_PROJECT_ID);
         if (projectId == null || projectId.trim().isEmpty()) {
@@ -69,17 +76,45 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
 
         repo = ProjectRepository.getInstance();
 
-        recycler = findViewById(R.id.recyclerEdit);
+        // --- תיקון: גישה ל-RecyclerView דרך Binding ---
+        recycler = binding.recyclerEdit;
         recycler.setLayoutManager(new LinearLayoutManager(this));
         adapter = new ApartmentDetailsAdapter(new ArrayList<>(), this);
         recycler.setAdapter(adapter);
 
         loadProject();
 
-        Button btnSaveAll = findViewById(R.id.btnSaveAll);
+        // --- ה-Listener הנכון: מבצע שמירה ורק אז מעבר ---
+        Button btnSaveAll = binding.btnSaveAll;
         btnSaveAll.setText("שמור והמשך");
         btnSaveAll.setOnClickListener(v -> saveApartmentDetailsAndNext());
+        // ------------------------------------------------
+
+        setupProgressStepper();
+        setupListeners();
     }
+
+    private void setupProgressStepper() {
+        progressHelper = new ProgressStepperHelper(
+                this,
+                ProgressStepperHelper.STEP_APARTMENT_DETAILS,
+                binding.getRoot(),
+                projectId
+        );
+        progressHelper.initialize();
+    }
+
+    private void setupListeners() {
+        binding.btnBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                progressHelper.moveToPreviousStep(); // → חזרה לשלב 2
+            }
+        });
+
+        // --- הוסר ה-Listener הכפול של btnSaveAll שהיה כאן ---
+    }
+
 
     private void loadProject() {
         repo.getProject(projectId, task -> {
@@ -234,11 +269,13 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
         });
     }
 
+    // --- התיקון: מעבר גנרי דרך ה-ProgressStepperHelper ---
     private void goToNextScreen() {
-        Intent i = new Intent(this, PropertyDetailsActivity.class);
-        i.putExtra("projectId", projectId);
-        startActivity(i);
+        // מאפשר ניווט גנרי בין כל השלבים בסטפר
+        progressHelper.moveToNextStep();
+        // אין צורך ב-finish() מכיוון שה-progressHelper אחראי כעת על הניווט
     }
+    // ---------------------------------------------------
 
     // ================== FieldClickListener ==================
 

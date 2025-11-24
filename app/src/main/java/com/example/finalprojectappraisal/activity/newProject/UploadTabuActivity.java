@@ -23,6 +23,7 @@ import com.bumptech.glide.Glide;
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.activity.HomePageActivity;
 import com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity;
+import com.example.finalprojectappraisal.databinding.ActivityUploadTabuBinding; // ⬅️ ייבוא ה-Binding
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -41,6 +42,10 @@ public class UploadTabuActivity extends AppCompatActivity {
     private static final int REQUEST_IMAGE_CAPTURE = 102;
     private static final int REQUEST_CAMERA_PERMISSION = 201;
 
+    // ⬅️ משתנים חדשים ל-Binding ול-Stepper
+    private ActivityUploadTabuBinding binding;
+    private ProgressStepperHelper progressHelper;
+
     private String projectId;
     private Uri pendingCameraUri;
     private Uri currentTabuUri;
@@ -57,7 +62,10 @@ public class UploadTabuActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_upload_tabu);
+
+        // ⬅️ שימוש ב-Binding
+        binding = ActivityUploadTabuBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
         projectId = getIntent().getStringExtra("projectId");
         if (projectId == null) {
@@ -70,28 +78,62 @@ public class UploadTabuActivity extends AppCompatActivity {
         storage = FirebaseStorage.getInstance();
 
         initViews();
+        setupProgressStepper(); // ⬅️ איתחול הסטפר
         setupListeners();
         loadExistingTabu();
     }
 
+    // ⬅️ הטמעת ProgressStepperHelper
+    private void setupProgressStepper() {
+        progressHelper = new ProgressStepperHelper(
+                this,
+                ProgressStepperHelper.STEP_TABU_UPLOAD, // שלב 9 (או השלב הרלוונטי)
+                binding.getRoot(),
+                projectId
+        );
+        progressHelper.initialize();
+    }
+
     private void initViews() {
-        tabuImageView = findViewById(R.id.tabu_image);
-        placeholderLayout = findViewById(R.id.placeholder_layout);
-        btnDeleteImage = findViewById(R.id.btn_delete_image);
-        processingStatus = findViewById(R.id.processing_status);
-        btnSaveAndContinue = findViewById(R.id.btnSaveAndContinue);
+        // ⬅️ גישה לרכיבים דרך Binding
+        tabuImageView = binding.tabuImage;
+        placeholderLayout = binding.placeholderLayout;
+        btnDeleteImage = binding.btnDeleteImage;
+        processingStatus = binding.processingStatus;
+        btnSaveAndContinue = binding.btnSaveAndContinue;
 
-        MaterialCardView backButtonCard = findViewById(R.id.back_button_card);
-        MaterialButton btnGallery = findViewById(R.id.btn_gallery);
-        MaterialButton btnCamera = findViewById(R.id.btn_camera);
+        MaterialCardView backButtonCard = binding.backButtonCard;
+        MaterialButton btnGallery = binding.btnGallery;
+        MaterialButton btnCamera = binding.btnCamera;
 
-        backButtonCard.setOnClickListener(v -> onBackPressed());
+        // ⬅️ טיפול בכפתור החזור עבר ל-setupListeners כדי להשתמש בסטפר
+        // backButtonCard.setOnClickListener(v -> onBackPressed());
         btnGallery.setOnClickListener(v -> openGallery());
         btnCamera.setOnClickListener(v -> openCameraWithPermissionCheck());
     }
 
     private void setupListeners() {
-        MaterialCardView imageContainer = findViewById(R.id.image_container);
+        // ⬅️ ניווט אחורה דרך הסטפר
+        binding.backButtonCard.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                progressHelper.moveToPreviousStep(); // → חזרה לשלב 8
+            }
+        });
+
+        // ⬅️ כפתור המשך (שהיה btnSaveAndContinue)
+        binding.btnSaveAndContinue.setOnClickListener(v -> {
+            if (currentTabuUri == null) {
+                toast("יש להעלות תמונת טאבו לפני המשך");
+                return;
+            }
+            // ⬅️ קוד השמירה נשאר כאן
+            // הפונקציה navigateToNextScreen תטפל במעבר (סיום הפרויקט)
+            uploadTabuToFirebase(currentTabuUri); // מעלה ושומר (אם לא נשמר קודם)
+            navigateToNextScreen();
+        });
+
+        MaterialCardView imageContainer = binding.imageContainer;
         imageContainer.setOnClickListener(v -> {
             if (currentTabuUri == null) {
                 showImageSourceDialog();
@@ -99,14 +141,6 @@ public class UploadTabuActivity extends AppCompatActivity {
         });
 
         btnDeleteImage.setOnClickListener(v -> deleteTabuImage());
-
-        btnSaveAndContinue.setOnClickListener(v -> {
-            if (currentTabuUri == null) {
-                toast("יש להעלות תמונת טאבו לפני המשך");
-                return;
-            }
-            navigateToNextScreen();
-        });
     }
 
     private void showImageSourceDialog() {
@@ -309,17 +343,16 @@ public class UploadTabuActivity extends AppCompatActivity {
                 });
     }
 
+    // ⬅️ תיקון: שימוש ב-progressHelper לסיום התהליך (השלב האחרון)
     private void navigateToNextScreen() {
-        try {
-            // במקום UploadImagesActivity, נעבור ל-HomePageActivity
-            Intent intent = new Intent(this, HomePageActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-            finish();
-        } catch (Exception e) {
-            toast("שגיאה במעבר: " + e.getMessage());
-            Log.e("UploadTabu", "Navigation error", e);
+        if (progressHelper.isLastStep()) {
+            // אם זה השלב האחרון, סיימו את יצירת הפרויקט
+            progressHelper.finishProjectCreation();
+        } else {
+            // אם במקרה זה לא השלב האחרון (למשל, שינוי עתידי), עברו לשלב הבא
+            progressHelper.moveToNextStep();
         }
+        // הפונקציה finishProjectCreation() ב-ProgressStepper אמורה להוביל ל-HomePageActivity ולסגור את הפעילויות.
     }
 
     private void toast(String message) {
