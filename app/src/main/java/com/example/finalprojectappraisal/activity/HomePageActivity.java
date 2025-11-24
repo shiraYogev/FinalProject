@@ -1,5 +1,6 @@
 package com.example.finalprojectappraisal.activity;
 
+import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,6 +19,7 @@ import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.activity.AllProjects.AllProjectsViewActivity;
 import com.example.finalprojectappraisal.activity.myProjects.MyProjectsActivity;
 import com.example.finalprojectappraisal.activity.newProject.client.ClientDetailsActivity;
+import com.example.finalprojectappraisal.model.Project;
 import com.example.finalprojectappraisal.utils.FilterPrefs;
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -26,12 +28,17 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.gson.Gson;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class HomePageActivity extends AppCompatActivity {
 
     // ---- Tags for Logcat ----
     private static final String TAG_HOME   = "HomePage";
     private static final String TAG_NAV    = "Home→MyProjects";
     private static final String TAG_STATUS = "HomeStatus";
+    private static final String TAG_RECENT = "HomeRecent";
 
     // ---- Views ----
     private MaterialCardView cardNewProject, cardMyProjects, cardAllProjectsViewOnly, cardSettings, mainCard;
@@ -42,6 +49,10 @@ public class HomePageActivity extends AppCompatActivity {
     private MaterialCardView statusProjectsCard;
     private LinearLayout statusProjectsContainer, statusLoadingState, statusProjectsList;
     private TextView statusTitle;
+
+    // ---- Recent projects (dynamic) ----
+    private LinearLayout recentActivityContainer;
+    private TextView recentActivityEmpty;
 
     // ---- Infra ----
     private Intent intent;
@@ -65,6 +76,7 @@ public class HomePageActivity extends AppCompatActivity {
         setupAnimations();
         loadUserData();
         loadProjectsByStatus();
+        loadRecentProjectsForHome(); // טעינת 4 הפרויקטים האחרונים
     }
 
     private void initializeViews() {
@@ -91,6 +103,10 @@ public class HomePageActivity extends AppCompatActivity {
         statusLoadingState = findViewById(R.id.status_loading_state);
         statusProjectsList = findViewById(R.id.status_projects_list);
         statusTitle = findViewById(R.id.status_title);
+
+        // Recent projects section
+        recentActivityContainer = findViewById(R.id.recent_activity_container);
+        recentActivityEmpty = findViewById(R.id.recent_activity_empty);
     }
 
     private void setupClickListeners() {
@@ -231,7 +247,7 @@ public class HomePageActivity extends AppCompatActivity {
     }
 
     private void animateCounterBanking(TextView textView, int start, int end) {
-        android.animation.ValueAnimator animator = android.animation.ValueAnimator.ofInt(start, end);
+        ValueAnimator animator = ValueAnimator.ofInt(start, end);
         animator.setDuration(1500);
         animator.setInterpolator(new android.view.animation.DecelerateInterpolator());
         animator.addUpdateListener(a -> textView.setText(String.valueOf((int) a.getAnimatedValue())));
@@ -270,12 +286,14 @@ public class HomePageActivity extends AppCompatActivity {
                     }
                     setDynamicGreeting();
                     loadProjectStats();
+                    loadRecentProjectsForHome(); // גם כאן, אחרי שנטען השמאי
                 })
                 .addOnFailureListener(e -> {
                     userNameText.setText("שגיאה בטעינת שם");
                     Log.e(TAG_HOME, "Error loading user data", e);
                     setDynamicGreeting();
                     loadProjectStats();
+                    loadRecentProjectsForHome();
                 });
     }
 
@@ -309,7 +327,7 @@ public class HomePageActivity extends AppCompatActivity {
 
                     // Order is defined in arrays.xml
                     String[] orderArr = getResources().getStringArray(R.array.project_statuses);
-                    java.util.List<String> order = java.util.Arrays.asList(orderArr);
+                    List<String> order = java.util.Arrays.asList(orderArr);
 
                     java.util.Map<String, Integer> counts = new java.util.LinkedHashMap<>();
                     for (String s : order) counts.put(s, 0);
@@ -424,6 +442,160 @@ public class HomePageActivity extends AppCompatActivity {
         statusProjectsList.addView(tv);
     }
 
+    // ========================= RECENT PROJECTS (LAST 4) =========================
+
+    private void loadRecentProjectsForHome() {
+        if (recentActivityContainer == null || recentActivityEmpty == null) return;
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            showRecentActivityEmpty("משתמש לא מחובר");
+            Log.w(TAG_RECENT, "No user → cannot load recent projects");
+            return;
+        }
+
+        String userId = currentUser.getUid();
+        recentActivityEmpty.setText("טוען פרויקטים אחרונים...");
+        recentActivityEmpty.setVisibility(View.VISIBLE);
+        recentActivityContainer.removeAllViews();
+
+        db.collection("appraisers").document(userId)
+                .get()
+                .addOnSuccessListener(appraiserDoc -> {
+                    if (!appraiserDoc.exists()) {
+                        Log.w(TAG_RECENT, "Appraiser doc not found for uid=" + userId);
+                        showRecentActivityEmpty("לא נמצאו פרויקטים לשמאי");
+                        return;
+                    }
+
+                    @SuppressWarnings("unchecked")
+                    List<String> activeProjects = (List<String>) appraiserDoc.get("activeProjects");
+                    Log.d(TAG_RECENT, "activeProjects=" + activeProjects);
+
+                    if (activeProjects == null || activeProjects.isEmpty()) {
+                        showRecentActivityEmpty("אין פרויקטים פעילים להצגה");
+                        return;
+                    }
+
+                    List<String> reversed = new ArrayList<>(activeProjects);
+                    Collections.reverse(reversed); // נניח שהאחרונים בסוף הרשימה
+                    List<String> limitedIds = reversed.subList(0, Math.min(4, reversed.size()));
+                    final List<String> orderedIds = new ArrayList<>(limitedIds);
+
+                    Log.d(TAG_RECENT, "Will load last ids=" + orderedIds);
+
+                    db.collection("projects")
+                            .whereIn("projectId", orderedIds)
+                            .get()
+                            .addOnSuccessListener(query -> {
+                                if (query.isEmpty()) {
+                                    Log.w(TAG_RECENT, "Projects query by projectId returned empty");
+                                    showRecentActivityEmpty("לא נמצאו פרויקטים תואמים");
+                                    return;
+                                }
+
+                                List<Project> projects = new ArrayList<>();
+                                for (DocumentSnapshot doc : query) {
+                                    Project p = doc.toObject(Project.class);
+                                    if (p != null) projects.add(p);
+                                }
+
+                                // סדר לפי סדר ה־ID ברשימת orderedIds
+                                Collections.sort(projects, (p1, p2) -> {
+                                    String id1 = safe(p1.getProjectId());
+                                    String id2 = safe(p2.getProjectId());
+                                    int idx1 = orderedIds.indexOf(id1);
+                                    int idx2 = orderedIds.indexOf(id2);
+                                    if (idx1 == -1) idx1 = orderedIds.size();
+                                    if (idx2 == -1) idx2 = orderedIds.size();
+                                    return Integer.compare(idx1, idx2);
+                                });
+
+                                recentActivityContainer.removeAllViews();
+
+                                for (Project p : projects) {
+                                    String projectId = p.getProjectId();
+                                    String status = p.getProjectStatus();
+                                    String address = p.getFullAddress();
+                                    if (address == null || address.trim().isEmpty()) {
+                                        address = "פרויקט ללא כתובת";
+                                    }
+                                    addRecentProjectRow(projectId, address, status);
+                                }
+
+                                if (recentActivityContainer.getChildCount() == 0) {
+                                    showRecentActivityEmpty("אין פרויקטים להצגה");
+                                } else {
+                                    recentActivityEmpty.setVisibility(View.GONE);
+                                }
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG_RECENT, "Error loading recent projects (projects query)", e);
+                                showRecentActivityEmpty("שגיאה בטעינת פרויקטים");
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG_RECENT, "Error loading appraiser doc for recent projects", e);
+                    showRecentActivityEmpty("שגיאה בטעינת פרויקטים");
+                });
+    }
+
+    private void addRecentProjectRow(String projectId, String address, String status) {
+        if (recentActivityContainer == null) return;
+
+        // Divider בין רשומות
+        if (recentActivityContainer.getChildCount() > 0) {
+            View divider = new View(this);
+            LinearLayout.LayoutParams dLp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, dp(1));
+            divider.setLayoutParams(dLp);
+            divider.setBackgroundColor(getColor(R.color.fp_outline));
+            recentActivityContainer.addView(divider);
+        }
+
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        row.setClickable(true);
+        row.setFocusable(true);
+        row.setBackgroundResource(android.R.drawable.list_selector_background);
+        row.setPadding(dp(8), dp(12), dp(8), dp(12));
+
+        TextView title = new TextView(this);
+        title.setText(address);
+        title.setTextSize(15f);
+        title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        title.setTextColor(getColor(R.color.text_primary_dark));
+        row.addView(title);
+
+        TextView subtitle = new TextView(this);
+        String statusLabel = (status == null || status.trim().isEmpty())
+                ? "סטטוס לא ידוע"
+                : "סטטוס: " + status;
+        subtitle.setText(statusLabel);
+        subtitle.setTextSize(13f);
+        subtitle.setTextColor(getColor(R.color.text_secondary_dark));
+        subtitle.setPadding(0, dp(4), 0, 0);
+        row.addView(subtitle);
+
+        // >>> שינוי כאן: מסננים לפי שם/כתובת הפרויקט (address) ולא לפי סטטוס
+        final String query = address; // חייב להיות final ללמבדא
+        row.setOnClickListener(v -> {
+            Log.d(TAG_NAV, "User tapped recent project from home; pid=" + projectId
+                    + ", query=" + query);
+            Intent i = new Intent(this, MyProjectsActivity.class);
+            i.putExtra(MyProjectsActivity.EXTRA_PREFILTER_QUERY, query);
+            startActivity(i);
+            overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
+        });
+
+        recentActivityContainer.addView(row);
+    }
+
+    private void showRecentActivityEmpty(String msg) {
+        if (recentActivityEmpty == null) return;
+        recentActivityEmpty.setText(msg);
+        recentActivityEmpty.setVisibility(View.VISIBLE);
+    }
 
     // ---- Lifecycle ----
     @Override
@@ -432,7 +604,8 @@ public class HomePageActivity extends AppCompatActivity {
         loadProjectStats();
         setDynamicGreeting();
         loadProjectsByStatus(); // keep status card fresh
-        Log.d(TAG_HOME, "onResume → refreshed stats, status");
+        loadRecentProjectsForHome(); // לרענן גם את 4 הפרויקטים האחרונים
+        Log.d(TAG_HOME, "onResume → refreshed stats, status, recent");
     }
 
     @Override
@@ -444,4 +617,29 @@ public class HomePageActivity extends AppCompatActivity {
     // ---- Utils ----
     private String safe(String s) { return s == null ? "" : s; }
     private int dp(int v) { return Math.round(v * getResources().getDisplayMetrics().density); }
+
+    // מצפן – כמו שהיה אצלך
+    private void openCompassAppOrStore() {
+        String specificCompassPackage = "app.melon.icompass";
+        Intent intent = getPackageManager().getLaunchIntentForPackage(specificCompassPackage);
+
+        if (intent != null) {
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+            startActivity(intent);
+            return;
+        }
+
+        android.widget.Toast.makeText(this, "האפליקציה הספציפית לא נמצאה, מפנה לחנות.", android.widget.Toast.LENGTH_LONG).show();
+
+        Intent playStoreIntent = new Intent(Intent.ACTION_VIEW,
+                android.net.Uri.parse("market://details?id=" + specificCompassPackage));
+
+        if (playStoreIntent.resolveActivity(getPackageManager()) != null) {
+            startActivity(playStoreIntent);
+        } else {
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW,
+                    android.net.Uri.parse("https://play.google.com/store/apps/details?id=" + specificCompassPackage));
+            startActivity(browserIntent);
+        }
+    }
 }

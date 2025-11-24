@@ -153,4 +153,6 @@
     <color name="fp_surface">#FFFFFF</color>
     <color name="fp_outline">#D9DCE3</color>
 
+    <color name="fp_divider_light">#F0F0F0</color>
+
 </resources>

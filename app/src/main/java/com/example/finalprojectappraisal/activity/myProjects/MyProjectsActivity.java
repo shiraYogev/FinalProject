@@ -1,5 +1,6 @@
 package com.example.finalprojectappraisal.activity.myProjects;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
@@ -31,9 +32,6 @@ import com.example.finalprojectappraisal.model.Appraiser;
 import com.example.finalprojectappraisal.model.Project;
 import com.example.finalprojectappraisal.utils.FilterPrefs;
 import com.google.android.material.chip.ChipGroup;
-import com.example.finalprojectappraisal.activity.newProject.client.ClientDetailsActivity;
-
-import android.app.AlertDialog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,8 +59,9 @@ public class MyProjectsActivity extends AppCompatActivity
 
     private String currentUserId = null;
 
-    // EXTRA name that Home page sends
+    // EXTRAs that מסכים אחרים יכולים לשלוח
     public static final String EXTRA_PREFILTER_STATUS = "prefilter_status";
+    public static final String EXTRA_PREFILTER_QUERY  = "prefilter_query";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,10 +131,9 @@ public class MyProjectsActivity extends AppCompatActivity
                 Log.d(TAG_REPORT, "User tapped report for projectId=" + pid);
 
                 Intent intent = new Intent(MyProjectsActivity.this, ProjectPreviewActivity.class);
-                // שולחים כמה מפתחות נפוצים כדי להתאים ללוגיקה קיימת:
-                intent.putExtra("projectId", pid);         // מקובל אצלך במסכים אחרים
-                intent.putExtra("EXTRA_PROJECT_ID", pid);  // אם הActivity משתמש בקבוע הזה
-                intent.putExtra("PROJECT_ID", pid);        // גיבוי נוסף
+                intent.putExtra("projectId", pid);
+                intent.putExtra("EXTRA_PROJECT_ID", pid);
+                intent.putExtra("PROJECT_ID", pid);
                 startActivity(intent);
             }
 
@@ -150,7 +148,6 @@ public class MyProjectsActivity extends AppCompatActivity
                 this, androidx.recyclerview.widget.DividerItemDecoration.VERTICAL));
         recyclerView.setClipToPadding(false);
         recyclerView.setPadding(0, 8, 0, 8);
-
 
         // Pull-to-refresh
         swipeRefresh.setOnRefreshListener(() -> {
@@ -227,8 +224,6 @@ public class MyProjectsActivity extends AppCompatActivity
 
         findViewById(R.id.btnNewProject).setOnClickListener(v -> {
             Log.d(TAG_ACT, "User tapped 'New Project' button. Starting ClientDetailsActivity.");
-
-            // יצירת Intent המפנה למסך פרטי הלקוח
             Intent intent = new Intent(MyProjectsActivity.this,
                     com.example.finalprojectappraisal.activity.newProject.client.ClientDetailsActivity.class);
             startActivity(intent);
@@ -244,15 +239,13 @@ public class MyProjectsActivity extends AppCompatActivity
             }
         });
 
-        // <<< NEW: apply prefilter from Intent (one-shot) >>>
+        // <<< NEW: apply prefilter from Intent (status OR query) >>>
         applyPrefilterIfAny();
 
-        // ============================================
         // בעיטה יזומה אחרי שכל ה-observers מחוברים
-        // ============================================
         Log.d(TAG_ACT, "KICK: viewingAll=true + fetchProjects()");
-        vm.setViewingAll(true);   // מציג זמנית "כל הפרויקטים" כדי לעקוף שיוכים מחמירים
-        vm.fetchProjects();       // מפעיל טעינה מיידית
+        vm.setViewingAll(true);
+        vm.fetchProjects();
     }
 
     @Override
@@ -276,45 +269,51 @@ public class MyProjectsActivity extends AppCompatActivity
         FilterPrefs.save(this, vm.getCurrentFilter());
     }
 
-    // ===== OnNoteSavedListener callback (מ־BottomSheet) =====
+    // ===== OnNoteSavedListener callback =====
     @Override
     public void onNoteSaved(@NonNull String projectId, @NonNull String newNote) {
         Log.d(TAG_ACT, "onNoteSaved: pid=" + projectId + " len=" + newNote.length());
-        // לריענון מיידי (לרוב גם ה-listener של Firestore יעדכן לבד)
         if (vm != null) vm.fetchProjects();
     }
 
-    // ===== Prefilter handling (NEW) =====
+    // ===== Prefilter handling (STATUS or QUERY) =====
     private void applyPrefilterIfAny() {
         String preStatus = getIntent().getStringExtra(EXTRA_PREFILTER_STATUS);
-        Log.d(TAG_PREF, "applyPrefilterIfAny() got extra prefilter_status=" + preStatus);
+        String preQuery  = getIntent().getStringExtra(EXTRA_PREFILTER_QUERY);
+        Log.d(TAG_PREF, "applyPrefilterIfAny() got extras: prefilter_status=" + preStatus
+                + ", prefilter_query=" + preQuery);
 
-        if (preStatus == null || preStatus.trim().isEmpty()) {
-            Log.d(TAG_PREF, "No prefilter_status extra. Using existing FilterPrefs only.");
+        // 1. אם הגיע סטטוס – נשמור התנהגות קיימת
+        if (preStatus != null && !preStatus.trim().isEmpty()) {
+            try {
+                FilterPrefs.saveSingleStatus(this, preStatus);
+                Log.d(TAG_PREF, "Saved preStatus to FilterPrefs: " + preStatus);
+
+                ProjectFilter f = FilterPrefs.load(this);
+                Log.d(TAG_PREF, "Loaded FilterPrefs after save: " + new com.google.gson.Gson().toJson(f));
+
+                vm.setFilter(f);
+                Log.d(TAG_PREF, "vm.setFilter(f) called.");
+
+                vm.fetchProjects();
+                Log.d(TAG_PREF, "vm.fetchProjects() called after setFilter (status).");
+            } catch (Throwable t) {
+                Log.e(TAG_PREF, "Error applying status prefilter", t);
+            } finally {
+                getIntent().removeExtra(EXTRA_PREFILTER_STATUS);
+            }
             return;
         }
 
-        try {
-            // Save only statuses list while preserving other fields
-            FilterPrefs.saveSingleStatus(this, preStatus);
-            Log.d(TAG_PREF, "Saved preStatus to FilterPrefs: " + preStatus);
-
-            // Load updated filter and apply to VM
-            ProjectFilter f = FilterPrefs.load(this);
-            Log.d(TAG_PREF, "Loaded FilterPrefs after save: " + new com.google.gson.Gson().toJson(f));
-
-            vm.setFilter(f);
-            Log.d(TAG_PREF, "vm.setFilter(f) called.");
-
-            // Ensure refresh (in case VM relies on a new fetch)
+        // 2. אם הגיע טקסט לחיפוש (למשל מהמסך הראשי – שם/כתובת הפרויקט)
+        if (preQuery != null && !preQuery.trim().isEmpty()) {
+            Log.d(TAG_PREF, "Applying text prefilter from EXTRA_PREFILTER_QUERY: '" + preQuery + "'");
+            // זה מפעיל את ה-TextWatcher → vm.setTextQuery + FilterPrefs.save
+            searchBar.setText(preQuery);
             vm.fetchProjects();
-            Log.d(TAG_PREF, "vm.fetchProjects() called after setFilter.");
-
-        } catch (Throwable t) {
-            Log.e(TAG_PREF, "Error applying prefilter", t);
-        } finally {
-            // prevent re-applying on back/rotation
-            getIntent().removeExtra(EXTRA_PREFILTER_STATUS);
+            getIntent().removeExtra(EXTRA_PREFILTER_QUERY);
+        } else {
+            Log.d(TAG_PREF, "No prefilter extras. Using existing FilterPrefs only.");
         }
     }
 
@@ -392,33 +391,26 @@ public class MyProjectsActivity extends AppCompatActivity
                 .create().show();
     }
 
-    // בתוך MyProjectsActivity.java, עדכן את המתודה הזו:
-    // בתוך MyProjectsActivity.java
+    // מצפן
     private void openCompassAppOrStore() {
-        // שם החבילה הספציפי שהתקבל מהקישור
         String specificCompassPackage = "app.melon.icompass";
 
-        // 1. נסה לפתוח את האפליקציה הספציפית
         Intent intent = getPackageManager().getLaunchIntentForPackage(specificCompassPackage);
 
         if (intent != null) {
-            // נמצאה האפליקציה הספציפית ("iCompass - מצפן דיגיטלי")
             intent.addCategory(Intent.CATEGORY_LAUNCHER);
             startActivity(intent);
             return;
         }
 
-        // 2. אם האפליקציה לא מותקנת, הפנה לחנות לאפליקציה הספציפית
         Toast.makeText(this, "האפליקציה הספציפית לא נמצאה, מפנה לחנות.", Toast.LENGTH_LONG).show();
 
-        // Intent לחנות האפליקציות לדף האפליקציה הספציפית
         Intent playStoreIntent = new Intent(Intent.ACTION_VIEW,
                 android.net.Uri.parse("market://details?id=" + specificCompassPackage));
 
         if (playStoreIntent.resolveActivity(getPackageManager()) != null) {
             startActivity(playStoreIntent);
         } else {
-            // גיבוי לדפדפן
             Intent browserIntent = new Intent(Intent.ACTION_VIEW,
                     android.net.Uri.parse("https://play.google.com/store/apps/details?id=" + specificCompassPackage));
             startActivity(browserIntent);
