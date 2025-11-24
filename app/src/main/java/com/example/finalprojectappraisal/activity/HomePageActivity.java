@@ -194,56 +194,135 @@ public class HomePageActivity extends AppCompatActivity {
         greetingText.setText(greeting);
     }
 
+    /**
+     * טוען סטטיסטיקות דרך מסמך השמאי:
+     *  - סופר את כמות ה־activeProjects → סה״כ פרויקטים
+     *  - מתוך אותם IDs בודק כמה הושלמו בשבעת הימים האחרונים
+     */
     private void loadProjectStats() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
             totalProjectsDisplay.setText("0");
-            completedThisWeek.setText("אין נתונים");
+            updateWeeklyText(0);
             Log.d(TAG_HOME, "No user → stats=0");
             return;
         }
 
-        db.collection("projects")
-                .whereEqualTo("appraiserId", currentUser.getUid())
+        String userId = currentUser.getUid();
+
+        db.collection("appraisers").document(userId)
                 .get()
-                .addOnSuccessListener(query -> {
-                    int totalProjects = query.size();
-                    Log.d(TAG_HOME, "Total projects for user=" + totalProjects);
-                    animateCounterBanking(totalProjectsDisplay, 0, totalProjects);
+                .addOnSuccessListener(doc -> {
+                    if (!doc.exists()) {
+                        Log.w(TAG_HOME, "Appraiser doc not found for uid=" + userId);
+                        totalProjectsDisplay.setText("0");
+                        updateWeeklyText(0);
+                        return;
+                    }
+
+                    @SuppressWarnings("unchecked")
+                    List<String> activeProjects =
+                            (List<String>) doc.get("activeProjects");
+
+                    int total = (activeProjects != null) ? activeProjects.size() : 0;
+                    Log.d(TAG_HOME, "Total activeProjects for appraiser=" + total);
+                    animateCounterBanking(totalProjectsDisplay, 0, total);
+
+                    // נמשיך לסטטיסטיקת "הושלמו השבוע" על בסיס אותם IDs
+                    loadWeeklyStats(activeProjects);
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG_HOME, "Error loading project count", e);
+                    Log.e(TAG_HOME, "Error loading appraiser for stats", e);
                     totalProjectsDisplay.setText("0");
+                    updateWeeklyText(-1); // שגיאה
                 });
-
-        loadWeeklyStats();
     }
 
-    private void loadWeeklyStats() {
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser == null) return;
+    /**
+     * מקבל את רשימת ה־IDs של הפרויקטים של השמאי (activeProjects),
+     * טוען כל פרויקט מהאוסף projects, ומספור:
+     * projectStatus == "הושלם" && completedDate >= sevenDaysAgo.
+     *
+     * שימי לב: חייב להיות שדה completedDate מסוג Timestamp / Date בפרויקט.
+     */
+    private void loadWeeklyStats(List<String> activeProjects) {
+        if (completedThisWeek == null) return;
 
-        java.util.Calendar calendar = java.util.Calendar.getInstance();
-        calendar.set(java.util.Calendar.DAY_OF_WEEK, java.util.Calendar.SUNDAY);
-        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0);
-        calendar.set(java.util.Calendar.MINUTE, 0);
-        calendar.set(java.util.Calendar.SECOND, 0);
-        java.util.Date weekStart = calendar.getTime();
+        if (activeProjects == null || activeProjects.isEmpty()) {
+            Log.d(TAG_HOME, "No activeProjects → weekly completed = 0");
+            updateWeeklyText(0);
+            return;
+        }
 
-        db.collection("projects")
-                .whereEqualTo("appraiserId", currentUser.getUid())
-                .whereEqualTo("projectStatus", "הושלם")
-                .whereGreaterThanOrEqualTo("completedDate", weekStart)
-                .get()
-                .addOnSuccessListener(query -> {
-                    int completedCount = query.size();
-                    Log.d(TAG_HOME, "Completed this week=" + completedCount);
-                    completedThisWeek.setText(completedCount + " הושלמו השבוע");
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG_HOME, "Error loading weekly stats", e);
-                    completedThisWeek.setText("נתונים לא זמינים");
-                });
+        // תאריך לפני 7 ימים מהיום
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.add(java.util.Calendar.DAY_OF_YEAR, -7);
+        final java.util.Date sevenDaysAgo = cal.getTime();
+
+        final int totalToCheck = activeProjects.size();
+        if (totalToCheck == 0) {
+            updateWeeklyText(0);
+            return;
+        }
+
+        final int[] processed = {0};
+        final int[] completedCount = {0};
+
+        for (String projectId : activeProjects) {
+            if (projectId == null || projectId.trim().isEmpty()) {
+                processed[0]++;
+                if (processed[0] == totalToCheck) {
+                    updateWeeklyText(completedCount[0]);
+                }
+                continue;
+            }
+
+            db.collection("projects").document(projectId)
+                    .get()
+                    .addOnSuccessListener(doc -> {
+                        processed[0]++;
+
+                        if (doc.exists()) {
+                            String status = doc.getString("projectStatus");
+                            java.util.Date completedDate = doc.getDate("completedDate"); // לשים לב לשם השדה!
+
+                            if ("הושלם".equals(status)
+                                    && completedDate != null
+                                    && !completedDate.before(sevenDaysAgo)) {
+                                completedCount[0]++;
+                            }
+                        }
+
+                        if (processed[0] == totalToCheck) {
+                            updateWeeklyText(completedCount[0]);
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        processed[0]++;
+                        Log.e(TAG_HOME, "Error loading project for weekly stats, id=" + projectId, e);
+                        if (processed[0] == totalToCheck) {
+                            updateWeeklyText(completedCount[0]);
+                        }
+                    });
+        }
+    }
+
+    /** מעדכן את הטקסט של "הושלמו השבוע" בהתאם לתוצאה. */
+    private void updateWeeklyText(int completedCount) {
+        if (completedThisWeek == null) return;
+
+        if (completedCount < 0) {
+            completedThisWeek.setText("נתונים לא זמינים");
+            return;
+        }
+
+        if (completedCount == 0) {
+            completedThisWeek.setText("לא הושלמו פרויקטים השבוע");
+        } else if (completedCount == 1) {
+            completedThisWeek.setText("פרויקט אחד הושלם השבוע");
+        } else {
+            completedThisWeek.setText(completedCount + " פרויקטים הושלמו השבוע");
+        }
     }
 
     private void animateCounterBanking(TextView textView, int start, int end) {
@@ -285,8 +364,8 @@ public class HomePageActivity extends AppCompatActivity {
                         Log.d(TAG_HOME, "Appraiser doc not exists → default name");
                     }
                     setDynamicGreeting();
-                    loadProjectStats();
-                    loadRecentProjectsForHome(); // גם כאן, אחרי שנטען השמאי
+                    loadProjectStats();       // משתמש במסמך השמאי כדי להגיע לפרויקטים
+                    loadRecentProjectsForHome();
                 })
                 .addOnFailureListener(e -> {
                     userNameText.setText("שגיאה בטעינת שם");
@@ -436,7 +515,7 @@ public class HomePageActivity extends AppCompatActivity {
         tv.setText(msg);
         tv.setTextColor(getColor(R.color.text_secondary_dark));
         tv.setTextSize(14);
-        tv.setGravity(android.view.Gravity.CENTER); // אין צורך ב-import
+        tv.setGravity(android.view.Gravity.CENTER);
         tv.setPadding(0, dp(32), 0, dp(32));
 
         statusProjectsList.addView(tv);
@@ -577,8 +656,7 @@ public class HomePageActivity extends AppCompatActivity {
         subtitle.setPadding(0, dp(4), 0, 0);
         row.addView(subtitle);
 
-        // >>> שינוי כאן: מסננים לפי שם/כתובת הפרויקט (address) ולא לפי סטטוס
-        final String query = address; // חייב להיות final ללמבדא
+        final String query = address; // search query for MyProjects
         row.setOnClickListener(v -> {
             Log.d(TAG_NAV, "User tapped recent project from home; pid=" + projectId
                     + ", query=" + query);
