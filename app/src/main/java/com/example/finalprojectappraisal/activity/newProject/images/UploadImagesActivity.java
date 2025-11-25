@@ -1,3 +1,4 @@
+// file: app/src/main/java/com/example/finalprojectappraisal/activity/newProject/images/UploadImagesActivity.java
 package com.example.finalprojectappraisal.activity.newProject.images;
 
 import android.Manifest;
@@ -126,7 +127,7 @@ public class UploadImagesActivity extends AppCompatActivity {
                     showImageSourceDialog();
                 },
                 this::onDeleteImageClicked,
-                this::onImageClicked // ⬅️ הוספת ה-OnImageClickListener
+                this::onImageClicked // ⬅️ OnImageClickListener
         );
 
         recyclerCategories.setAdapter(categoriesAdapter);
@@ -163,33 +164,65 @@ public class UploadImagesActivity extends AppCompatActivity {
             categoriesAdapter.notifyDataSetChanged();
         });
 
-        // Observer לתמונה שנשמרה
+        // ✅ Observer מתוקן לתמונה שנשמרה
         vm.getLastSavedImage().observe(this, img -> {
             if (img == null) return;
 
-            ImageCategorySection sec = findSection(img.getCategory());
+            Image.Category cat = img.getCategory();
+            if (cat == null) return;
+
+            ImageCategorySection sec = findSection(cat);
             if (sec == null) return;
 
-            // החלפת URL זמני ב-URL סופי
+            int secIndex = categories.indexOf(sec);
+            if (secIndex == -1) return;
+
+            // ננסה למצוא את התמונה שכבר קיימת ב־UI (temp) ולעדכן אותה
+            Image target = null;
+
             for (int i = 0; i < sec.images.size(); i++) {
                 Image it = sec.images.get(i);
-                if (img.getId().equals(it.getId())) {
-                    sec.images.set(i, img);
-                    categoriesAdapter.notifyImageChanged(categories.indexOf(sec));
+
+                // 1) התאמה לפי id – לתמונות שכבר קיימות ב־DB
+                if (img.getId() != null && it.getId() != null && img.getId().equals(it.getId())) {
+                    target = it;
+                    break;
+                }
+
+                // 2) fallback להתאמה לפי localUri – לתמונה שהועלתה כרגע
+                if (img.getLocalUri() != null &&
+                        img.getLocalUri().equals(it.getLocalUri())) {
+                    target = it;
                     break;
                 }
             }
 
-            // קטגוריית "אחר" - ללא סיווג
+            if (target == null) {
+                // לא מצאנו temp קיים – נוסיף את התמונה מה־ViewModel לרשימה
+                target = img;
+                sec.images.add(target);
+            } else {
+                // מעדכנים את האובייקט שקיים כבר בליסט עם הנתונים מהתמונה השמורה
+                target.setId(img.getId());
+                target.setUrl(img.getUrl());
+                target.setProjectId(img.getProjectId());
+                target.setDescription(img.getDescription());
+            }
+
+            categoriesAdapter.notifyImageChanged(secIndex);
+
+            // קטגוריית "אחר" - ללא סיווג אוטומטי
             if (sec.category == Image.Category.OTHER) {
-                img.setDescription("תמונה נוספת (ללא סיווג אוטומטי)");
-                categoriesAdapter.notifyImageChanged(categories.indexOf(sec));
+                if (target.getDescription() == null || target.getDescription().trim().isEmpty()) {
+                    target.setDescription("תמונה נוספת (ללא סיווג אוטומטי)");
+                }
+                categoriesAdapter.notifyImageChanged(secIndex);
                 toast("התמונה נשמרה (קטגוריה: אחר)");
                 return;
             }
 
-            // הפעלת סיווג אוטומטי
-            classifyImage(img, sec);
+            // הפעלת סיווג אוטומטי על האובייקט שנמצא בליסט (target)
+            classifyImage(target, sec);
         });
 
         // Observer למחיקה
@@ -216,9 +249,9 @@ public class UploadImagesActivity extends AppCompatActivity {
                                 @NonNull Image image,
                                 int sectionIndex,
                                 int imageIndex) {
-        // 🚨 לוגיקה לפתיחת תצוגה מקדימה במסך מלא או דיאלוג
+        // Logic for full-screen preview or dialog can be added here
         Log.d("UploadImagesActivity", "Image Clicked: " + image.getId() + " in section: " + section.title);
-        // דוגמה:
+        // Example:
         // Intent previewIntent = new Intent(this, ImagePreviewActivity.class);
         // previewIntent.putExtra("imageUri", image.getLocalUri());
         // startActivity(previewIntent);
