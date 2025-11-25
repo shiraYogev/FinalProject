@@ -43,7 +43,7 @@ public class HomePageActivity extends AppCompatActivity {
     // ---- Views ----
     private MaterialCardView cardNewProject, cardMyProjects, cardAllProjectsViewOnly, cardSettings, mainCard;
     private TextView userNameText, totalProjectsDisplay, greetingText, completedThisWeek;
-    private ImageView notificationsButton, userAvatar;
+    private ImageView userAvatar; // notificationsButton הוסר
 
     // ---- By-Status section views ----
     private MaterialCardView statusProjectsCard;
@@ -94,7 +94,6 @@ public class HomePageActivity extends AppCompatActivity {
         completedThisWeek = findViewById(R.id.completed_this_week);
 
         // Header icons
-        notificationsButton = findViewById(R.id.btn_notifications);
         userAvatar = findViewById(R.id.user_avatar);
 
         // By-Status section
@@ -142,13 +141,11 @@ public class HomePageActivity extends AppCompatActivity {
         };
         cardSettings.setOnClickListener(settingsListener);
 
-        notificationsButton.setOnClickListener(v -> {
-            addRippleEffect(v);
-            // TODO: open notifications screen
-        });
+        // אין notificationsButton יותר
 
         userAvatar.setOnClickListener(v -> {
             addRippleEffect(v);
+            // אפשר בעתיד לפתוח פה מסך פרופיל/הגדרות משתמש
             overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
         });
     }

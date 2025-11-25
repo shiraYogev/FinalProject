@@ -119,72 +119,13 @@
                             android:fontFamily="sans-serif" />
                     </LinearLayout>
 
-                    <!-- Spacer -->
+                    <!-- Spacer (אמצע ריק, כי אין כפתורים בצד שמאל) -->
                     <View
                         android:layout_width="0dp"
                         android:layout_height="0dp"
                         android:layout_weight="1" />
 
-                    <!-- Left Actions – יופיעו בצד שמאל (בגלל RTL) -->
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <!-- Notifications -->
-                        <androidx.cardview.widget.CardView
-                            android:layout_width="52dp"
-                            android:layout_height="52dp"
-                            app:cardCornerRadius="16dp"
-                            app:cardElevation="0dp"
-                            app:cardBackgroundColor="#1AFFFFFF">
-
-                            <FrameLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent">
-
-                                <androidx.appcompat.widget.AppCompatImageView
-                                    android:id="@+id/btn_notifications"
-                                    android:layout_width="24dp"
-                                    android:layout_height="24dp"
-                                    android:layout_gravity="center"
-                                    app:srcCompat="@drawable/ic_bell"
-                                    app:tint="@android:color/white"
-                                    android:contentDescription="@string/cd_notifications"
-                                    android:background="?attr/selectableItemBackgroundBorderless" />
-
-                                <!-- Badge -->
-                                <View
-                                    android:layout_width="10dp"
-                                    android:layout_height="10dp"
-                                    android:layout_gravity="top|end"
-                                    android:layout_marginTop="10dp"
-                                    android:layout_marginEnd="10dp"
-                                    android:background="@drawable/dot_indicator" />
-                            </FrameLayout>
-                        </androidx.cardview.widget.CardView>
-
-                        <!-- Menu / Settings -->
-                        <androidx.cardview.widget.CardView
-                            android:layout_width="52dp"
-                            android:layout_height="52dp"
-                            android:layout_marginStart="12dp"
-                            app:cardCornerRadius="16dp"
-                            app:cardElevation="0dp"
-                            app:cardBackgroundColor="#1AFFFFFF">
-
-                            <androidx.appcompat.widget.AppCompatImageView
-                                android:id="@+id/btn_menu"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_gravity="center"
-                                app:srcCompat="@drawable/ic_settings_gear"
-                                app:tint="@android:color/white"
-                                android:contentDescription="@string/cd_settings"
-                                android:background="?attr/selectableItemBackgroundBorderless" />
-                        </androidx.cardview.widget.CardView>
-                    </LinearLayout>
+                    <!-- לא נשארים כפתורי התראות/הגדרות למעלה -->
                 </LinearLayout>
 
                 <!-- ========== Main Stats Cards Row (רק כרטיס אחד) ========== -->
@@ -376,6 +317,7 @@
             <!-- ========== Main Content Area ========== -->
 
             <!-- Quick Actions -->
+            <!-- (לא נגענו פה בכלל) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -605,7 +547,7 @@
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Settings -->
+                    <!-- Settings (בפעולות מהירות, כן נשאר) -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/card_settings"
                         android:layout_width="0dp"
