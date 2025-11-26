@@ -99,7 +99,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         btnLogout.setOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
-            Intent intent = new Intent(SettingsActivity.this, LoginActivity.class);
+            Intent intent = new Intent(SettingsActivity.this, MainActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
                     | Intent.FLAG_ACTIVITY_NEW_TASK
                     | Intent.FLAG_ACTIVITY_CLEAR_TASK);

@@ -8,23 +8,26 @@ import android.os.Looper;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.finalprojectappraisal.R;
-import com.example.finalprojectappraisal.activity.HomePageActivity;
+// ✅ יש לייבא את MainActivity
+import com.example.finalprojectappraisal.activity.MainActivity;
 
 public class SplashActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // חשוב: ה-Theme של האקטיביטי כבר Theme.App.Splash (ב-Manifest)
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_splash); // ראה סעיף 4
+        setContentView(R.layout.activity_splash);
 
-        // השהייה קצרה לויזואליות (אפשר 0 אם לא רוצים בכלל)
+        // השהייה קצרה
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            // כאן לא מפנים למסך "השלמת שמאי" – הולכים ישר למסך הבית
-            Intent i = new Intent(SplashActivity.this, HomePageActivity.class);
+
+            // ⬇️ השינוי כאן: הפנייה ל-MainActivity במקום HomePageActivity/LoginActivity
+            Intent i = new Intent(SplashActivity.this, MainActivity.class);
+
+            // הדגלים האלה נכונים כדי למנוע חזרה למסך הפתיחה
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(i);
             finish();
-        }, 400);
+        }, 400); // 400 מילישניות
     }
 }
