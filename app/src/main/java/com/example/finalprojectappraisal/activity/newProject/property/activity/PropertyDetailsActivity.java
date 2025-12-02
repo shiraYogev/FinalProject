@@ -197,7 +197,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                     Choices.EXTERNAL_CLADDING_OPTIONS, true
             ));
             items.add(FieldItem.floorsComposite(
-                    "number_of_floors", "מספר קומות",
+                    "number_of_floors", "מס' קומות",
                     fromPd(pd, "number_of_floors", p != null ? p.getNumberOfFloors() : null),
                     Choices.FLOORS_REFERENCE_LEVELS, true
             ));
@@ -207,15 +207,15 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                     fromPd(pd, "building_entry", p != null ? p.getBuildingEntry() : null)
             ));
             items.add(FieldItem.text(
-                    "building_number", "מספר הבניין",
+                    "building_number", "מס' הבניין",
                     fromPd(pd, "building_number", p != null ? p.getBuildingNumber() : null)
             ));
             items.add(FieldItem.text(
-                    "zone_number", "מספר אזור",
+                    "zone_number", "מס' אזור",
                     fromPd(pd, "zone_number", p != null ? p.getZoneNumber() : null)
             ));
             items.add(FieldItem.text(
-                    "building_city_plan_number", "מספר תכנית עירונית (תב\"ע)",
+                    "building_city_plan_number", "מס' תוכנית תלה",
                     fromPd(pd, "building_city_plan_number", p != null ? p.getBuildingCityPlanNumber() : null)
             ));
 
@@ -359,20 +359,20 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                 or(p.getExternalCladding()), Choices.EXTERNAL_CLADDING_OPTIONS, true));
 
         logVal("number_of_floors", p.getNumberOfFloors());
-        items.add(FieldItem.floorsComposite("number_of_floors", "מספר קומות",
+        items.add(FieldItem.floorsComposite("number_of_floors", "מס' קומות",
                 or(p.getNumberOfFloors()), Choices.FLOORS_REFERENCE_LEVELS, true));
 
         logVal("building_entry", p.getBuildingEntry());
         items.add(FieldItem.text("building_entry", "כניסה/מבואה", or(p.getBuildingEntry())));
 
         logVal("building_number", p.getBuildingNumber());
-        items.add(FieldItem.text("building_number", "מספר הבניין", or(p.getBuildingNumber())));
+        items.add(FieldItem.text("building_number", "מס' הבניין", or(p.getBuildingNumber())));
 
         logVal("zone_number", p.getZoneNumber());
-        items.add(FieldItem.text("zone_number", "מספר אזור", or(p.getZoneNumber())));
+        items.add(FieldItem.text("zone_number", "מס' אזור", or(p.getZoneNumber())));
 
         logVal("building_city_plan_number", p.getBuildingCityPlanNumber());
-        items.add(FieldItem.text("building_city_plan_number", "מספר תכנית עירונית (תב\"ע)", or(p.getBuildingCityPlanNumber())));
+        items.add(FieldItem.text("building_city_plan_number", "מס' תוכנית תלה", or(p.getBuildingCityPlanNumber())));
 
         items.add(new SectionItem("פרטי הדירה"));
 
