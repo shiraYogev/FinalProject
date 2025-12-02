@@ -63,7 +63,7 @@
                                 android:id="@+id/user_avatar"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                app:srcCompat="@drawable/ic_user"
+                                app:srcCompat="@drawable/icon_smaily"
                                 android:contentDescription="@string/cd_user_avatar"
                                 android:scaleType="centerCrop"
                                 android:background="?attr/selectableItemBackgroundBorderless" />
@@ -85,7 +85,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:gravity="end"
-                        android:layout_marginEnd="4dp">
+                        android:layout_marginEnd="16dp">
 
                         <TextView
                             android:id="@+id/greeting_text"
@@ -333,7 +333,6 @@
                     android:textSize="20sp"
                     android:fontFamily="sans-serif-medium"
                     android:layout_marginBottom="20dp"/>
-
                 <LinearLayout
                     android:id="@+id/action_grid"
                     android:layout_width="match_parent"

@@ -102,7 +102,7 @@
     <!-- טקסטים לבנים/כהים (קיימים) -->
     <color name="text_primary_white">#FFFFFF</color>
     <color name="text_secondary_white">#B8C5FF</color>
-    <color name="text_primary_dark">#1F2937</color>
+    <color name="text_primary_dark">#121212</color>
     <color name="text_secondary_dark">#6B7280</color>
 
     <!-- אייקונים -->
