@@ -18,6 +18,7 @@ import com.example.finalprojectappraisal.databinding.ActivityClientDetailsBindin
 import com.example.finalprojectappraisal.model.Client;
 import com.example.finalprojectappraisal.model.Project;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.libraries.places.widget.AutocompleteActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
@@ -34,11 +35,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import com.example.finalprojectappraisal.BuildConfig;
 
 public class ClientDetailsActivity extends AppCompatActivity {
 
     private EditText clientIdEditText;
-    private EditText fullNameEditText;
+    private EditText firstNameEditText; // מפוצל
+    private EditText lastNameEditText;  // מפוצל
     private EditText emailEditText;
     private EditText phoneNumberEditText;
     private EditText fullAddressEditText;
@@ -62,7 +65,8 @@ public class ClientDetailsActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         clientIdEditText    = binding.clientIdEditText;
-        fullNameEditText    = binding.fullNameEditText;
+        firstNameEditText   = binding.firstNameEditText;
+        lastNameEditText    = binding.lastNameEditText;
         emailEditText       = binding.emailEditText;
         phoneNumberEditText = binding.phoneNumberEditText;
         fullAddressEditText = binding.fullAddressEditText;
@@ -71,7 +75,7 @@ public class ClientDetailsActivity extends AppCompatActivity {
 
         // 1. אתחול Google Places SDK
         if (!Places.isInitialized()) {
-            Places.initialize(getApplicationContext(), getString(R.string.google_maps_key), Locale.forLanguageTag("he"));
+            Places.initialize(getApplicationContext(), BuildConfig.GOOGLE_MAPS_API_KEY, Locale.forLanguageTag("he"));
         }
         // 2. הגדרת לחיצה על שדה הכתובת להפעלת Autocomplete
         // שדה זה הוגדר כ-focusable="false" ב-XML כדי לאפשר את הלחיצה
@@ -134,15 +138,20 @@ public class ClientDetailsActivity extends AppCompatActivity {
      */
     private boolean validateInputs() {
         String clientId = clientIdEditText.getText().toString().trim();
-        String fullName = fullNameEditText.getText().toString().trim();
+        String firstName = firstNameEditText.getText().toString().trim();
+        String lastname = lastNameEditText.getText().toString().trim();
         String fullAddress = fullAddressEditText.getText().toString().trim();
 
         if (clientId.isEmpty()) {
             clientIdEditText.setError("חובה למלא תעודת זהות");
             return false;
         }
-        if (fullName.isEmpty()) {
-            fullNameEditText.setError("חובה למלא שם מלא");
+        if (firstNameEditText.getText().toString().trim().isEmpty()) {
+            firstNameEditText.setError("חובה למלא שם פרטי");
+            return false;
+        }
+        if (lastNameEditText.getText().toString().trim().isEmpty()) {
+            lastNameEditText.setError("חובה למלא שם משפחה");
             return false;
         }
         // דורשים כתובת רק במצב יצירה (כי במצב עריכה הכתובת כבר קיימת)
@@ -238,7 +247,8 @@ public class ClientDetailsActivity extends AppCompatActivity {
             Client c = p.getClient();
             if (c != null) {
                 if (c.getClientId() != null)        clientIdEditText.setText(c.getClientId());
-                if (c.getFullName() != null)        fullNameEditText.setText(c.getFullName());
+                if (c.getFirstName() != null)       firstNameEditText.setText(c.getFirstName());
+                if (c.getLastName() != null)        lastNameEditText.setText(c.getLastName());
                 if (c.getEmail() != null)           emailEditText.setText(c.getEmail());
                 if (c.getPhoneNumber() != null)     phoneNumberEditText.setText(c.getPhoneNumber());
             }
@@ -249,32 +259,36 @@ public class ClientDetailsActivity extends AppCompatActivity {
     /** מצב עריכה: מעדכן את פרטי הלקוח בפרויקט קיים וממשיך לשלב הבא */
     private void updateClientForExistingProjectAndContinue(String projectId) {
         String clientId     = clientIdEditText.getText().toString().trim();
-        String fullName     = fullNameEditText.getText().toString().trim();
+        String firstName    = firstNameEditText.getText().toString().trim();
+        String lastName     = lastNameEditText.getText().toString().trim();
         String email        = emailEditText.getText().toString().trim();
         String phoneNumber  = phoneNumberEditText.getText().toString().trim();
         String fullAddress  = fullAddressEditText.getText().toString().trim();
 
-        Client client = new Client(clientId, fullName, email, phoneNumber, null);
+        String combinedFullName = firstName + " " + lastName;
 
-        // שמירת פרטי לקוח
+        Client client = new Client(clientId, combinedFullName, email, phoneNumber, null);
+        client.setFirstName(firstName);
+        client.setLastName(lastName);
+
         ProjectRepository.getInstance().saveClientDetails(projectId, client, task -> {
             if (!task.isSuccessful()) {
                 Toast.makeText(this, "שמירת פרטי הלקוח נכשלה", Toast.LENGTH_LONG).show();
                 return;
             }
 
-            // אם כתובת עודכנה – נעדכן גם אותה
+            java.util.Map<String, Object> fields = new java.util.HashMap<>();
             if (!fullAddress.isEmpty()) {
-                java.util.Map<String, Object> fields = new java.util.HashMap<>();
                 fields.put("fullAddress", fullAddress);
+            }
+            if (!fields.isEmpty()) {
                 ProjectRepository.getInstance().updateMultipleFields(projectId, fields, t2 -> {
-                    // לא קריטי אם נכשל – נתקדם
                     Toast.makeText(this, "פרטי הלקוח נשמרו בהצלחה!", Toast.LENGTH_SHORT).show();
-                    progressHelper.moveToNextStep(); // → מעבר לשלב הבא
+                    progressHelper.moveToNextStep();
                 });
             } else {
                 Toast.makeText(this, "פרטי הלקוח נשמרו בהצלחה!", Toast.LENGTH_SHORT).show();
-                progressHelper.moveToNextStep(); // → מעבר לשלב הבא
+                progressHelper.moveToNextStep();
             }
         });
     }
@@ -288,14 +302,19 @@ public class ClientDetailsActivity extends AppCompatActivity {
     /** מצב יצירה: יוצר פרויקט חדש וממשיך לשלב הבא בזרימה */
     private void createProjectWithClientAndContinue() {
         String clientId     = clientIdEditText.getText().toString().trim();
-        String fullName     = fullNameEditText.getText().toString().trim();
+        String firstName    = firstNameEditText.getText().toString().trim();
+        String lastName     = lastNameEditText.getText().toString().trim();
+        String combinedFullName = firstName + " " + lastName;
         String email        = emailEditText.getText().toString().trim();
         String phoneNumber  = phoneNumberEditText.getText().toString().trim();
         String fullAddress  = fullAddressEditText.getText().toString().trim();
 
         // בדיקות הקלט כבר בוצעו ב-validateInputs()
 
-        Client client = new Client(clientId, fullName, email, phoneNumber, null);
+        Client client = new Client(clientId, combinedFullName, email, phoneNumber, null);
+        client.setFirstName(firstName);
+        client.setLastName(lastName);
+
         Project project = new Project();
         project.setClient(client);
         project.setFullAddress(fullAddress);

@@ -26,6 +26,9 @@ public class Client {
     private String phoneNumber;      // Phone number (mobile and/or office)
     private List<Project> properties;  // List of properties owned by the client (linked to appraisal)
 
+    private String firstName;
+    private String lastName;
+
     // Constructor
     public Client(String clientId, String fullName, String email, String phoneNumber,
                   List<Project> properties) {
@@ -53,6 +56,12 @@ public class Client {
     public String getFullName() {
         return fullName;
     }
+
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
 
     public void setFullName(String fullName) {
         this.fullName = fullName;

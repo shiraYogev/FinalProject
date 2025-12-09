@@ -8,7 +8,6 @@
     android:background="#F5F7FA"
     android:layoutDirection="rtl">
 
-    <!-- אזור עליון עם גרדיאנט מודרני -->
     <LinearLayout
         android:id="@+id/header_bg"
         android:layout_width="0dp"
@@ -20,7 +19,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Header מעוצב -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/header_section"
             android:layout_width="match_parent"
@@ -29,7 +27,6 @@
             android:paddingTop="32dp"
             android:paddingBottom="32dp">
 
-            <!-- מיכל הכותרות - בצד ימין -->
             <LinearLayout
                 android:id="@+id/title_container"
                 android:layout_width="wrap_content"
@@ -41,7 +38,6 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
-                <!-- אייקון + כותרת (כיתוב בצד ימין) -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -50,14 +46,12 @@
                     android:layoutDirection="rtl"
                     android:orientation="horizontal">
 
-                    <!-- אייקון -->
                     <androidx.appcompat.widget.AppCompatImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         app:srcCompat="@drawable/ic_user"
                         app:tint="#E0FFFFFF" />
 
-                    <!-- נקודה -->
                     <View
                         android:layout_width="4dp"
                         android:layout_height="4dp"
@@ -66,7 +60,6 @@
                         android:background="@drawable/dot_indicator"
                         android:backgroundTint="#80FFFFFF" />
 
-                    <!-- כותרת - מיושרת לימין -->
                     <TextView
                         android:id="@+id/title_text"
                         android:layout_width="wrap_content"
@@ -83,7 +76,6 @@
                         android:textSize="28sp" />
                 </LinearLayout>
 
-                <!-- תת כותרת מעוצבת - ימין -->
                 <TextView
                     android:id="@+id/subtitle_text"
                     android:layout_width="wrap_content"
@@ -98,7 +90,6 @@
                     android:textColor="#CCFFFFFF"
                     android:textSize="14sp" />
 
-                <!-- מחוון התקדמות חדש! -->
                 <include
                     layout="@layout/progress_stepper"
                     android:layout_width="wrap_content"
@@ -108,7 +99,6 @@
 
             </LinearLayout>
 
-            <!-- כפתור חזור מעוצב - בצד שמאל -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/back_button_card"
                 android:layout_width="48dp"
@@ -137,7 +127,6 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
 
-    <!-- כרטיס הטופס המרכזי - מותאם לטאבלט -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/main_content_card"
         android:layout_width="0dp"
@@ -169,7 +158,6 @@
                 android:orientation="vertical"
                 android:padding="40dp">
 
-                <!-- כותרת מחולקת עם קו מפריד - מיושרת לימין -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -178,7 +166,6 @@
                     android:layout_marginBottom="32dp"
                     android:layoutDirection="rtl">
 
-                    <!-- טקסט הכותרת -->
                     <TextView
                         android:id="@+id/personal_details_title"
                         android:layout_width="wrap_content"
@@ -190,13 +177,11 @@
                         android:letterSpacing="0.02"
                         android:layout_marginStart="8dp"/>
 
-                    <!-- אייקון -->
                     <androidx.appcompat.widget.AppCompatImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         app:tint="@color/primary_blue"/>
 
-                    <!-- קו לכיוון שמאל -->
                     <View
                         android:layout_width="0dp"
                         android:layout_height="2dp"
@@ -205,9 +190,6 @@
                         android:background="@drawable/divider_gradient"/>
                 </LinearLayout>
 
-                <!-- שדות טופס - אחד אחרי השני בעמודה אחת -->
-
-                <!-- תעודת זהות -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -229,21 +211,20 @@
                         android:id="@+id/clientIdEditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
                         android:inputType="number"
                         android:maxLength="9"
-                        android:textSize="16sp"
+                        android:paddingVertical="16dp"
                         android:textColor="#1F2937"
-                        android:fontFamily="sans-serif-medium"
-                        android:paddingVertical="16dp"/>
+                        android:textSize="16sp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- שם מלא -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
-                    android:hint="שם מלא"
+                    android:hint="שם פרטי"
                     app:startIconDrawable="@drawable/ic_person"
                     app:startIconTint="@color/primary_blue"
                     app:boxStrokeColor="@color/primary_blue"
@@ -256,7 +237,7 @@
                     app:boxStrokeWidthFocused="2dp">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/fullNameEditText"
+                        android:id="@+id/firstNameEditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="textPersonName"
@@ -266,7 +247,33 @@
                         android:paddingVertical="16dp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- אימייל -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:hint="שם משפחה"
+                    app:startIconDrawable="@drawable/ic_person"
+                    app:startIconTint="@color/primary_blue"
+                    app:boxStrokeColor="@color/primary_blue"
+                    app:hintTextColor="@color/primary_blue"
+                    app:boxCornerRadiusTopStart="16dp"
+                    app:boxCornerRadiusTopEnd="16dp"
+                    app:boxCornerRadiusBottomStart="16dp"
+                    app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxStrokeWidth="2dp"
+                    app:boxStrokeWidthFocused="2dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/lastNameEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName"
+                        android:textSize="16sp"
+                        android:textColor="#1F2937"
+                        android:fontFamily="sans-serif-medium"
+                        android:paddingVertical="16dp"/>
+                </com.google.android.material.textfield.TextInputLayout>
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -295,7 +302,6 @@
                         android:paddingVertical="16dp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- טלפון -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -324,7 +330,6 @@
                         android:paddingVertical="16dp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- כתובת מלאה -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/fullAddressInputLayout"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -361,33 +366,38 @@
                         android:cursorVisible="false"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- קו מפריד -->
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:background="@drawable/divider_gradient"
-                    android:layout_marginBottom="32dp"
+                    android:layout_marginBottom="24dp"
                     android:alpha="0.3"/>
-
-                <!-- כפתורים -->
+                
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="end">
+                    android:gravity="end"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="16dp"
+                    android:baselineAligned="false">
 
-                    <!-- ביטול -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/cancelButton"
                         android:layout_width="0dp"
-                        android:layout_height="64dp"
+                        android:layout_height="56dp"
                         android:layout_weight="1"
-                        android:layout_marginEnd="16dp"
+                        android:layout_marginEnd="8dp"
                         android:text="ביטול"
                         android:textColor="#6B7280"
-                        android:textSize="17sp"
+                        android:textSize="15sp"
                         android:textStyle="bold"
-                        android:letterSpacing="0.02"
+                        android:letterSpacing="0.01"
+                        android:maxLines="1"
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="12sp"
+                        android:autoSizeMaxTextSize="15sp"
+                        android:autoSizeStepGranularity="1sp"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         app:cornerRadius="16dp"
                         app:strokeColor="#D1D5DB"
@@ -395,28 +405,39 @@
                         app:icon="@drawable/ic_close"
                         app:iconTint="#6B7280"
                         app:iconGravity="textStart"
-                        app:iconPadding="12dp"
-                        app:iconSize="22dp"
-                        android:elevation="0dp"/>
+                        app:iconPadding="8dp"
+                        app:iconSize="20dp"
+                        android:paddingVertical="14dp"
+                        android:paddingHorizontal="16dp"
+                        android:gravity="center"
+                        android:elevation="0dp"
+                        android:stateListAnimator="@null"/>
 
-                    <!-- שמור פרטי לקוח -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/saveClientButton"
                         android:layout_width="0dp"
-                        android:layout_height="64dp"
-                        android:layout_weight="1.5"
-                        android:layout_marginStart="16dp"
-                        android:text="שמור פרטי לקוח"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="שמור"
                         android:textColor="@android:color/white"
-                        android:textSize="17sp"
+                        android:textSize="15sp"
                         android:textStyle="bold"
-                        android:letterSpacing="0.02"
+                        android:letterSpacing="0.01"
+                        android:maxLines="1"
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="12sp"
+                        android:autoSizeMaxTextSize="15sp"
+                        android:autoSizeStepGranularity="1sp"
                         app:cornerRadius="16dp"
                         app:icon="@drawable/ic_save"
                         app:iconTint="@android:color/white"
                         app:iconGravity="textStart"
-                        app:iconPadding="12dp"
-                        app:iconSize="22dp"
+                        app:iconPadding="8dp"
+                        app:iconSize="20dp"
+                        android:paddingVertical="14dp"
+                        android:paddingHorizontal="16dp"
+                        android:gravity="center"
                         android:backgroundTint="@null"
                         android:background="@drawable/bg_main_card_gradient"
                         android:elevation="4dp"
@@ -425,7 +446,6 @@
                         android:focusable="true"/>
                 </LinearLayout>
 
-                <!-- אינדיקטור אבטחה -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

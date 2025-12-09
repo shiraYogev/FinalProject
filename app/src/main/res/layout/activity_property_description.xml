@@ -11,7 +11,6 @@
     android:focusableInTouchMode="true"
     android:padding="0dp">
 
-    <!-- אזור עליון עם גרדיאנט מודרני (כמו שאר המסכים) -->
     <LinearLayout
         android:id="@+id/header_bg"
         android:layout_width="0dp"
@@ -31,7 +30,6 @@
             android:paddingTop="32dp"
             android:paddingBottom="32dp">
 
-            <!-- מיכל הכותרות - בצד ימין (כמו פרטי לקוח/דירה) -->
             <LinearLayout
                 android:id="@+id/title_container"
                 android:layout_width="wrap_content"
@@ -43,7 +41,6 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
-                <!-- אייקון + כותרת (כיתוב בצד ימין) -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -52,14 +49,12 @@
                     android:layoutDirection="rtl"
                     android:orientation="horizontal">
 
-                    <!-- אייקון -->
                     <androidx.appcompat.widget.AppCompatImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         app:srcCompat="@drawable/ic_building"
                         app:tint="#E0FFFFFF" />
 
-                    <!-- נקודה -->
                     <View
                         android:layout_width="4dp"
                         android:layout_height="4dp"
@@ -68,8 +63,6 @@
                         android:background="@drawable/dot_indicator"
                         android:backgroundTint="#80FFFFFF" />
 
-                    <!-- כותרת ראשית - תיאור הנכס -->
-                    <!-- שימי לב: שמרתי id בשם title אם את משתמשת בו בקוד -->
                     <TextView
                         android:id="@+id/title"
                         android:layout_width="wrap_content"
@@ -86,7 +79,6 @@
                         android:textSize="28sp" />
                 </LinearLayout>
 
-                <!-- תת כותרת -->
                 <TextView
                     android:id="@+id/subtitle_text"
                     android:layout_width="wrap_content"
@@ -101,7 +93,6 @@
                     android:textColor="#CCFFFFFF"
                     android:textSize="14sp" />
 
-                <!-- מחוון התקדמות חדש! -->
                 <include
                     layout="@layout/progress_stepper"
                     android:layout_width="wrap_content"
@@ -111,7 +102,6 @@
 
             </LinearLayout>
 
-            <!-- כפתור חזור מעוצב - בצד שמאל -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/back_button_card"
                 android:layout_width="48dp"
@@ -140,7 +130,6 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
 
-    <!-- כרטיס מרכזי עם תוכן המסך (טקסט חופשי + AI) -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/main_content_card"
         android:layout_width="0dp"
@@ -172,15 +161,22 @@
                 android:padding="32dp"
                 android:layoutDirection="rtl">
 
-                <!-- תחזוקה -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="תחזוקה / שיפוצים"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#1F2937"
+                    android:layout_marginBottom="8dp"/>
+
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="תחזוקה / שיפוצים"
                     app:boxBackgroundColor="#F2F2F2"
                     app:boxStrokeColor="@color/primary_blue"
-                    android:layout_marginBottom="16dp">
+                    android:layout_marginBottom="24dp">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edtMaintenance"
@@ -192,15 +188,22 @@
                         android:textColor="@android:color/black" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- מה כלול בדירה -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="מה כלול בדירה"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#1F2937"
+                    android:layout_marginBottom="8dp"/>
+
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="מה כלול בדירה"
                     app:boxBackgroundColor="#F2F2F2"
                     app:boxStrokeColor="@color/primary_blue"
-                    android:layout_marginBottom="16dp">
+                    android:layout_marginBottom="24dp">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edtApartmentIncludes"
@@ -212,7 +215,6 @@
                         android:textColor="@android:color/black" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- כותרת תקציר -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -220,10 +222,8 @@
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:textColor="#1F2937"
-                    android:layout_marginTop="8dp"
                     android:layout_marginBottom="12dp"/>
 
-                <!-- כפתורי AI -->
                 <LinearLayout
                     android:id="@+id/aiRow"
                     android:layout_width="match_parent"
@@ -277,7 +277,6 @@
                         android:textColor="@color/primary_blue" />
                 </LinearLayout>
 
-                <!-- תיאור כללי -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -296,7 +295,6 @@
                         android:textColor="@android:color/black" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- טקסט עזר -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -308,7 +306,6 @@
         </ScrollView>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- כפתורי תחתית -->
     <LinearLayout
         android:id="@+id/actionsRow"
         android:layout_width="0dp"
@@ -351,7 +348,6 @@
             app:iconTint="@android:color/white"/>
     </LinearLayout>
 
-    <!-- שכבת טעינה מעל הכל -->
     <FrameLayout
         android:id="@+id/progress"
         android:layout_width="0dp"

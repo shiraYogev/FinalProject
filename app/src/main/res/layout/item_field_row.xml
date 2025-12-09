@@ -14,8 +14,7 @@
 
     <TextView
         android:id="@+id/txtTitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"  android:layout_height="wrap_content"
         android:text="שם שדה"
         android:textSize="15sp"
         android:textColor="@android:color/black"
@@ -23,12 +22,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@id/txtValue"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
-    <TextView
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintHorizontal_weight="2"  android:maxLines="2"                     android:breakStrategy="simple"           android:layout_marginEnd="8dp"/>       <TextView
         android:id="@+id/txtValue"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"  android:layout_height="wrap_content"
         android:text="ערך"
         android:textSize="15sp"
         android:textColor="@android:color/darker_gray"
@@ -38,7 +37,10 @@
         app:layout_constraintEnd_toStartOf="@id/imgEdit"
         app:layout_constraintTop_toTopOf="@id/txtTitle"
         app:layout_constraintBottom_toBottomOf="@id/txtTitle"
-        app:layout_constraintHorizontal_bias="1" />
+        app:layout_constraintHorizontal_bias="1"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintHorizontal_weight="1"
+    android:maxLines="1" />
 
     <ImageView
         android:id="@+id/imgEdit"

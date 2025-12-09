@@ -21,6 +21,14 @@ val geminiKey: String = localProps.getProperty("GEMINI_API_KEY")
 // (אופציונלי לדיבוג: לא מדפיסים את המפתח עצמו)
 println("GEMINI_API_KEY present in build? ${geminiKey.isNotEmpty()} length=${geminiKey.length}")
 
+val googleMapsKey: String = localProps.getProperty("GOOGLE_MAPS_API_KEY")
+    ?: (project.findProperty("GOOGLE_MAPS_API_KEY") as String?)
+    ?: System.getenv("GOOGLE_MAPS_API_KEY")
+    ?: ""
+
+// (אופציונלי לדיבוג)
+println("GOOGLE_MAPS_API_KEY present in build? ${googleMapsKey.isNotEmpty()} length=${googleMapsKey.length}")
+
 android {
     namespace = "com.example.finalprojectappraisal"
     compileSdk = 35
@@ -36,6 +44,8 @@ android {
 
         // Expose key to BuildConfig
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
+        buildConfigField("String", "GOOGLE_MAPS_API_KEY", googleMapsKey)
+        manifestPlaceholders["googleMapsApiKey"] = googleMapsKey
 
         // ✅ Enable VectorDrawableCompat for all API levels
         vectorDrawables {
@@ -132,6 +142,9 @@ dependencies {
     // Google Places API
     //implementation ("com.google.android.libraries.places:places:3.3.0")
     implementation("com.google.android.libraries.places:places:5.0.0")
+
+    implementation ("androidx.recyclerview:recyclerview:1.3.2")
+
 
 
 }
