@@ -97,7 +97,7 @@
                     android:textColor="#CCFFFFFF"
                     android:textSize="14sp" />
 
-                <!-- מחוון התקדמות חדש! -->
+                <!-- מחוון התקדמות -->
                 <include
                     layout="@layout/progress_stepper"
                     android:layout_width="wrap_content"
@@ -143,16 +143,16 @@
         android:layout_height="0dp"
         android:layout_marginHorizontal="48dp"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="16dp"
         app:cardCornerRadius="28dp"
         app:cardElevation="8dp"
         app:strokeColor="#E5E7EB"
         app:strokeWidth="1dp"
         app:cardBackgroundColor="@android:color/white"
         app:layout_constraintTop_toBottomOf="@id/header_bg"
-        app:layout_constraintBottom_toTopOf="@id/btnSaveAndContinue"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/btnAddBedroom"
         app:layout_constraintWidth_max="1200dp">
 
         <androidx.recyclerview.widget.RecyclerView
@@ -163,6 +163,28 @@
             android:clipToPadding="false"
             android:scrollbars="vertical" />
     </com.google.android.material.card.MaterialCardView>
+
+    <!-- כפתור: הוסף חדר שינה נוסף -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAddBedroom"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="48dp"
+        android:layout_marginBottom="16dp"
+        android:text="הוסף חדר שינה נוסף"
+        android:textSize="15sp"
+        android:textColor="@color/fp_primary_dark"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        app:strokeWidth="1dp"
+        app:strokeColor="@color/fp_primary_dark"
+        app:icon="@drawable/ic_add"
+        app:iconTint="@color/fp_primary_dark"
+        app:iconPadding="8dp"
+        app:iconGravity="textStart"
+        app:layout_constraintTop_toBottomOf="@id/image_upload_card"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/btnSaveAndContinue" />
 
     <!-- כפתור שמירה -->
     <com.google.android.material.button.MaterialButton

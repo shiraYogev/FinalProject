@@ -17,6 +17,7 @@ import com.example.finalprojectappraisal.model.Image;
 import java.util.List;
 
 public class ImagePagerAdapter extends RecyclerView.Adapter<ImagePagerAdapter.PagerViewHolder> {
+
     public interface OnImageActionListener {
         void onDelete(int position);
         void onDescriptionChanged(int position, String newText);
@@ -37,7 +38,6 @@ public class ImagePagerAdapter extends RecyclerView.Adapter<ImagePagerAdapter.Pa
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_image_in_pager, parent, false);
 
-        // הבטחה שכל עמוד ימלא את ה-ViewPager2
         RecyclerView.LayoutParams lp = new RecyclerView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -47,29 +47,44 @@ public class ImagePagerAdapter extends RecyclerView.Adapter<ImagePagerAdapter.Pa
         return new PagerViewHolder(v);
     }
 
-
     @Override
     public void onBindViewHolder(@NonNull PagerViewHolder holder, int position) {
         Image img = images.get(position);
 
+        // ✅ תטען URL ואם עדיין אין (תמונה זמנית) – תטען localUri
+        String toLoad = (img.getUrl() != null && !img.getUrl().trim().isEmpty())
+                ? img.getUrl()
+                : img.getLocalUri();
+
         Glide.with(holder.imageView.getContext())
-                .load(img.getUrl())
+                .load(toLoad)
                 .placeholder(R.drawable.baseline_add_photo_alternate_24)
                 .into(holder.imageView);
 
+        // ✅ חשוב: לנקות listener לפני setText כדי למנוע טריגרים מוזרים בריסייקל
+        holder.editDescription.setOnFocusChangeListener(null);
         holder.editDescription.setText(img.getDescription());
 
         holder.editDescription.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus && listener != null)
-                listener.onDescriptionChanged(position, holder.editDescription.getText().toString());
+            if (!hasFocus && listener != null) {
+                int pos = holder.getBindingAdapterPosition();
+                if (pos == RecyclerView.NO_POSITION) return;
+                listener.onDescriptionChanged(pos, holder.editDescription.getText().toString());
+            }
         });
 
         holder.btnDeleteImage.setOnClickListener(v -> {
-            if (listener != null) listener.onDelete(position);
+            if (listener == null) return;
+            int pos = holder.getBindingAdapterPosition();
+            if (pos == RecyclerView.NO_POSITION) return;
+            listener.onDelete(pos);
         });
 
         holder.imageView.setOnClickListener(v -> {
-            if (listener != null) listener.onImageClick(position);
+            if (listener == null) return;
+            int pos = holder.getBindingAdapterPosition();
+            if (pos == RecyclerView.NO_POSITION) return;
+            listener.onImageClick(pos);
         });
     }
 

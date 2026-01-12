@@ -77,5 +77,25 @@
             app:iconTint="@color/text_primary_dark"
             app:iconGravity="textStart"
             app:iconPadding="8dp"/>
+
+        <!-- כפתור הוספת חדר שינה נוסף (מוצג רק בקטגוריות חדר שינה) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAddBedroom"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_marginTop="8dp"
+            android:text="+ הוסף חדר שינה נוסף"
+            android:textColor="@color/text_primary_dark"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:backgroundTint="@null"
+            android:background="@drawable/button_add_image"
+            android:visibility="gone"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_add"
+            app:iconTint="@color/text_primary_dark"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"/>
+
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

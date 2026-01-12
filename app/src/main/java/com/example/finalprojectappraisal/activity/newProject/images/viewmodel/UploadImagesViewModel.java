@@ -22,6 +22,7 @@ import java.util.List;
  * - Persist image document under projects/{id}/images/{imageId}
  * - Maintain property image arrays (front_image / interior_image)
  * - Delete image from project and cleanup arrays
+ * - Update feature flags (hasParking / hasStorageRoom) based on image category
  *
  * Notes:
  * - Activity handles UI and classification (Gemini) only.
@@ -39,25 +40,11 @@ public class UploadImagesViewModel extends ViewModel {
     private final MutableLiveData<Image> lastSavedImage = new MutableLiveData<>(null);
     private final MutableLiveData<Boolean> lastDeleteOk = new MutableLiveData<>(null);
 
-    public LiveData<Boolean> getLoading() {
-        return loading;
-    }
-
-    public LiveData<String> getError() {
-        return error;
-    }
-
-    public LiveData<List<Image>> getExisting() {
-        return existing;
-    }
-
-    public LiveData<Image> getLastSavedImage() {
-        return lastSavedImage;
-    }
-
-    public LiveData<Boolean> getLastDeleteOk() {
-        return lastDeleteOk;
-    }
+    public LiveData<Boolean> getLoading() { return loading; }
+    public LiveData<String> getError() { return error; }
+    public LiveData<List<Image>> getExisting() { return existing; }
+    public LiveData<Image> getLastSavedImage() { return lastSavedImage; }
+    public LiveData<Boolean> getLastDeleteOk() { return lastDeleteOk; }
 
     public void init(@NonNull String projectId) {
         this.projectId = projectId;
@@ -77,24 +64,37 @@ public class UploadImagesViewModel extends ViewModel {
         });
     }
 
-    /**
-     * Uploads local image → gets https URL → saves image doc → updates property image array.
-     * Emits the final Image (with https url + storagePath) via getLastSavedImage().
-     */
+    // ✅ Backward compatible overload (in case some call site still uses old signature)
     public void uploadAndSave(@NonNull android.net.Uri localUri,
                               @NonNull Image.Category category,
                               @Nullable String promptForInfo) {
+        uploadAndSave(localUri, category, promptForInfo, Image.Subcategory.NONE, 0);
+    }
+
+    /**
+     * ✅ NEW:
+     * Uploads local image → gets https URL → saves image doc → updates property image array.
+     * Also persists subCategory + bedroomIndex to Firestore.
+     */
+    public void uploadAndSave(@NonNull android.net.Uri localUri,
+                              @NonNull Image.Category category,
+                              @Nullable String promptForInfo,
+                              @NonNull Image.Subcategory subCategory,
+                              int bedroomIndex) {
         if (projectId == null) {
             error.setValue("Missing projectId");
             return;
         }
 
-        // create an Image instance with a generated ID (Image should generate one if missing)
         Image image = new Image();
         image.setProjectId(projectId);
         image.setCategory(category);
+
+        // ✅ persist "which room" identity
+        image.setSubCategory(subCategory != null ? subCategory : Image.Subcategory.NONE);
+        image.setBedroomIndex(bedroomIndex);
+
         image.setLocalUri(localUri.toString());
-        // keep content Uri as url until https is obtained (Activity may use for immediate UI)
         image.setUrl(localUri.toString());
 
         loading.setValue(true);
@@ -105,11 +105,11 @@ public class UploadImagesViewModel extends ViewModel {
                 error.setValue("Upload to storage failed");
                 return;
             }
+
             String downloadUrl = task1.getResult();
             image.setUrl(downloadUrl);
             image.setStoragePath(repo.buildImageStoragePath(projectId, image.getId()));
 
-            // Save image doc under subcollection
             repo.addImageToProject(projectId, image, task2 -> {
                 if (!task2.isSuccessful()) {
                     loading.setValue(false);
@@ -117,12 +117,12 @@ public class UploadImagesViewModel extends ViewModel {
                     return;
                 }
 
-                // Update property image array (front_image / interior_image)
                 String arrayField = arrayNameForCategory(category);
+
                 if (arrayField == null) {
-                    // no array update needed (e.g. קטגוריה OTHER)
                     loading.setValue(false);
                     lastSavedImage.setValue(image);
+                    updateFeatureFlagsForCategory(category);
                     return;
                 }
 
@@ -132,15 +132,12 @@ public class UploadImagesViewModel extends ViewModel {
                         error.setValue("Updating property image array failed");
                     }
                     lastSavedImage.setValue(image);
+                    updateFeatureFlagsForCategory(category);
                 });
             });
         });
     }
 
-    /**
-     * Deletes an image by id and cleans the property image array if it matches the url.
-     * Emits success/failure via getLastDeleteOk().
-     */
     public void deleteImage(@NonNull Image image) {
         if (projectId == null) {
             error.setValue("Missing projectId");
@@ -163,7 +160,6 @@ public class UploadImagesViewModel extends ViewModel {
                 return;
             }
 
-            // remove from property array if matches
             String arrayField = arrayNameForCategory(image.getCategory());
             String url = image.getUrl();
             if (arrayField == null || url == null || url.trim().isEmpty()) {
@@ -195,9 +191,35 @@ public class UploadImagesViewModel extends ViewModel {
             case KITCHEN:
             case BATHROOM:
                 return FirestoreConstants.FIELD_INTERIOR_IMAGE; // "interior_image"
-            // OTHER, VIEW, ENTRANCE_DOOR וכו' לא נכנסים למערך התמונות הראשיות
             default:
                 return null;
+        }
+    }
+
+    private void updateFeatureFlagsForCategory(@Nullable Image.Category category) {
+        if (projectId == null || category == null) return;
+
+        switch (category) {
+            case STORAGE:
+                repo.setBooleanFlagOnProject(
+                        projectId,
+                        FirestoreConstants.FIELD_HAS_STORAGE_ROOM,
+                        true,
+                        task -> { if (!task.isSuccessful()) error.setValue("Failed to update storage flag"); }
+                );
+                break;
+
+            case PARKING:
+                repo.setBooleanFlagOnProject(
+                        projectId,
+                        FirestoreConstants.FIELD_HAS_PARKING,
+                        true,
+                        task -> { if (!task.isSuccessful()) error.setValue("Failed to update parking flag"); }
+                );
+                break;
+
+            default:
+                break;
         }
     }
 }

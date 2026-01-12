@@ -40,23 +40,31 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
                           int imageIndex);
     }
 
+    /** Callback לכפתור "הוסף חדר שינה נוסף" שיושב בתוך כרטיס חדר שינה. */
+    public interface OnAddBedroomListener {
+        void onAddBedroom(@NonNull ImageCategorySection bedroomSection);
+    }
+
     private final List<ImageCategorySection> categories;
     private final Context context;
     private final OnAddImageListener addImageListener;
     private final OnImageDeleteListener deleteListener;
     private final OnImageClickListener imageClickListener;
+    private final OnAddBedroomListener addBedroomListener;
 
     public ImageCategoriesAdapter(@NonNull List<ImageCategorySection> categories,
                                   @NonNull Context context,
                                   @NonNull OnAddImageListener addImageListener,
                                   @NonNull OnImageDeleteListener deleteListener,
-                                  @NonNull OnImageClickListener imageClickListener) {
+                                  @NonNull OnImageClickListener imageClickListener,
+                                  @NonNull OnAddBedroomListener addBedroomListener) {
 
         this.categories = categories;
         this.context = context;
         this.addImageListener = addImageListener;
         this.deleteListener = deleteListener;
         this.imageClickListener = imageClickListener;
+        this.addBedroomListener = addBedroomListener;
     }
 
     @NonNull
@@ -71,13 +79,18 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
         ImageCategorySection section = categories.get(position);
         holder.txtTitle.setText(section.title);
 
+        // ננקה callback קודם אם יש (חשוב בריסייקל)
+        if (holder.pageChangeCallback != null) {
+            holder.viewPagerImages.unregisterOnPageChangeCallback(holder.pageChangeCallback);
+            holder.pageChangeCallback = null;
+        }
+
         // Adapter לתמונות בתוך הסקשן
         ImagePagerAdapter pagerAdapter = new ImagePagerAdapter(
                 section.images,
                 new ImagePagerAdapter.OnImageActionListener() {
                     @Override
                     public void onDelete(int imagePosition) {
-                        // Delegate delete to Activity (DB + rollback if needed)
                         int sectionIndex = holder.getAdapterPosition();
                         if (sectionIndex == RecyclerView.NO_POSITION) return;
                         if (imagePosition < 0 || imagePosition >= section.images.size()) return;
@@ -92,7 +105,6 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
                     public void onDescriptionChanged(int imagePosition, String newText) {
                         if (imagePosition >= 0 && imagePosition < section.images.size()) {
                             section.images.get(imagePosition).setDescription(newText);
-                            // If you want to persist description to DB, do it via Activity callback.
                         }
                     }
 
@@ -111,11 +123,7 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
         );
 
         holder.viewPagerImages.setAdapter(pagerAdapter);
-
-        // Clear old callback before registering new one
-        if (holder.pageChangeCallback != null) {
-            holder.viewPagerImages.unregisterOnPageChangeCallback(holder.pageChangeCallback);
-        }
+        holder.viewPagerImages.setCurrentItem(0, false);
 
         holder.pageChangeCallback = new ViewPager2.OnPageChangeCallback() {
             @Override
@@ -126,15 +134,52 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
         };
         holder.viewPagerImages.registerOnPageChangeCallback(holder.pageChangeCallback);
 
-        // Initial description for current image
-        int current = holder.viewPagerImages.getCurrentItem();
-        holder.updateDescriptionForPosition(section, current);
+        // Initial description
+        holder.updateDescriptionForPosition(section, 0);
 
+        // כפתור הוספת תמונה
         holder.btnAddImage.setOnClickListener(v -> {
             if (addImageListener != null) {
                 addImageListener.onAddImage(section);
             }
         });
+
+        // ✅ כפתור "הוסף חדר שינה נוסף" – רק בחדרי שינה ממוספרים (לא הורים),
+        // ורק בכרטיס של חדר השינה הממוספר האחרון.
+        if (holder.btnAddBedroom != null) {
+            boolean isNumberedBedroom =
+                    section.category == Image.Category.BEDROOM
+                            && section.subCategory == Image.Subcategory.NONE
+                            && section.bedroomIndex >= 1;
+
+            int maxBedroomIndex = getMaxNumberedBedroomIndex();
+
+            boolean showAddBedroomButton = isNumberedBedroom && section.bedroomIndex == maxBedroomIndex;
+
+            if (showAddBedroomButton) {
+                holder.btnAddBedroom.setVisibility(View.VISIBLE);
+                holder.btnAddBedroom.setOnClickListener(v -> {
+                    if (addBedroomListener != null) {
+                        addBedroomListener.onAddBedroom(section);
+                    }
+                });
+            } else {
+                holder.btnAddBedroom.setVisibility(View.GONE);
+                holder.btnAddBedroom.setOnClickListener(null);
+            }
+        }
+    }
+
+    private int getMaxNumberedBedroomIndex() {
+        int max = 1; // לפחות חדר שינה 1
+        for (ImageCategorySection s : categories) {
+            if (s.category == Image.Category.BEDROOM
+                    && s.subCategory == Image.Subcategory.NONE
+                    && s.bedroomIndex >= 1) {
+                max = Math.max(max, s.bedroomIndex);
+            }
+        }
+        return max;
     }
 
     @Override
@@ -152,6 +197,7 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
         TextView txtImageDescription;
         ViewPager2 viewPagerImages;
         Button btnAddImage;
+        Button btnAddBedroom;
 
         ViewPager2.OnPageChangeCallback pageChangeCallback;
 
@@ -161,11 +207,9 @@ public class ImageCategoriesAdapter extends RecyclerView.Adapter<ImageCategories
             viewPagerImages = itemView.findViewById(R.id.viewPagerImages);
             btnAddImage = itemView.findViewById(R.id.btnAddImage);
             txtImageDescription = itemView.findViewById(R.id.txtImageDescription);
+            btnAddBedroom = itemView.findViewById(R.id.btnAddBedroom);
         }
 
-        /**
-         * Updates the description TextView according to the currently visible image in the section.
-         */
         void updateDescriptionForPosition(@NonNull ImageCategorySection section, int position) {
             if (section.images == null || section.images.isEmpty()
                     || position < 0 || position >= section.images.size()) {

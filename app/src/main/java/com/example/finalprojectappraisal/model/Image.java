@@ -13,12 +13,16 @@ public class Image {
 
     public enum Category {
         EXTERIOR, LIVING_ROOM, KITCHEN, BATHROOM, BEDROOM, VIEW, DINING_ROOM, ENTRANCE_DOOR,
-        BALCONY, STORAGE, HALLWAY, ENTRANCE, GARDEN, ELEVATOR, PARKING, INTERIOR_DOORS, OTHER
+        BALCONY, STORAGE, HALLWAY, ENTRANCE, GARDEN, ELEVATOR, PARKING, INTERIOR_DOORS, OTHER,
+        PANTRY, YARD, DINING_AREA
+
     }
 
     public enum Subcategory {
         CABINETS, WORKTOP, SINK, FLOOR, DOOR, WINDOW, LIGHTING, FURNITURE,
-        SHOWER, BATHTUB, TOILET, CLOSET, SHELVES, APPLIANCES, WALLS, CEILING, OTHER
+        SHOWER, BATHTUB, TOILET, CLOSET, SHELVES, APPLIANCES, WALLS, CEILING, OTHER, NONE,
+        MASTER,       // הורים (חדר שינה או שירותים)
+        GUEST,        // שירותי אורחים
     }
 
     private String id;
@@ -37,6 +41,9 @@ public class Image {
     private String uploadDate;
     private List<String> labels;
     private boolean isVerified;
+    private int bedroomIndex = 0; // 0 = לא חדר שינה מספרי, 1 = חדר שינה 1, 2 = חדר שינה 2...
+    private Subcategory subCategory = Subcategory.NONE;
+
     private Map<Subcategory, String> finalClassification; // manually edited final result
 
     // Full constructor
@@ -139,6 +146,17 @@ public class Image {
                 }
             }
         }
+
+        Object idxObj = map.get("bedroomIndex");
+        if (idxObj instanceof Long) this.bedroomIndex = ((Long) idxObj).intValue();
+        else if (idxObj instanceof Double) this.bedroomIndex = ((Double) idxObj).intValue();
+
+        Object scObj = map.get("subCategory");
+        if (scObj instanceof String) {
+            try { this.subCategory = Subcategory.valueOf((String) scObj); } catch (Exception ignored) {}
+        }
+        if (this.subCategory == null) this.subCategory = Subcategory.NONE;
+
     }
 
     public Map<String, Object> toMap() {
@@ -168,6 +186,9 @@ public class Image {
         for (Map.Entry<Subcategory, String> entry : getFinalClassification().entrySet())
             finalClassNames.put(entry.getKey().name(), entry.getValue());
         map.put("finalClassification", finalClassNames);
+
+        map.put("bedroomIndex", bedroomIndex);
+        map.put("subCategory", (subCategory != null ? subCategory.name() : Subcategory.NONE.name()));
 
         return map;
     }
@@ -201,4 +222,10 @@ public class Image {
     public void setLabels(List<String> labels) { this.labels = (labels != null) ? labels : new ArrayList<>(); }
     public void setVerified(boolean verified) { isVerified = verified; }
     public void setFinalClassification(Map<Subcategory, String> finalClassification) { this.finalClassification = (finalClassification != null) ? finalClassification : new HashMap<>(); }
+    public int getBedroomIndex() { return bedroomIndex; }
+    public void setBedroomIndex(int index) { this.bedroomIndex = index; }
+
+    public Subcategory getSubCategory() { return subCategory; }
+    public void setSubCategory(Subcategory sc) { this.subCategory = sc; }
+
 }

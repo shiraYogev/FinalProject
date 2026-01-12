@@ -1,33 +1,41 @@
 package com.example.finalprojectappraisal.activity.newProject.property.common.state;
 
+import androidx.annotation.Nullable;
+
 import com.example.finalprojectappraisal.model.Project;
 
 public class ApartmentEditableState {
+
     public String entranceDoorCondition;
     public String windowType;
     public boolean hasCentralHeating;
     public String hasBars;
-    public String hasAirConditioning;
+    public String hasAirConditioning;   // "מלא / חלקי / אין"
     public String flooringType;
     public String flooringSize;
     public String interiorDoorCondition;
     public String kitchenCondition;
     public String bathroomFixtures;
 
-    // ⬅️ changed: elevator as String, matches spinner values
-    // allowed values: "אין", "יש (1)", "יש (2)", "יש (3)", "יש (4)"
+    // Elevator as String: "אין", "יש (1)", "יש (2)", "יש (3)", "יש (4)"
     public String hasElevator;
 
     public boolean hasParking;
     public boolean hasStorage;
 
-    public static ApartmentEditableState fromProject(Project p) {
+    public static ApartmentEditableState fromProject(@Nullable Project p) {
         ApartmentEditableState s = new ApartmentEditableState();
-        s.entranceDoorCondition = p.getEntranceDoorCondition();
-        s.windowType            = p.getWindowType();
+        if (p == null) {
+            return s;
+        }
+
+        s.entranceDoorCondition = safe(p.getEntranceDoorCondition());
+        s.windowType            = safe(p.getWindowType());
         s.hasCentralHeating     = p.isHasCentralHeating();
-        s.hasBars               = p.getHasBars();
-        s.hasAirConditioning    = p.isHasAirConditioning();
+        s.hasBars               = safe(p.getHasBars());
+
+        // ⬅️ כאן התיקון – להשתמש ב-isHasAirConditioning()
+        s.hasAirConditioning    = safe(p.isHasAirConditioning());
 
         String flooring = p.getFlooringType();
         if (flooring != null) {
@@ -41,15 +49,19 @@ public class ApartmentEditableState {
             }
         }
 
-        s.interiorDoorCondition = p.getInteriorDoorCondition();
-        s.kitchenCondition      = p.getKitchenCondition();
-        s.bathroomFixtures      = p.getBathroomFixtures();
+        s.interiorDoorCondition = safe(p.getInteriorDoorCondition());
+        s.kitchenCondition      = safe(p.getKitchenCondition());
+        s.bathroomFixtures      = safe(p.getBathroomFixtures());
 
-        // ⬅️ changed: read String from Project (not boolean)
-        s.hasElevator           = p.getHasElevator(); // "אין", "יש (1)" וכו' או null
+        s.hasElevator           = safe(p.getHasElevator());
 
         s.hasParking            = p.isHasParking();
         s.hasStorage            = p.isHasStorageRoom();
+
         return s;
+    }
+
+    private static String safe(@Nullable String v) {
+        return v == null ? "" : v;
     }
 }

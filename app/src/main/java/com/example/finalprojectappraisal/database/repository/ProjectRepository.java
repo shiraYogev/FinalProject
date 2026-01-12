@@ -20,7 +20,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldValue; // <<< NEW
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Transaction;
 
@@ -197,6 +197,46 @@ public class ProjectRepository {
         });
     }
 
+    // =======================================
+    // Project feature flags (parking / storage)
+    // =======================================
+
+    /**
+     * Sets a boolean flag on the project document, e.g.:
+     * - hasParking
+     * - hasStorageRoom
+     *
+     * Uses the same Firestore instance & constants as the rest of the repository,
+     * and also updates lastUpdateDate.
+     */
+    public void setBooleanFlagOnProject(@NonNull String projectId,
+                                        @NonNull String flagField,
+                                        boolean value,
+                                        @Nullable OnCompleteListener<Void> onComplete) {
+
+        if (projectId.trim().isEmpty()) {
+            if (onComplete != null) {
+                onComplete.onComplete(Tasks.forException(new IllegalArgumentException("Empty projectId")));
+            }
+            return;
+        }
+
+        DocumentReference docRef = db
+                .collection(FirestoreConstants.COLLECTION_PROJECTS)
+                .document(projectId);
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put(flagField, value);
+        updates.put(FirestoreConstants.FIELD_LAST_UPDATE_DATE, FieldValue.serverTimestamp());
+
+        docRef.update(updates)
+                .addOnCompleteListener(task -> {
+                    if (onComplete != null) {
+                        onComplete.onComplete(task);
+                    }
+                });
+    }
+
     // ===== Images & Documents =====
     public String buildImageStoragePath(@NonNull String projectId, @NonNull String imageId) {
         return mediaService.buildImageStoragePath(projectId, imageId);
@@ -275,19 +315,19 @@ public class ProjectRepository {
                 return null; // TResult = Void
             });
 
-            // לא להשתמש ב-?: כדי למנוע קונפליקט בין <Void> ל<Object>
             if (listener != null) {
                 tx.addOnCompleteListener(listener);
             } else {
                 tx.addOnCompleteListener(task -> { /* no-op */ });
             }
         } else {
-            java.util.Map<String, Object> fields = new java.util.HashMap<>();
+            Map<String, Object> fields = new HashMap<>();
             fields.put(FirestoreConstants.FIELD_NOTE, newNote);
             fields.put(FirestoreConstants.FIELD_LAST_UPDATE_DATE, FieldValue.serverTimestamp());
             updateManager.updateMultipleFields(projectId, fields, listener);
         }
     }
+
     // ===== Utils / state =====
     public void refreshCurrentProject() { if (currentProjectId != null) loadProject(currentProjectId); }
     public void projectExists(@NonNull String projectId, @Nullable OnCompleteListener<Boolean> l) { dataService.projectExists(projectId, l); }
