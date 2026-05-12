@@ -75,8 +75,7 @@ public class ProjectRepository {
             emitErr("Validation failed: " + v.getErrorsAsString(), listener);
             return;
         }
-        var newRef = db.collection(FirestoreConstants.COLLECTION_PROJECTS).document();
-        project.setProjectId(newRef.getId());
+        var newRef = db.collection(FirestoreConstants.COLLECTION_PROJECTS).document(project.getProjectId());
         newRef.set(project)
                 .addOnCompleteListener(listener)
                 .addOnFailureListener(e -> errorMessage.setValue(FirestoreConstants.ERROR_CREATING_PROJECT + ": " + e.getMessage()));

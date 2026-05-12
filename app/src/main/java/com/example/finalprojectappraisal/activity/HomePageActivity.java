@@ -21,6 +21,7 @@ import com.example.finalprojectappraisal.activity.myProjects.MyProjectsActivity;
 import com.example.finalprojectappraisal.activity.newProject.client.ClientDetailsActivity;
 import com.example.finalprojectappraisal.model.Project;
 import com.example.finalprojectappraisal.utils.FilterPrefs;
+import androidx.appcompat.app.AlertDialog;
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;

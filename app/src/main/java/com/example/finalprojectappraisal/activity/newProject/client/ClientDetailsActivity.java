@@ -41,6 +41,7 @@ import com.example.finalprojectappraisal.BuildConfig;
 
 public class ClientDetailsActivity extends AppCompatActivity {
 
+    private EditText caseNumberEditText;
     private EditText clientIdEditText;
     private EditText firstNameEditText; // מפוצל
     private EditText lastNameEditText;  // מפוצל
@@ -66,6 +67,7 @@ public class ClientDetailsActivity extends AppCompatActivity {
         binding = ActivityClientDetailsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        caseNumberEditText  = binding.caseNumberEditText;
         clientIdEditText    = binding.clientIdEditText;
         firstNameEditText   = binding.firstNameEditText;
         lastNameEditText    = binding.lastNameEditText;
@@ -173,6 +175,11 @@ public class ClientDetailsActivity extends AppCompatActivity {
         String lastname = lastNameEditText.getText().toString().trim();
         String fullAddress = fullAddressEditText.getText().toString().trim();
 
+        String caseNumber = caseNumberEditText.getText().toString().trim();
+        if (caseNumber.isEmpty()) {
+            caseNumberEditText.setError("חובה למלא מספר תיק");
+            return false;
+        }
         if (clientId.isEmpty()) {
             clientIdEditText.setError("חובה למלא תעודת זהות");
             return false;
@@ -332,6 +339,7 @@ public class ClientDetailsActivity extends AppCompatActivity {
 
     /** מצב יצירה: יוצר פרויקט חדש וממשיך לשלב הבא בזרימה */
     private void createProjectWithClientAndContinue() {
+        String caseNumber   = caseNumberEditText.getText().toString().trim();
         String clientId     = clientIdEditText.getText().toString().trim();
         String firstName    = firstNameEditText.getText().toString().trim();
         String lastName     = lastNameEditText.getText().toString().trim();
@@ -340,13 +348,26 @@ public class ClientDetailsActivity extends AppCompatActivity {
         String phoneNumber  = phoneNumberEditText.getText().toString().trim();
         String fullAddress  = fullAddressEditText.getText().toString().trim();
 
-        // בדיקות הקלט כבר בוצעו ב-validateInputs()
+        FirebaseFirestore.getInstance().collection("projects").document(caseNumber).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        caseNumberEditText.setError("מספר תיק זה כבר קיים במערכת");
+                        Toast.makeText(this, "מספר תיק " + caseNumber + " כבר תפוס", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    doCreateProject(caseNumber, clientId, combinedFullName, firstName, lastName, email, phoneNumber, fullAddress);
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "שגיאה בבדיקת מספר תיק", Toast.LENGTH_LONG).show());
+    }
 
+    private void doCreateProject(String caseNumber, String clientId, String combinedFullName,
+                                 String firstName, String lastName, String email,
+                                 String phoneNumber, String fullAddress) {
         Client client = new Client(clientId, combinedFullName, email, phoneNumber, null);
         client.setFirstName(firstName);
         client.setLastName(lastName);
 
-        Project project = new Project();
+        Project project = new Project(caseNumber);
         project.setClient(client);
         project.setFullAddress(fullAddress);
 
