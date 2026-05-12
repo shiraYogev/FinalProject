@@ -297,11 +297,6 @@ public class UploadImagesActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        // 🏠 כפתור בית - חזרה לדף הבית עם ייצוא JSON אוטומטי
-        if (binding.btnHomeHeader != null) {
-            binding.btnHomeHeader.getRoot().setOnClickListener(v -> navigateToHomeWithExport());
-        }
-
         MaterialCardView backButtonCard = binding.backButtonCard;
         if (backButtonCard != null) {
             backButtonCard.setOnClickListener(v -> progressHelper.moveToPreviousStep());
