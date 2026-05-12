@@ -11,8 +11,10 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.activity.HomePageActivity;
 import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper;
 import com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity;
+import com.example.finalprojectappraisal.export.ProjectCompletionActivity;
 import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.databinding.ActivityClientDetailsBinding;
 import com.example.finalprojectappraisal.model.Client;
@@ -109,6 +111,14 @@ public class ClientDetailsActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
+        // 🏠 כפתור בית - חזרה לדף הבית עם ייצוא JSON אוטומטי
+        binding.btnHomeHeader.getRoot().setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                navigateToHomeWithExport();
+            }
+        });
+
         // כפתור חזור - אם זה שלב 1, חזור למסך הקודם
         binding.btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -130,6 +140,27 @@ public class ClientDetailsActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    /**
+     * 🏠 מעבר לדף הבית עם ייצוא אוטומטי של JSON
+     */
+    private void navigateToHomeWithExport() {
+        // שמירת הנתונים הנוכחיים אם יש מה לשמור
+        if (projectId != null) {
+            // מעבר למסך סיום שמבצע ייצוא JSON ואז לדף הבית
+            Intent intent = new Intent(this, ProjectCompletionActivity.class);
+            intent.putExtra(ProjectCompletionActivity.EXTRA_PROJECT_ID, projectId);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        } else {
+            // אם אין projectId, פשוט חזור לבית בלי ייצוא
+            Intent intent = new Intent(this, HomePageActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        }
     }
 
     /**

@@ -124,6 +124,12 @@
         <activity android:name=".activity.activitiesAdmin.AdminListActivity" />
         <activity android:name=".activity.EditProfileActivity" />
 
+        <!-- 📤 Project JSON Export Completion Activity -->
+        <activity
+            android:name=".export.ProjectCompletionActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+
         <!-- 🔑 Google Maps/Places API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"

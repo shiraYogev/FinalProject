@@ -111,6 +111,16 @@
 
             </LinearLayout>
 
+            <!-- 🏠 כפתור בית - חזרה לדף הבית עם ייצוא JSON -->
+            <include
+                android:id="@+id/btn_home_header"
+                layout="@layout/home_button_header"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
             <!-- כפתור חזור מעוצב - בצד שמאל -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/back_button_card"

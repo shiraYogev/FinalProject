@@ -22,7 +22,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.finalprojectappraisal.BuildConfig;
+import com.example.finalprojectappraisal.activity.HomePageActivity;
 import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper;
+import com.example.finalprojectappraisal.export.ProjectCompletionActivity;
 import com.example.finalprojectappraisal.activity.newProject.images.viewmodel.UploadImagesViewModel;
 import com.example.finalprojectappraisal.adapter.ImageCategoriesAdapter;
 import com.example.finalprojectappraisal.classifer.ImageCategorySection;
@@ -295,6 +297,11 @@ public class UploadImagesActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
+        // 🏠 כפתור בית - חזרה לדף הבית עם ייצוא JSON אוטומטי
+        if (binding.btnHomeHeader != null) {
+            binding.btnHomeHeader.getRoot().setOnClickListener(v -> navigateToHomeWithExport());
+        }
+
         MaterialCardView backButtonCard = binding.backButtonCard;
         if (backButtonCard != null) {
             backButtonCard.setOnClickListener(v -> progressHelper.moveToPreviousStep());
@@ -314,6 +321,25 @@ public class UploadImagesActivity extends AppCompatActivity {
             progressHelper.moveToNextStep();
             finish();
         });
+    }
+
+    /**
+     * 🏠 מעבר לדף הבית עם ייצוא אוטומטי של JSON
+     */
+    private void navigateToHomeWithExport() {
+        String currentProjectId = projectId;
+        if (currentProjectId != null) {
+            Intent intent = new Intent(this, ProjectCompletionActivity.class);
+            intent.putExtra(ProjectCompletionActivity.EXTRA_PROJECT_ID, currentProjectId);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        } else {
+            Intent intent = new Intent(this, HomePageActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        }
     }
 
     private void onImageClicked(@NonNull ImageCategorySection section,

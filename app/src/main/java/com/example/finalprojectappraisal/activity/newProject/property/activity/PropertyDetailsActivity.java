@@ -17,7 +17,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.activity.HomePageActivity;
 import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper; // ⬅️ ייבוא נדרש
+import com.example.finalprojectappraisal.export.ProjectCompletionActivity;
 import com.example.finalprojectappraisal.adapter.PropertyDetailsAdapter;
 import com.example.finalprojectappraisal.activity.newProject.property.activity.PropertyDetailsActivity.FieldItem;
 import com.example.finalprojectappraisal.activity.newProject.property.activity.PropertyDetailsActivity.ListItem;
@@ -122,7 +124,10 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
     }
 
     private void setupListeners() {
-        binding.btnBack.setOnClickListener(new View.OnClickListener() {
+        // 🏠 כפתור בית - חזרה לדף הבית עם ייצוא JSON אוטומטי
+        binding.btnHomeHeader.getRoot().setOnClickListener(v -> navigateToHomeWithExport());
+
+        binding.backButtonCard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 progressHelper.moveToPreviousStep(); // → חזרה לשלב 3
@@ -729,4 +734,22 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
     }
 
     interface TextConsumer { void accept(String s); }
+
+    /**
+     * 🏠 מעבר לדף הבית עם ייצוא אוטומטי של JSON
+     */
+    private void navigateToHomeWithExport() {
+        if (projectId != null) {
+            Intent intent = new Intent(this, ProjectCompletionActivity.class);
+            intent.putExtra(ProjectCompletionActivity.EXTRA_PROJECT_ID, projectId);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        } else {
+            Intent intent = new Intent(this, HomePageActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        }
+    }
 }

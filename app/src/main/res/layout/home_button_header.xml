@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    home_button_header.xml
+    כפתור בית לחזרה לדף הבית + ייצוא אוטומטי JSON
+    משמש בכל עמודי יצירת פרויקט חדש
+-->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/btn_home_header"
+    android:layout_width="48dp"
+    android:layout_height="48dp"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="#26FFFFFF"
+    app:strokeWidth="0dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    android:contentDescription="חזור לדף הבית">
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="center"
+        app:srcCompat="@drawable/ic_home"
+        app:tint="@android:color/white" />
+
+</com.google.android.material.card.MaterialCardView>

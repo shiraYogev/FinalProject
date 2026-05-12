@@ -23,6 +23,7 @@ import com.bumptech.glide.Glide;
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.activity.HomePageActivity;
 import com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity;
+import com.example.finalprojectappraisal.export.ProjectCompletionActivity;
 import com.example.finalprojectappraisal.databinding.ActivityUploadTabuBinding; // ⬅️ ייבוא ה-Binding
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
@@ -55,6 +56,7 @@ public class UploadTabuActivity extends AppCompatActivity {
     private FloatingActionButton btnDeleteImage;
     private TextView processingStatus;
     private MaterialButton btnSaveAndContinue;
+    private MaterialButton btnBackToHome; // 🏠 כפתור חזור לבית
 
     private FirebaseFirestore db;
     private FirebaseStorage storage;
@@ -101,6 +103,7 @@ public class UploadTabuActivity extends AppCompatActivity {
         btnDeleteImage = binding.btnDeleteImage;
         processingStatus = binding.processingStatus;
         btnSaveAndContinue = binding.btnSaveAndContinue;
+        btnBackToHome = binding.btnBackToHome; // 🏠 חיבור כפתור חזור לבית
 
         MaterialCardView backButtonCard = binding.backButtonCard;
         MaterialButton btnGallery = binding.btnGallery;
@@ -141,6 +144,21 @@ public class UploadTabuActivity extends AppCompatActivity {
         });
 
         btnDeleteImage.setOnClickListener(v -> deleteTabuImage());
+
+        // 🏠 כפתור חזור לדף הבית (דילוג על ייצוא JSON)
+        if (btnBackToHome != null) {
+            btnBackToHome.setOnClickListener(v -> navigateToHome());
+        }
+    }
+
+    /**
+     * 🏠 מעבר לדף הבית ללא ייצוא JSON
+     */
+    private void navigateToHome() {
+        Intent intent = new Intent(this, HomePageActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private void showImageSourceDialog() {
@@ -346,13 +364,16 @@ public class UploadTabuActivity extends AppCompatActivity {
     // ⬅️ תיקון: שימוש ב-progressHelper לסיום התהליך (השלב האחרון)
     private void navigateToNextScreen() {
         if (progressHelper.isLastStep()) {
-            // אם זה השלב האחרון, סיימו את יצירת הפרויקט
-            progressHelper.finishProjectCreation();
+            // 📤 ייצוא ל-JSON ואז מעבר למסך סיום
+            Intent intent = new Intent(this, ProjectCompletionActivity.class);
+            intent.putExtra(ProjectCompletionActivity.EXTRA_PROJECT_ID, projectId);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
         } else {
             // אם במקרה זה לא השלב האחרון (למשל, שינוי עתידי), עברו לשלב הבא
             progressHelper.moveToNextStep();
         }
-        // הפונקציה finishProjectCreation() ב-ProgressStepper אמורה להוביל ל-HomePageActivity ולסגור את הפעילויות.
     }
 
     private void toast(String message) {

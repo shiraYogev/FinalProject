@@ -107,6 +107,16 @@
 
             </LinearLayout>
 
+            <!-- 🏠 כפתור בית - חזרה לדף הבית עם ייצוא JSON -->
+            <include
+                android:id="@+id/btn_home_header"
+                layout="@layout/home_button_header"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
             <!-- כפתור חזור מעוצב - בצד שמאל -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/back_button_card"
@@ -312,7 +322,7 @@
         android:textStyle="bold"
         android:textColor="@android:color/white"
         android:layout_marginHorizontal="48dp"
-        android:layout_marginBottom="32dp"
+        android:layout_marginBottom="16dp"
         android:backgroundTint="@null"
         android:background="@drawable/bg_main_card_gradient"
         app:cornerRadius="16dp"
@@ -321,6 +331,28 @@
         app:iconGravity="textStart"
         app:iconPadding="12dp"
         app:iconSize="22dp"
+        app:layout_constraintBottom_toTopOf="@id/btnBackToHome"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- 🏠 כפתור חזור לדף הבית -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnBackToHome"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:text="דלג וחזור לדף הבית"
+        android:textSize="15sp"
+        android:textColor="#6B7280"
+        android:layout_marginHorizontal="48dp"
+        android:layout_marginBottom="24dp"
+        app:cornerRadius="16dp"
+        app:strokeColor="#E5E7EB"
+        app:strokeWidth="1dp"
+        app:icon="@drawable/ic_home"
+        app:iconTint="#6B7280"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp"
+        style="@style/Widget.Material3.Button.OutlinedButton"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
