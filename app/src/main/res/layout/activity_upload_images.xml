@@ -7,7 +7,6 @@
     android:layoutDirection="rtl"
     android:background="#F5F7FA">
 
-    <!-- אזור עליון עם גרדיאנט מודרני -->
     <LinearLayout
         android:id="@+id/header_bg"
         android:layout_width="0dp"
@@ -19,7 +18,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Header מעוצב כמו שאר המסכים -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/header_section"
             android:layout_width="match_parent"
@@ -28,7 +26,6 @@
             android:paddingTop="32dp"
             android:paddingBottom="24dp">
 
-            <!-- מיכל הכותרות - בצד ימין -->
             <LinearLayout
                 android:id="@+id/title_container"
                 android:layout_width="wrap_content"
@@ -40,7 +37,6 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
-                <!-- אייקון + כותרת (כיתוב בצד ימין) -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -49,14 +45,12 @@
                     android:layoutDirection="rtl"
                     android:orientation="horizontal">
 
-                    <!-- אייקון -->
                     <androidx.appcompat.widget.AppCompatImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         app:srcCompat="@drawable/ic_building"
                         app:tint="#E0FFFFFF" />
 
-                    <!-- נקודה -->
                     <View
                         android:layout_width="4dp"
                         android:layout_height="4dp"
@@ -65,7 +59,6 @@
                         android:background="@drawable/dot_indicator"
                         android:backgroundTint="#80FFFFFF" />
 
-                    <!-- כותרת ראשית -->
                     <TextView
                         android:id="@+id/title_text"
                         android:layout_width="wrap_content"
@@ -82,7 +75,6 @@
                         android:textSize="28sp" />
                 </LinearLayout>
 
-                <!-- תת כותרת -->
                 <TextView
                     android:id="@+id/description_text"
                     android:layout_width="wrap_content"
@@ -97,7 +89,6 @@
                     android:textColor="#CCFFFFFF"
                     android:textSize="14sp" />
 
-                <!-- מחוון התקדמות -->
                 <include
                     layout="@layout/progress_stepper"
                     android:layout_width="wrap_content"
@@ -107,17 +98,6 @@
 
             </LinearLayout>
 
-            <!-- 🏠 כפתור בית - חזרה לדף הבית עם ייצוא JSON -->
-            <include
-                android:id="@+id/btn_home_header"
-                layout="@layout/home_button_header"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent" />
-
-            <!-- כפתור חזור מעוצב - בצד שמאל -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/back_button_card"
                 android:layout_width="48dp"
@@ -125,7 +105,6 @@
                 app:cardCornerRadius="14dp"
                 app:cardElevation="0dp"
                 app:cardBackgroundColor="#26FFFFFF"
-                app:strokeWidth="0dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
@@ -139,14 +118,12 @@
                     android:layout_height="24dp"
                     android:layout_gravity="center"
                     app:srcCompat="@drawable/ic_arrow_back"
-                    app:tint="@android:color/white"
-                    android:contentDescription="חזור"/>
+                    app:tint="@android:color/white" />
             </com.google.android.material.card.MaterialCardView>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
 
-    <!-- כרטיס תוכן עם RecyclerView לקטגוריות התמונות -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/image_upload_card"
         android:layout_width="0dp"
@@ -162,7 +139,7 @@
         app:layout_constraintTop_toBottomOf="@id/header_bg"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/btnAddBedroom"
+        app:layout_constraintBottom_toTopOf="@id/btnSaveAndContinue"
         app:layout_constraintWidth_max="1200dp">
 
         <androidx.recyclerview.widget.RecyclerView
@@ -174,29 +151,6 @@
             android:scrollbars="vertical" />
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- כפתור: הוסף חדר שינה נוסף -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnAddBedroom"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="48dp"
-        android:layout_marginBottom="16dp"
-        android:text="הוסף חדר שינה נוסף"
-        android:textSize="15sp"
-        android:textColor="@color/fp_primary_dark"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-        app:strokeWidth="1dp"
-        app:strokeColor="@color/fp_primary_dark"
-        app:icon="@drawable/ic_add"
-        app:iconTint="@color/fp_primary_dark"
-        app:iconPadding="8dp"
-        app:iconGravity="textStart"
-        app:layout_constraintTop_toBottomOf="@id/image_upload_card"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/btnSaveAndContinue" />
-
-    <!-- כפתור שמירה -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSaveAndContinue"
         android:layout_width="0dp"
