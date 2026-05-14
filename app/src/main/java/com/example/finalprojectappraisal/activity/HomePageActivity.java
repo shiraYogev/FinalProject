@@ -42,9 +42,11 @@ public class HomePageActivity extends AppCompatActivity {
     private static final String TAG_RECENT = "HomeRecent";
 
     // ---- Views ----
-    private MaterialCardView cardNewProject, cardMyProjects, cardAllProjectsViewOnly, cardSettings, mainCard;
-    private TextView userNameText, totalProjectsDisplay, greetingText, completedThisWeek;
-    private ImageView userAvatar; // notificationsButton הוסר
+    private MaterialCardView cardNewProject, cardMyProjects, cardAllProjectsViewOnly, cardSettings;
+    private MaterialCardView cardStatTotal, cardStatActive, cardStatCompleted;
+    private TextView userNameText, greetingText;
+    private TextView statTotalValue, statActiveValue, statCompletedValue;
+    private ImageView userAvatar;
 
     // ---- By-Status section views ----
     private MaterialCardView statusProjectsCard;
@@ -86,13 +88,20 @@ public class HomePageActivity extends AppCompatActivity {
         cardMyProjects = findViewById(R.id.card_my_projects);
         cardAllProjectsViewOnly = findViewById(R.id.card_all_projects_view_only);
         cardSettings = findViewById(R.id.card_settings);
-        mainCard = findViewById(R.id.main_card);
+
+        // Stat cards
+        cardStatTotal = findViewById(R.id.card_stat_total);
+        cardStatActive = findViewById(R.id.card_stat_active);
+        cardStatCompleted = findViewById(R.id.card_stat_completed);
 
         // Texts
         userNameText = findViewById(R.id.user_name);
-        totalProjectsDisplay = findViewById(R.id.total_projects_display);
         greetingText = findViewById(R.id.greeting_text);
-        completedThisWeek = findViewById(R.id.completed_this_week);
+
+        // Stat texts
+        statTotalValue = findViewById(R.id.stat_total_value);
+        statActiveValue = findViewById(R.id.stat_active_value);
+        statCompletedValue = findViewById(R.id.stat_completed_value);
 
         // Header icons
         userAvatar = findViewById(R.id.user_avatar);
@@ -142,6 +151,32 @@ public class HomePageActivity extends AppCompatActivity {
         };
         cardSettings.setOnClickListener(settingsListener);
 
+        // Stat cards click listeners - navigate to MyProjects with filter
+        cardStatTotal.setOnClickListener(v -> {
+            addRippleEffect(v);
+            intent = new Intent(HomePageActivity.this, MyProjectsActivity.class);
+            startActivity(intent);
+            overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
+        });
+
+        cardStatActive.setOnClickListener(v -> {
+            addRippleEffect(v);
+            FilterPrefs.saveSingleStatus(this, "בביצוע");
+            intent = new Intent(HomePageActivity.this, MyProjectsActivity.class);
+            intent.putExtra(MyProjectsActivity.EXTRA_PREFILTER_STATUS, "בביצוע");
+            startActivity(intent);
+            overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
+        });
+
+        cardStatCompleted.setOnClickListener(v -> {
+            addRippleEffect(v);
+            FilterPrefs.saveSingleStatus(this, "הושלם");
+            intent = new Intent(HomePageActivity.this, MyProjectsActivity.class);
+            intent.putExtra(MyProjectsActivity.EXTRA_PREFILTER_STATUS, "הושלם");
+            startActivity(intent);
+            overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
+        });
+
         // אין notificationsButton יותר
 
         userAvatar.setOnClickListener(v -> {
@@ -152,9 +187,18 @@ public class HomePageActivity extends AppCompatActivity {
     }
 
     private void setupAnimations() {
-        Animation mainCardAnimation = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
-        mainCardAnimation.setStartOffset(100);
-        mainCard.startAnimation(mainCardAnimation);
+        // Stat cards animation
+        Animation statAnim1 = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
+        statAnim1.setStartOffset(100);
+        cardStatTotal.startAnimation(statAnim1);
+
+        Animation statAnim2 = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
+        statAnim2.setStartOffset(150);
+        cardStatActive.startAnimation(statAnim2);
+
+        Animation statAnim3 = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
+        statAnim3.setStartOffset(200);
+        cardStatCompleted.startAnimation(statAnim3);
 
         Animation cardAnimation1 = AnimationUtils.loadAnimation(this, R.anim.slide_up_banking);
         cardAnimation1.setStartOffset(200);
@@ -193,14 +237,15 @@ public class HomePageActivity extends AppCompatActivity {
     }
 
     /**
-     * טוען סטטיסטיקות דרך מסמך השמאי:
-     *  - סופר את כמות ה־activeProjects → סה״כ פרויקטים
-     *  - מתוך אותם IDs בודק כמה הושלמו בשבעת הימים האחרונים
+     * טוען סטטיסטיקות ל-3 הכרטיסים:
+     *  - סה"כ פרויקטים
+     *  - בביצוע (לא הושלם)
+     *  - הושלמו
      */
     private void loadProjectStats() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
-            totalProjectsDisplay.setText("0");
+            setStatValues(0, 0, 0);
             updateWeeklyText(0);
             Log.d(TAG_HOME, "No user → stats=0");
             return;
@@ -213,7 +258,7 @@ public class HomePageActivity extends AppCompatActivity {
                 .addOnSuccessListener(doc -> {
                     if (!doc.exists()) {
                         Log.w(TAG_HOME, "Appraiser doc not found for uid=" + userId);
-                        totalProjectsDisplay.setText("0");
+                        setStatValues(0, 0, 0);
                         updateWeeklyText(0);
                         return;
                     }
@@ -224,52 +269,44 @@ public class HomePageActivity extends AppCompatActivity {
 
                     int total = (activeProjects != null) ? activeProjects.size() : 0;
                     Log.d(TAG_HOME, "Total activeProjects for appraiser=" + total);
-                    animateCounterBanking(totalProjectsDisplay, 0, total);
 
-                    // נמשיך לסטטיסטיקת "הושלמו השבוע" על בסיס אותם IDs
-                    loadWeeklyStats(activeProjects);
+                    // נטען את הסטטוסים של הפרויקטים לחלוקה לכרטיסים
+                    loadProjectStatusBreakdown(activeProjects, total);
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG_HOME, "Error loading appraiser for stats", e);
-                    totalProjectsDisplay.setText("0");
-                    updateWeeklyText(-1); // שגיאה
+                    setStatValues(0, 0, 0);
+                    updateWeeklyText(-1);
                 });
     }
 
-    /**
-     * מקבל את רשימת ה־IDs של הפרויקטים של השמאי (activeProjects),
-     * טוען כל פרויקט מהאוסף projects, ומספור:
-     * projectStatus == "הושלם" && completedDate >= sevenDaysAgo.
-     *
-     * שימי לב: חייב להיות שדה completedDate מסוג Timestamp / Date בפרויקט.
-     */
-    private void loadWeeklyStats(List<String> activeProjects) {
-        if (completedThisWeek == null) return;
+    /** מעדכן את הכרטיסים עם הנתונים */
+    private void setStatValues(int total, int active, int completed) {
+        if (statTotalValue != null) statTotalValue.setText(String.valueOf(total));
+        if (statActiveValue != null) statActiveValue.setText(String.valueOf(active));
+        if (statCompletedValue != null) statCompletedValue.setText(String.valueOf(completed));
+    }
 
+    /** טוען את הסטטוסים ומחלק ל-3 קטגוריות */
+    private void loadProjectStatusBreakdown(List<String> activeProjects, int total) {
         if (activeProjects == null || activeProjects.isEmpty()) {
-            Log.d(TAG_HOME, "No activeProjects → weekly completed = 0");
+            setStatValues(0, 0, 0);
             updateWeeklyText(0);
             return;
         }
-
-        // תאריך לפני 7 ימים מהיום
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        cal.add(java.util.Calendar.DAY_OF_YEAR, -7);
-        final java.util.Date sevenDaysAgo = cal.getTime();
 
         final int totalToCheck = activeProjects.size();
-        if (totalToCheck == 0) {
-            updateWeeklyText(0);
-            return;
-        }
-
         final int[] processed = {0};
         final int[] completedCount = {0};
+        final int[] activeCount = {0}; // לא הושלם
 
         for (String projectId : activeProjects) {
             if (projectId == null || projectId.trim().isEmpty()) {
                 processed[0]++;
                 if (processed[0] == totalToCheck) {
+                    animateCounterBanking(statTotalValue, 0, total);
+                    animateCounterBanking(statActiveValue, 0, activeCount[0]);
+                    animateCounterBanking(statCompletedValue, 0, completedCount[0]);
                     updateWeeklyText(completedCount[0]);
                 }
                 continue;
@@ -282,44 +319,39 @@ public class HomePageActivity extends AppCompatActivity {
 
                         if (doc.exists()) {
                             String status = doc.getString("projectStatus");
-                            java.util.Date completedDate = doc.getDate("completedDate"); // לשים לב לשם השדה!
-
-                            if ("הושלם".equals(status)
-                                    && completedDate != null
-                                    && !completedDate.before(sevenDaysAgo)) {
+                            if ("הושלם".equals(status)) {
                                 completedCount[0]++;
+                            } else {
+                                activeCount[0]++;
                             }
                         }
 
                         if (processed[0] == totalToCheck) {
+                            animateCounterBanking(statTotalValue, 0, total);
+                            animateCounterBanking(statActiveValue, 0, activeCount[0]);
+                            animateCounterBanking(statCompletedValue, 0, completedCount[0]);
                             updateWeeklyText(completedCount[0]);
                         }
                     })
                     .addOnFailureListener(e -> {
                         processed[0]++;
-                        Log.e(TAG_HOME, "Error loading project for weekly stats, id=" + projectId, e);
+                        Log.e(TAG_HOME, "Error loading project status, id=" + projectId, e);
                         if (processed[0] == totalToCheck) {
+                            animateCounterBanking(statTotalValue, 0, total);
+                            animateCounterBanking(statActiveValue, 0, activeCount[0]);
+                            animateCounterBanking(statCompletedValue, 0, completedCount[0]);
                             updateWeeklyText(completedCount[0]);
                         }
                     });
         }
     }
 
-    /** מעדכן את הטקסט של "הושלמו השבוע" בהתאם לתוצאה. */
+    /** לוג בלבד - הכרטיס השלישי מציג כבר את הספירה */
     private void updateWeeklyText(int completedCount) {
-        if (completedThisWeek == null) return;
-
         if (completedCount < 0) {
-            completedThisWeek.setText("נתונים לא זמינים");
-            return;
-        }
-
-        if (completedCount == 0) {
-            completedThisWeek.setText("לא הושלמו פרויקטים השבוע");
-        } else if (completedCount == 1) {
-            completedThisWeek.setText("פרויקט אחד הושלם השבוע");
+            Log.w(TAG_HOME, "Weekly stats error");
         } else {
-            completedThisWeek.setText(completedCount + " פרויקטים הושלמו השבוע");
+            Log.d(TAG_HOME, "Weekly completed projects: " + completedCount);
         }
     }
 

@@ -50,5 +50,6 @@
     <string name="cd_my_projects">פתח הפרויקטים שלי</string>
     <string name="cd_settings">פתח הגדרות</string>
     <string name="cd_user_avatar">תמונת פרופיל</string>
+    <string name="label_total">סה&quot;כ</string>
 
 </resources>

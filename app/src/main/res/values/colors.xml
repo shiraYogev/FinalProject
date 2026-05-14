@@ -4,18 +4,24 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- ===== Booking-like Brand Palette ===== -->
-    <!-- Primary (כותרות/רכיבים עיקריים) -->
-    <color name="brand_navy">#003580</color>
-    <!-- Accent / Link Blue (כפתורים משניים, קישורים, אייקונים) -->
-    <color name="brand_accent">#006CE4</color>
-    <!-- בהירים לאייקון-רקע/Chips -->
-    <color name="brand_accent_10">#E7F1FF</color>
-    <color name="brand_accent_20">#D3E6FF</color>
+    <!-- ===== Premium Banking/Appraisal Brand Palette ===== -->
+    <!-- Primary Navy - כחול עמוק רשמי (כמו בנקים/פיננסים) -->
+    <color name="brand_navy">#0A1628</color>
+    <!-- Secondary Navy - גוון בהיר מעט למעברים -->
+    <color name="brand_navy_light">#1E3A5F</color>
+    <!-- Accent Gold - זהב עדין לנגיעות יוקרה -->
+    <color name="brand_accent">#C9A962</color>
+    <!-- Accent Gold Light - לרקעים קלים -->
+    <color name="brand_accent_light">#E8D5A3</color>
+    <!-- צבעי רקע בהירים (Glass/UI) -->
+    <color name="brand_accent_10">#F8FAFC</color>
+    <color name="brand_accent_20">#EEF2F7</color>
+    <color name="brand_gold_10">#FCF9F2</color>
 
-    <!-- רקעים/משטחים -->
-    <color name="brand_bg">#F5F7FA</color>
+    <!-- רקעים/משטחים - פלטה נקייה ורשמית -->
+    <color name="brand_bg">#F8FAFC</color>
     <color name="brand_surface">#FFFFFF</color>
+    <color name="brand_surface_elevated">#FFFFFF</color>
 
     <!-- טקסטים -->
     <color name="text_primary">#0A0A0A</color>
@@ -90,18 +96,18 @@
     <color name="accent_orange">#F59E0B</color>
     <color name="accent_orange_20">#20F59E0B</color>
 
-    <!-- Gradient (מחודשים לליבה החדשה) -->
-    <!-- כחול בסיס + כחול מעט כהה ממנו (~10%) -->
-    <color name="fp_primary">#3949AB</color>        <!-- היה מעט בהיר יותר -->
-    <color name="fp_primary_dark">#3142A3</color>   <!-- ~10% כהה יותר -->
+    <!-- Gradient - גרדיאנט רשמי ואלגנטי -->
+    <!-- Navy Deep ל-Navy Light - מעבר אלגנטי -->
+    <color name="fp_primary">#1E3A5F</color>
+    <color name="fp_primary_dark">#0A1628</color>
 
-    <!-- הטוקנים שהגרדיאנט משתמש בהם -->
-    <color name="primary_gradient_start">#4559C7</color>
-    <color name="primary_gradient_end">@color/brand_accent</color>
+    <!-- הטוקנים שהגרדיאנט משתמש בהם - גרדיאנט כחול עמוק -->
+    <color name="primary_gradient_start">#1E3A5F</color>
+    <color name="primary_gradient_end">#0A1628</color>
 
-    <!-- טקסטים לבנים/כהים (קיימים) -->
+    <!-- טקסטים לבנים/כהים (מעודכן) -->
     <color name="text_primary_white">#FFFFFF</color>
-    <color name="text_secondary_white">#B8C5FF</color>
+    <color name="text_secondary_white">#C9A962</color>  <!-- זהב עדין לטקסט משני על כהה -->
     <color name="text_primary_dark">#121212</color>
     <color name="text_secondary_dark">#6B7280</color>
 
