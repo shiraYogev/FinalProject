@@ -287,8 +287,8 @@ public class HomePageActivity extends AppCompatActivity {
         if (statCompletedValue != null) statCompletedValue.setText(String.valueOf(completed));
     }
 
-    /** טוען את הסטטוסים ומחלק ל-3 קטגוריות */
-    private void loadProjectStatusBreakdown(List<String> activeProjects, int total) {
+    /** טוען את הסטטוסים ומחלק ל-3 קטגוריות - סופר רק פרויקטים קיימים */
+    private void loadProjectStatusBreakdown(List<String> activeProjects, int totalInArray) {
         if (activeProjects == null || activeProjects.isEmpty()) {
             setStatValues(0, 0, 0);
             updateWeeklyText(0);
@@ -297,14 +297,15 @@ public class HomePageActivity extends AppCompatActivity {
 
         final int totalToCheck = activeProjects.size();
         final int[] processed = {0};
+        final int[] existingCount = {0};  // פרויקטים שבאמת קיימים
         final int[] completedCount = {0};
-        final int[] activeCount = {0}; // לא הושלם
+        final int[] activeCount = {0};    // לא הושלם
 
         for (String projectId : activeProjects) {
             if (projectId == null || projectId.trim().isEmpty()) {
                 processed[0]++;
                 if (processed[0] == totalToCheck) {
-                    animateCounterBanking(statTotalValue, 0, total);
+                    animateCounterBanking(statTotalValue, 0, existingCount[0]);
                     animateCounterBanking(statActiveValue, 0, activeCount[0]);
                     animateCounterBanking(statCompletedValue, 0, completedCount[0]);
                     updateWeeklyText(completedCount[0]);
@@ -318,16 +319,21 @@ public class HomePageActivity extends AppCompatActivity {
                         processed[0]++;
 
                         if (doc.exists()) {
+                            existingCount[0]++;  // פרויקט קיים!
                             String status = doc.getString("projectStatus");
                             if ("הושלם".equals(status)) {
                                 completedCount[0]++;
                             } else {
                                 activeCount[0]++;
                             }
+                        } else {
+                            Log.w(TAG_HOME, "Project not found: " + projectId + " (might be deleted)");
                         }
 
                         if (processed[0] == totalToCheck) {
-                            animateCounterBanking(statTotalValue, 0, total);
+                            Log.d(TAG_HOME, "Stats: existing=" + existingCount[0] +
+                                    ", active=" + activeCount[0] + ", completed=" + completedCount[0]);
+                            animateCounterBanking(statTotalValue, 0, existingCount[0]);
                             animateCounterBanking(statActiveValue, 0, activeCount[0]);
                             animateCounterBanking(statCompletedValue, 0, completedCount[0]);
                             updateWeeklyText(completedCount[0]);
@@ -335,9 +341,9 @@ public class HomePageActivity extends AppCompatActivity {
                     })
                     .addOnFailureListener(e -> {
                         processed[0]++;
-                        Log.e(TAG_HOME, "Error loading project status, id=" + projectId, e);
+                        Log.e(TAG_HOME, "Error loading project, id=" + projectId, e);
                         if (processed[0] == totalToCheck) {
-                            animateCounterBanking(statTotalValue, 0, total);
+                            animateCounterBanking(statTotalValue, 0, existingCount[0]);
                             animateCounterBanking(statActiveValue, 0, activeCount[0]);
                             animateCounterBanking(statCompletedValue, 0, completedCount[0]);
                             updateWeeklyText(completedCount[0]);
