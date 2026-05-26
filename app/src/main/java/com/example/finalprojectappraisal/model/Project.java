@@ -153,6 +153,9 @@ public class Project {
     @SerializedName("apartment_includes")
     private String apartmentIncludes;
 
+    @SerializedName("apartment_renovations")
+    private String apartmentRenovations;
+
     @SerializedName("apartment_bathroom_fixtures")
     private String bathroomFixtures;
 
@@ -759,6 +762,17 @@ public class Project {
     @PropertyName("apartment_includes")
     public void setApartmentIncludes(String apartmentIncludes) {
         this.apartmentIncludes = apartmentIncludes;
+        updateLastUpdateDate();
+    }
+
+    @PropertyName("apartment_renovations")
+    public String getApartmentRenovations() {
+        return apartmentRenovations;
+    }
+
+    @PropertyName("apartment_renovations")
+    public void setApartmentRenovations(String apartmentRenovations) {
+        this.apartmentRenovations = apartmentRenovations;
         updateLastUpdateDate();
     }
 

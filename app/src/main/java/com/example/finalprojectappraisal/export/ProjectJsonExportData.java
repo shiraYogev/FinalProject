@@ -49,6 +49,7 @@ public class ProjectJsonExportData {
     private String apartmentStory;
     private String numberOfRooms;
     private String apartmentIncludes;
+    private String apartmentRenovations;
     private List<String> apartmentDirections;
     private String apartmentKitchen;
     private String apartmentFlooring;
@@ -289,6 +290,14 @@ public class ProjectJsonExportData {
 
     public void setApartmentIncludes(String apartmentIncludes) {
         this.apartmentIncludes = apartmentIncludes;
+    }
+
+    public String getApartmentRenovations() {
+        return apartmentRenovations;
+    }
+
+    public void setApartmentRenovations(String apartmentRenovations) {
+        this.apartmentRenovations = apartmentRenovations;
     }
 
     public List<String> getApartmentDirections() {

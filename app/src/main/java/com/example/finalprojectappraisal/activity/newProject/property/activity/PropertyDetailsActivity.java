@@ -322,10 +322,17 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
         if (s.isEmpty()) return res;
 
         for (String t : Choices.ENVIRONMENT_TYPES) {
-            String prefix = t + " – ";
-            if (s.startsWith(prefix)) {
+            String dashPrefix = t + " – ";
+            if (s.startsWith(dashPrefix)) {
                 res.type = t;
-                res.description = s.substring(prefix.length()).trim();
+                res.description = s.substring(dashPrefix.length()).trim();
+                return res;
+            }
+
+            String commaPrefix = t + ", ";
+            if (s.startsWith(commaPrefix)) {
+                res.type = t;
+                res.description = s.substring(commaPrefix.length()).trim();
                 return res;
             }
         }
@@ -566,11 +573,11 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
                                 String level = opts.get(which);
                                 if (f.allowOther && "אחר".equals(level)) {
                                     promptText("פרט/י", "", other -> {
-                                        String composed = count + " קומות – מעל: " + other;
+                                        String composed = count + " קומות, מעל " + other;
                                         updateValue(f, composed, pos);
                                     });
                                 } else {
-                                    String composed = count + " קומות – " + level;
+                                    String composed = count + " קומות, " + level;
                                     updateValue(f, composed, pos);
                                 }
                             })
@@ -655,7 +662,7 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
             } else if (envDesc == null || envDesc.isEmpty()) {
                 combined = envType;
             } else {
-                combined = envType + " – " + envDesc;
+                combined = envType + ", " + envDesc;
             }
             updates.put("environment_characteristics", combined);
         }

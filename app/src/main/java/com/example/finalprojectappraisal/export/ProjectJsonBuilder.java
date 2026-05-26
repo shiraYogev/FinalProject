@@ -180,6 +180,7 @@ public class ProjectJsonBuilder {
         root.put("apartment_story", safeString(data.getApartmentStory()));
         root.put("number_of_rooms", safeString(data.getNumberOfRooms()));
         root.put("apartment_includes", safeString(data.getApartmentIncludes()));
+        root.put("apartment_renovations", safeString(data.getApartmentRenovations()));
 
         // כיווני אוויר - מרשימה למחרוזת
         List<String> directions = data.getApartmentDirections();
