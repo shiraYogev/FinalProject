@@ -267,6 +267,6 @@ public final class GeminiJsonParser {
     private static String combineFlooring(String type, String size) {
         if (type == null) return null;
         if (size == null || size.trim().isEmpty()) return type;
-        return type + " (" + size.trim() + ")";
+        return type + " " + size.trim();
     }
 }

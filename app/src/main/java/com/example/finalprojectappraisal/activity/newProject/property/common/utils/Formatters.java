@@ -17,11 +17,11 @@ public final class Formatters {
         return b ? YES : NO;
     }
 
-    /** חיבור ריצוף: 'סוג (מידה)' או רק 'סוג' אם אין מידה; אם אין סוג מחזיר null */
+    /** חיבור ריצוף: 'סוג מידה' או רק 'סוג' אם אין מידה; אם אין סוג מחזיר null */
     public static String combineFlooring(String type, String size) {
         if (type == null || type.trim().isEmpty()) return null;
         String t = type.trim();
         if (size == null || size.trim().isEmpty()) return t;
-        return t + " (" + size.trim() + ")";
+        return t + " " + size.trim();
     }
 }

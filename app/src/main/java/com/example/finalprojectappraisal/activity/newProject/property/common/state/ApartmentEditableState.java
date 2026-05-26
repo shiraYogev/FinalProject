@@ -41,11 +41,20 @@ public class ApartmentEditableState {
         if (flooring != null) {
             int i = flooring.lastIndexOf('('), j = flooring.lastIndexOf(')');
             if (i > 0 && j > i) {
+                // backward compat: old format "סוג (מידה)"
                 s.flooringType = flooring.substring(0, i).trim();
                 s.flooringSize = flooring.substring(i + 1, j).trim();
             } else {
-                s.flooringType = flooring.trim();
-                s.flooringSize = null;
+                // new format: "סוג מידה" where size is NNxNN at the end
+                java.util.regex.Matcher m = java.util.regex.Pattern
+                        .compile("^(.*?)\\s+(\\d+[Xx]\\d+)$").matcher(flooring.trim());
+                if (m.matches()) {
+                    s.flooringType = m.group(1).trim();
+                    s.flooringSize = m.group(2).trim();
+                } else {
+                    s.flooringType = flooring.trim();
+                    s.flooringSize = null;
+                }
             }
         }
 

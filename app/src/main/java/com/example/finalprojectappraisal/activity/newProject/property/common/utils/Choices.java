@@ -27,8 +27,8 @@ public final class Choices {
     );
 
     public static final List<String> FLOORING_SIZES = Arrays.asList(
-            "120X120","100X100","90X90","80X80","60X60","50X50","45X45","40X40","30X30",
-            "45X90","60X120","22X90","20X120"
+            "120X240","120X120","100X100","90X90","80X80","60X60","50X50","45X45","40X40",
+            "33X33","30X60","30X30","25X150","22X90","20X120","20X20","15X60","45X90","60X120"
     );
 
     public static final List<String> KITCHEN_CABINETS = Arrays.asList(
