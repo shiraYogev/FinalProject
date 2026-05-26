@@ -10,7 +10,8 @@ public final class Choices {
     public static final List<String> YES_NO_STRINGS = Arrays.asList("כן", "לא");
 
     public static final List<String> ENTRANCE_DOOR_TYPES = Arrays.asList(
-            "פלדלת", "פלדלת מעוצבת", "עץ", "מעוצבת ממתכת (חרש)", "דמוי עץ", "טרם הותקן"
+            "פלדה/ביטחון", "פלדה מעוצבת", "מעוצבת ממתכת (חרש)", "עץ אומן", "דמוי עץ",
+            "מעוצבת (כנף וחצי)", "מעוצבת (כנף כפולה)", "טרם הותקן", "בבנייה"
     );
 
     public static final List<String> WINDOW_TYPES = Arrays.asList(
