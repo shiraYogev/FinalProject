@@ -49,8 +49,7 @@ public class GeminiHelper {
     // Preferred model order (fast vision → older fallbacks)
     private static final String[] MODEL_CHAIN = new String[]{
             "gemini-2.5-flash",
-            "gemini-2.0-flash",
-            "gemini-1.5-flash"
+            "gemini-2.0-flash"
     };
 
     public interface ClassificationCallback {
@@ -112,7 +111,23 @@ public class GeminiHelper {
             }
 
             @Override public void onError(String error) {
+                // ── RAW ERROR (full text, before any classification) ──────────────
+                Log.e(TAG, "[" + tid + "] RAW_ERROR model=" + modelName + ":\n" + error);
+                // ─────────────────────────────────────────────────────────────────
+
                 RetryDecision d = classifyErrorForRetry(error);
+                Log.d(TAG, "[" + tid + "] ERROR_CLASS → retryable=" + d.retryable
+                        + " fatal=" + d.fatal + " reason=" + d.reason);
+
+                // Fatal errors (billing/quota) – no retries, no fallbacks
+                if (d.fatal) {
+                    Log.wtf(TAG, "[" + tid + "] FATAL BILLING/QUOTA error on model=" + modelName
+                            + "\nFull error: " + error);
+                    if (cb != null) cb.onError("שגיאת חיוב/מכסה ב-Gemini API. " +
+                            "ודאי שה-API key תקף ושמכסת השימוש לא נגמרה.");
+                    return;
+                }
+
                 // Retry same model?
                 if (d.retryable && attempt < MAX_RETRIES) {
                     long delay = backoffWithJitter(attempt);
@@ -145,29 +160,45 @@ public class GeminiHelper {
     }
 
     private static RetryDecision classifyErrorForRetry(String err) {
-        if (err == null) return new RetryDecision(false, "unknown");
+        if (err == null) return new RetryDecision(false, false, "unknown");
         String s = err.toLowerCase();
+        Log.d(TAG, "classifyErrorForRetry input (lowercase, first 300): "
+                + s.substring(0, Math.min(300, s.length())));
 
-        if (s.contains("503") || s.contains("overloaded") || s.contains("unavailable")) {
-            return new RetryDecision(true, "503 UNAVAILABLE/overloaded");
+        // Billing / quota errors – fatal, don't retry or fallback
+        if (s.contains("402") || s.contains("payment") || s.contains("billing")
+                || s.contains("quota_exceeded") || s.contains("resource_exhausted")
+                || s.contains("quota exceeded") || s.contains("out of quota")
+                || s.contains("billing account")) {
+            return new RetryDecision(false, true, "billing/quota error");
+        }
+
+        if (s.contains("503") || s.contains("overloaded")
+                || (s.contains("unavailable") && !s.contains("billing"))) {
+            return new RetryDecision(true, false, "503 UNAVAILABLE/overloaded");
         }
         if (s.contains("429") || s.contains("rate limit")) {
-            return new RetryDecision(true, "429 rate limit");
+            return new RetryDecision(true, false, "429 rate limit");
         }
         if (s.contains("timeout") || s.contains("timed out") || s.contains("failed to connect")
                 || s.contains("connection reset") || s.contains("network")) {
-            return new RetryDecision(true, "network/timeout");
+            return new RetryDecision(true, false, "network/timeout");
         }
         if (s.contains("missingfieldexception") || s.contains("field 'details' is required")) {
-            return new RetryDecision(true, "sdk deserialization (details missing)");
+            return new RetryDecision(true, false, "sdk deserialization (details missing)");
         }
-        return new RetryDecision(false, s);
+        return new RetryDecision(false, false, s);
     }
 
     private static class RetryDecision {
         final boolean retryable;
+        final boolean fatal;    // true = billing/quota; skip all retries & fallbacks
         final String reason;
-        RetryDecision(boolean r, String reason) { this.retryable = r; this.reason = reason; }
+        RetryDecision(boolean retryable, boolean fatal, String reason) {
+            this.retryable = retryable;
+            this.fatal = fatal;
+            this.reason = reason;
+        }
     }
 
     // ========================= Single attempt implementation =========================
@@ -225,12 +256,16 @@ public class GeminiHelper {
         } catch (ExecutionException ee) {
             Throwable cause = (ee.getCause() != null) ? ee.getCause() : ee;
             String chain = buildCauseChain(cause);
-            logE(tid, "ExecutionException (wrapped): " + chain, cause);
+            // Log the full stack trace so we can see the exact HTTP error/status code
+            Log.e(TAG, "[" + tid + "] ExecutionException (wrapped): " + chain, ee);
+            if (cause != cause && cause.getCause() != null) {
+                Log.e(TAG, "[" + tid + "] Root cause message: " + cause.getCause().getMessage(), cause.getCause());
+            }
             if (callback != null) callback.onError(chain);
 
         } catch (Exception e) {
             String chain = buildCauseChain(e);
-            logE(tid, "General exception: " + chain, e);
+            Log.e(TAG, "[" + tid + "] General exception: " + chain, e);
             if (callback != null) callback.onError(chain);
         }
     }

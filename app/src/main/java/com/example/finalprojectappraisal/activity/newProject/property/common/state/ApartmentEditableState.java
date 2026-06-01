@@ -2,6 +2,7 @@ package com.example.finalprojectappraisal.activity.newProject.property.common.st
 
 import androidx.annotation.Nullable;
 
+import com.example.finalprojectappraisal.activity.newProject.property.common.utils.Formatters;
 import com.example.finalprojectappraisal.model.Project;
 
 public class ApartmentEditableState {
@@ -14,7 +15,9 @@ public class ApartmentEditableState {
     public String flooringType;
     public String flooringSize;
     public String interiorDoorCondition;
-    public String kitchenCondition;
+    public String kitchenCondition; // תיאור מוצג
+    public String kitchenCabinets;  // ערך נפרד לבחירה מחדש
+    public String kitchenWorktop;   // ערך נפרד לבחירה מחדש
     public String bathroomFixtures;
 
     // Elevator as String: "אין", "יש (1)", "יש (2)", "יש (3)", "יש (4)"
@@ -59,7 +62,11 @@ public class ApartmentEditableState {
         }
 
         s.interiorDoorCondition = safe(p.getInteriorDoorCondition());
-        s.kitchenCondition      = safe(p.getKitchenCondition());
+
+        Formatters.KitchenParts kitchen = Formatters.splitKitchen(p.getKitchenCondition());
+        s.kitchenCabinets = safe(kitchen.cabinets);
+        s.kitchenWorktop  = safe(kitchen.worktop);
+        s.kitchenCondition = safe(kitchen.normalized());
         s.bathroomFixtures      = safe(p.getBathroomFixtures());
 
         s.hasElevator           = safe(p.getHasElevator());

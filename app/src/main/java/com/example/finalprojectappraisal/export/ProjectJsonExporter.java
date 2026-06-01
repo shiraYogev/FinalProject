@@ -127,14 +127,23 @@ public class ProjectJsonExporter {
                     if (task.isSuccessful() && task.getResult() != null) {
                         for (DocumentSnapshot doc : task.getResult()) {
                             try {
-                                Image img = doc.toObject(Image.class);
-                                if (img != null) {
-                                    // וידוא שיש ID
-                                    if (img.getId() == null || img.getId().isEmpty()) {
-                                        img.setId(doc.getId());
+                                Map<String, Object> imgData = doc.getData();
+                                if (imgData == null) continue;
+                                Image img = new Image();
+                                img.setId(doc.getId());
+                                Object url = imgData.get("url");
+                                if (url != null) img.setUrl(url.toString());
+                                Object cat = imgData.get("category");
+                                if (cat != null) {
+                                    try {
+                                        img.setCategory(Image.Category.valueOf(cat.toString()));
+                                    } catch (IllegalArgumentException ex) {
+                                        img.setCategory(Image.Category.OTHER);
                                     }
-                                    images.add(img);
                                 }
+                                Object desc = imgData.get("description");
+                                if (desc != null) img.setDescription(desc.toString());
+                                images.add(img);
                             } catch (Exception e) {
                                 Log.w(TAG, "Failed to parse image: " + doc.getId(), e);
                             }
@@ -153,20 +162,43 @@ public class ProjectJsonExporter {
      * ממלא את נתוני הפרויקט ממסמך Firestore
      */
     private void fillProjectData(ProjectJsonExportData exportData, DocumentSnapshot doc) {
-        // נתוני שמאי
+        Log.d(TAG, "=== fillProjectData START docId=" + doc.getId() + " ===");
+
+        // שליפת כל הנתונים הגולמיים כ-Map פשוט (ללא deserialization)
+        Map<String, Object> root = doc.getData();
+        if (root == null) {
+            Log.w(TAG, "fillProjectData: doc.getData() returned null!");
+            return;
+        }
+        Log.d(TAG, "ROOT keys: " + root.keySet().toString());
+
+        // שליפת property_details map
+        Map<String, Object> pd = getNestedMap(root, "property_details");
+        Log.d(TAG, "property_details keys: " + (pd != null ? pd.keySet().toString() : "NULL - not found!"));
+
+        // שליפת bankDetails map
+        Map<String, Object> bankMapRaw = getNestedMap(root, "bankDetails");
+        Log.d(TAG, "bankDetails keys: " + (bankMapRaw != null ? bankMapRaw.keySet().toString() : "NULL - not found!"));
+
+        // שליפת client map
+        Map<String, Object> clientMapRaw = getNestedMap(root, "client");
+
+        // שליפת presenter_details map
+        Map<String, Object> presenterMapRaw = getNestedMap(root, "presenter_details");
+
+        // נתוני שמאי (שורש)
         exportData.setAppraiserName(safeGetString(doc, "appraiser_name"));
         exportData.setAppraisalDate(safeGetString(doc, "appraisal_date"));
         exportData.setAppraiserRole(safeGetString(doc, "appraiser_role"));
 
         // נתוני לקוח
         try {
-            Map<String, Object> clientMap = doc.get("client", Map.class);
-            if (clientMap != null) {
+            if (clientMapRaw != null) {
                 Client client = new Client();
-                client.setClientId(safeMapValue(clientMap, "client_id"));
-                client.setFullName(safeMapValue(clientMap, "full_name"));
-                client.setEmail(safeMapValue(clientMap, "email"));
-                client.setPhoneNumber(safeMapValue(clientMap, "phone_number"));
+                client.setClientId(firstNonEmpty(safeMapValue(clientMapRaw, "clientId"), safeMapValue(clientMapRaw, "client_id")));
+                client.setFullName(firstNonEmpty(safeMapValue(clientMapRaw, "fullName"), safeMapValue(clientMapRaw, "full_name")));
+                client.setEmail(safeMapValue(clientMapRaw, "email"));
+                client.setPhoneNumber(firstNonEmpty(safeMapValue(clientMapRaw, "phoneNumber"), safeMapValue(clientMapRaw, "phone_number")));
                 exportData.setClient(client);
             }
         } catch (Exception e) {
@@ -174,18 +206,13 @@ public class ProjectJsonExporter {
         }
 
         // פרטי מוסר
-        try {
-            Map<String, Object> presenterMap = doc.get("presenter_details", Map.class);
-            if (presenterMap != null) {
-                exportData.setPresenterDetails(presenterMap);
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "Failed to parse presenter details", e);
+        if (presenterMapRaw != null) {
+            exportData.setPresenterDetails(presenterMapRaw);
         }
 
         // פרטי בנק
         try {
-            Map<String, Object> bankMap = doc.get("bank_details", Map.class);
+            Map<String, Object> bankMap = bankMapRaw;
             if (bankMap != null) {
                 BankDetails bankDetails = new BankDetails();
                 bankDetails.setBankName(safeMapValue(bankMap, "bank_name"));
@@ -213,48 +240,67 @@ public class ProjectJsonExporter {
             Log.w(TAG, "Failed to parse bank details", e);
         }
 
-        // סיכום וכתובת
-        exportData.setPropertySummary(safeGetString(doc, "property_summary"));
+        // שדות מ-property_details עם fallback לשורש
         exportData.setFullAddress(safeGetString(doc, "full_address"));
-        exportData.setBuildingEntry(safeGetString(doc, "building_entry"));
-        exportData.setBuildingNumber(safeGetString(doc, "building_number"));
-        exportData.setZoneNumber(safeGetString(doc, "zone_number"));
-        exportData.setBuildingCityPlanNumber(safeGetString(doc, "building_city_plan_number"));
-        exportData.setEnvironmentCharacteristics(safeGetString(doc, "environment_characteristics"));
-        exportData.setPropertyLocation(safeGetString(doc, "property_location"));
-        exportData.setBuildingType(safeGetString(doc, "building_type"));
-        exportData.setPhysicalCondition(safeGetString(doc, "physical_condition"));
-        exportData.setMaintenance(safeGetString(doc, "maintenance"));
-        exportData.setConstructionMaterial(safeGetString(doc, "construction_material"));
-        exportData.setHasElevator(safeGetString(doc, "has_elevator"));
-        exportData.setExternalCladding(safeGetString(doc, "external_cladding"));
-        exportData.setNumberOfFloors(safeGetString(doc, "number_of_floors"));
+        Log.d(TAG, "full_address=" + safeGetString(doc, "full_address"));
+        exportData.setPropertySummary(pdOrRoot(pd, doc, "property_summary"));
+        Log.d(TAG, "property_summary=" + pdOrRoot(pd, doc, "property_summary"));
+        exportData.setBuildingEntry(pdOrRoot(pd, doc, "building_entry"));
+        Log.d(TAG, "building_entry=" + pdOrRoot(pd, doc, "building_entry"));
+        exportData.setBuildingNumber(pdOrRoot(pd, doc, "building_number"));
+        exportData.setZoneNumber(pdOrRoot(pd, doc, "zone_number"));
+        exportData.setBuildingCityPlanNumber(pdOrRoot(pd, doc, "building_city_plan_number"));
+        exportData.setEnvironmentCharacteristics(pdOrRoot(pd, doc, "environment_characteristics"));
+        exportData.setPropertyLocation(pdOrRoot(pd, doc, "property_location"));
+        exportData.setBuildingType(pdOrRoot(pd, doc, "building_type"));
+        exportData.setPhysicalCondition(pdOrRoot(pd, doc, "physical_condition"));
+        exportData.setMaintenance(pdOrRoot(pd, doc, "maintenance"));
+        exportData.setConstructionMaterial(pdOrRoot(pd, doc, "construction_material"));
+        exportData.setExternalCladding(pdOrRoot(pd, doc, "external_cladding"));
+        exportData.setNumberOfFloors(pdOrRoot(pd, doc, "number_of_floors"));
+        exportData.setRegisteredApartmentArea(pdOrRoot(pd, doc, "registered_apartment_area"));
+        exportData.setGrossApartmentArea(pdOrRoot(pd, doc, "gross_apartment_area"));
 
-        // פרטי דירה
-        exportData.setApartmentNumber(safeGetString(doc, "apartment_number(municipal_form)"));
-        exportData.setApartmentStory(safeGetString(doc, "apartment_story"));
-        exportData.setNumberOfRooms(safeGetString(doc, "number_of_rooms"));
-        exportData.setApartmentIncludes(safeGetString(doc, "apartment_includes"));
+        // has_elevator - בשורש כ-string ("יש (2)" וכו')
+        exportData.setHasElevator(safeGetString(doc, "has_elevator"));
+
+        // פרטי דירה - property_details עם fallback לשורש
+        // apartment_number - יש שני שמות אפשריים ב-property_details
+        String aptNum = safeMapValue(pd, "apartment_number(municipal_form)");
+        if (aptNum.isEmpty()) aptNum = safeMapValue(pd, "apartment_number_municipal_form");
+        if (aptNum.isEmpty()) aptNum = safeGetString(doc, "apartment_number(municipal_form)");
+        exportData.setApartmentNumber(aptNum);
+
+        exportData.setApartmentStory(pdOrRoot(pd, doc, "apartment_story"));
+        exportData.setNumberOfRooms(pdOrRoot(pd, doc, "number_of_rooms"));
+        exportData.setApartmentIncludes(pdOrRoot(pd, doc, "apartment_includes"));
+        exportData.setApartmentRenovations(pdOrRoot(pd, doc, "apartment_renovations"));
+
+        // שדות AI - נמצאים בשורש בלבד
         exportData.setApartmentKitchen(safeGetString(doc, "apartment_kitchen"));
         exportData.setApartmentFlooring(safeGetString(doc, "apartment_flooring"));
         exportData.setApartmentMainEntranceDoor(safeGetString(doc, "apartment_main_entrance_door"));
         exportData.setApartmentInteriorDoorsAndFrames(safeGetString(doc, "apartment_interior_doors_and_frames"));
         exportData.setApartmentBathroomFixtures(safeGetString(doc, "apartment_bathroom_fixtures"));
         exportData.setApartmentWindows(safeGetString(doc, "apartment_windows"));
-        exportData.setHasBars(safeGetString(doc, "has_bars"));
         exportData.setApartmentAirConditioning(safeGetString(doc, "apartment_air_conditioning"));
-        exportData.setRegisteredApartmentArea(safeGetString(doc, "registered_apartment_area"));
-        exportData.setGrossApartmentArea(safeGetString(doc, "gross_apartment_area"));
+        exportData.setHasBars(safeGetString(doc, "has_bars"));
 
-        // כיווני אוויר (רשימה)
+        // כיווני אוויר - property_details עם fallback לשורש
         try {
-            List<String> directions = doc.get("apartment_directions", List.class);
+            List<String> directions = null;
+            if (pd != null && pd.get("apartment_directions") instanceof List) {
+                directions = (List<String>) pd.get("apartment_directions");
+            }
+            if (directions == null || directions.isEmpty()) {
+                directions = doc.get("apartment_directions", List.class);
+            }
             exportData.setApartmentDirections(directions != null ? directions : new ArrayList<>());
         } catch (Exception e) {
             exportData.setApartmentDirections(new ArrayList<>());
         }
 
-        // שדות בוליאניים
+        // שדות בוליאניים - בשורש
         Boolean centralHeating = doc.getBoolean("central_heating_or_fireplace");
         exportData.setCentralHeatingOrFireplace(centralHeating != null ? centralHeating : false);
 
@@ -264,8 +310,32 @@ public class ProjectJsonExporter {
         Boolean hasStorage = doc.getBoolean("has_storage");
         exportData.setHasStorage(hasStorage != null ? hasStorage : false);
 
-        // תמונת טאבו
+        // תמונת טאבו (שורש)
         exportData.setTabuCropImage(safeGetString(doc, "tabu_crop_image"));
+    }
+
+    /** שולף nested Map מתוך root map ללא שגיאת generic type */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getNestedMap(Map<String, Object> root, String key) {
+        if (root == null) return null;
+        Object val = root.get(key);
+        if (val instanceof Map) return (Map<String, Object>) val;
+        return null;
+    }
+
+    /** שולף שדה מ-property_details, ואם ריק - מהשורש */
+    private String pdOrRoot(Map<String, Object> pd, DocumentSnapshot doc, String key) {
+        String val = safeMapValue(pd, key);
+        if (!val.isEmpty()) return val;
+        return safeGetString(doc, key);
+    }
+
+    /** מחזיר את הראשון שאינו ריק */
+    private String firstNonEmpty(String... values) {
+        for (String v : values) {
+            if (v != null && !v.isEmpty()) return v;
+        }
+        return "";
     }
 
     /**

@@ -2,6 +2,7 @@ package com.example.finalprojectappraisal.classifer.aggregation;
 
 import androidx.annotation.NonNull;
 
+import com.example.finalprojectappraisal.activity.newProject.property.common.utils.Formatters;
 import com.example.finalprojectappraisal.classifer.gemini.GeminiJsonParser;
 import com.example.finalprojectappraisal.model.Image;
 
@@ -178,17 +179,10 @@ public final class ProjectImageAggregator {
 
         // build final "apartment_kitchen" string like GeminiJsonParser does
         String cabinetsStr = buildCabinetsString(flags);
-        String kitchenCondition = null;
-
-        if (cabinetsStr != null) {
-            // לדוגמה: "ארונות: עליונים ותחתונים"
-            kitchenCondition = "ארונות: " + cabinetsStr;
+        if (Formatters.cabinetsImplyNoWorktop(cabinetsStr)) {
+            bestWorktop = null;
         }
-        if (bestWorktop != null) {
-            // מוסיפים "משטח: X"
-            kitchenCondition = (kitchenCondition == null ? "" : kitchenCondition + ", ")
-                    + "משטח: " + bestWorktop;
-        }
+        String kitchenCondition = Formatters.combineKitchen(cabinetsStr, bestWorktop);
 
         if (kitchenCondition != null && !kitchenCondition.isEmpty()) {
             out.put(GeminiJsonParser.FirestoreKeys.KITCHEN_CONDITION, kitchenCondition);
@@ -202,15 +196,19 @@ public final class ProjectImageAggregator {
     private static class CabinetsFlags {
         boolean hasUpper;
         boolean hasLower;
+        String pendingState; // "טרם הותקן" or "בבנייה" if that is all we saw
     }
 
     /**
      * Accumulate cabinets info from a single image string.
-     * With the new KITCHEN_PROMPT we expect:
-     * - "אין ארונות"
-     * - "עליונים בלבד"
-     * - "תחתונים בלבד"
-     * - "עליונים ותחתונים"
+     * Handles values from GeminiPrompts.KITCHEN_PROMPT, e.g.:
+     * - "ארונות עץ עליונים ותחתונים"
+     * - "ארונות עץ תחתונים"
+     * - "ארונות עץ עליונים"
+     * - "ארונות עץ עליונים ותחתונים אין עבודה"
+     * - "ארונות עץ תחתונים אין עבודה"
+     * - "טרם הותקן", "בבנייה"
+     * Also handles legacy short-form values.
      */
     private static CabinetsFlags accumulateCabinets(CabinetsFlags acc, String cabinetsVal) {
         if (cabinetsVal == null || cabinetsVal.trim().isEmpty()) return acc;
@@ -218,43 +216,37 @@ public final class ProjectImageAggregator {
         String v = cabinetsVal.trim();
         if (acc == null) acc = new CabinetsFlags();
 
-        switch (v) {
-            case "אין ארונות":
-                // no contribution to upper/lower
-                break;
-            case "עליונים בלבד":
-                acc.hasUpper = true;
-                break;
-            case "תחתונים בלבד":
-                acc.hasLower = true;
-                break;
-            case "עליונים ותחתונים":
-                acc.hasUpper = true;
-                acc.hasLower = true;
-                break;
-            default:
-                // unexpected string – ignore
-                break;
+        if (v.contains("עליונים") && v.contains("תחתונים")) {
+            acc.hasUpper = true;
+            acc.hasLower = true;
+        } else if (v.contains("עליונים")) {
+            acc.hasUpper = true;
+        } else if (v.contains("תחתונים")) {
+            acc.hasLower = true;
+        } else if ("טרם הותקן".equals(v) || "בבנייה".equals(v)) {
+            if (acc.pendingState == null) acc.pendingState = v;
         }
+        // "אין ארונות" and unrecognized strings contribute nothing
         return acc;
     }
 
     /**
-     * Convert accumulated flags to a single cabinets string.
+     * Convert accumulated flags to a single cabinets string matching Choices.KITCHEN_CABINETS.
      */
     private static String buildCabinetsString(CabinetsFlags flags) {
         if (flags == null) return null;
 
-        if (!flags.hasUpper && !flags.hasLower) {
-            return "אין ארונות";
-        }
         if (flags.hasUpper && flags.hasLower) {
-            return "עליונים ותחתונים";
+            return "ארונות עץ עליונים ותחתונים";
         }
         if (flags.hasUpper) {
-            return "עליונים בלבד";
+            return "ארונות עץ עליונים";
         }
-        return "תחתונים בלבד";
+        if (flags.hasLower) {
+            return "ארונות עץ תחתונים";
+        }
+        // Only pending state seen (e.g. "טרם הותקן" / "בבנייה") — return it directly
+        return flags.pendingState;
     }
 
     // =========================================================

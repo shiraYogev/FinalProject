@@ -1,6 +1,7 @@
 // file: app/src/main/java/com/example/finalprojectappraisal/classifer/gemini/GeminiJsonParser.java
 package com.example.finalprojectappraisal.classifer.gemini;
 
+import com.example.finalprojectappraisal.activity.newProject.property.common.utils.Formatters;
 import com.example.finalprojectappraisal.model.Image;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -82,9 +83,10 @@ public final class GeminiJsonParser {
             case KITCHEN: {
                 String cabinets = optString(j, "cabinets");
                 String worktop  = optString(j, "worktop");
-                String kc = null;
-                if (cabinets != null) kc = "ארונות: " + cabinets;
-                if (worktop != null)  kc = (kc == null ? "" : kc + ", ") + "משטח: " + worktop;
+                if (Formatters.cabinetsImplyNoWorktop(cabinets)) {
+                    worktop = null;
+                }
+                String kc = Formatters.combineKitchen(cabinets, worktop);
                 if (kc != null) fields.put(FirestoreKeys.KITCHEN_CONDITION, kc);
                 break;
             }
@@ -165,7 +167,9 @@ public final class GeminiJsonParser {
                 String cabinets = optString(j, "cabinets");
                 String worktop  = optString(j, "worktop");
                 if (cabinets != null) kv.put("ארונות", cabinets);
-                if (worktop != null)  kv.put("משטח עבודה", worktop);
+                if (worktop != null && !Formatters.cabinetsImplyNoWorktop(cabinets)) {
+                    kv.put("משטח עבודה", Formatters.decorateWorktop(worktop));
+                }
                 break;
             }
             default:
@@ -190,7 +194,9 @@ public final class GeminiJsonParser {
                 String cabinets = optString(j, "cabinets");
                 String worktop  = optString(j, "worktop");
                 if (cabinets != null) out.put(Image.Subcategory.CABINETS, cabinets);
-                if (worktop != null)  out.put(Image.Subcategory.WORKTOP, worktop);
+                if (worktop != null && !Formatters.cabinetsImplyNoWorktop(cabinets)) {
+                    out.put(Image.Subcategory.WORKTOP, worktop);
+                }
                 break;
             }
             case LIVING_ROOM: {

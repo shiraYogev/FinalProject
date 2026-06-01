@@ -197,7 +197,7 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
         items.add(SectionItem.of("מטבח"));
         items.add(FieldItem.of(
                 GeminiJsonParser.FirestoreKeys.KITCHEN_CONDITION,
-                "מצב מטבח (ארונות + משטח עבודה)",
+                "מצב מטבח",
                 Formatters.safe(state.kitchenCondition)
         ));
 

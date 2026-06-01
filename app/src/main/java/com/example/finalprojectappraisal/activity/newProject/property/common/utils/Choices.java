@@ -23,8 +23,10 @@ public final class Choices {
     );
 
     public static final List<String> FLOORING_TYPES = Arrays.asList(
-            "אבן טבעית","שיש","טרצו","גרניט","קרמיקה","פסיפס","פורצלן גרניט",
-            "אריחי בטון","בטון מוחלק","פרקט","p.v.c","פרלטו","פורצלן דמוי פרקט","אחר","טרם רוצף"
+            "פורצלן גרניט","אבן טבעית/שיש","קרמיקה","טרצו","פסיפס",
+            "אריחי בטון","בטון מוחלק","פרקט לביניציה","פרקט עץ","p.v.c",
+            "לוחות דמוי עץ/אבן","פרלטו","פורצלן דמוי פרקט","ריצוף אפוקסי",
+            "שטיח מקיר לקיר","טרם רוצף","בבנייה","אחר"
     );
 
     public static final List<String> FLOORING_SIZES = Arrays.asList(
@@ -33,7 +35,11 @@ public final class Choices {
     );
 
     public static final List<String> KITCHEN_CABINETS = Arrays.asList(
-             "ארונות עץ תחתונים בלבד", "ארונות עץ עליונים ותחתונים", "טרם הותקן"
+            "ארונות עץ עליונים ותחתונים",
+            "ארונות עץ תחתונים",
+            "ארונות עץ עליונים",
+            "טרם הותקן",
+            "בבנייה"
     );
 
     public static final List<String> KITCHEN_WORKTOPS = Arrays.asList(
