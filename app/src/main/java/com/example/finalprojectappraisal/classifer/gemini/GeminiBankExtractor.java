@@ -4,12 +4,11 @@ import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
-import com.example.finalprojectappraisal.BuildConfig;
 import com.example.finalprojectappraisal.model.BankDetails;
-import com.google.ai.client.generativeai.GenerativeModel;
-import com.google.ai.client.generativeai.java.GenerativeModelFutures;
-import com.google.ai.client.generativeai.type.Content;
-import com.google.ai.client.generativeai.type.GenerateContentResponse;
+import com.google.firebase.vertexai.FirebaseVertexAI;
+import com.google.firebase.vertexai.java.GenerativeModelFutures;
+import com.google.firebase.vertexai.type.Content;
+import com.google.firebase.vertexai.type.GenerateContentResponse;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
@@ -20,8 +19,6 @@ import java.util.concurrent.Executors;
 
 public class GeminiBankExtractor {
     private static final String TAG = "GeminiBankExtractor";
-    private static final String API_KEY =
-            BuildConfig.GEMINI_API_KEY != null ? BuildConfig.GEMINI_API_KEY.trim() : "";
     private static final Executor executor = Executors.newSingleThreadExecutor();
 
     public interface BankDataExtractionCallback {
@@ -128,12 +125,12 @@ public class GeminiBankExtractor {
 
             // יצירת מודל Gemini
             GenerativeModelFutures generativeModel = GenerativeModelFutures.from(
-                    new GenerativeModel("gemini-2.0-flash-exp", API_KEY)
+                    FirebaseVertexAI.getInstance().generativeModel("gemini-2.0-flash")
             );
 
             // יצירת Content עם הבייטים של ה-PDF והפרומפט
             Content content = new Content.Builder()
-                    .addBlob("application/pdf", pdfBytes)
+                    .addInlineData(pdfBytes, "application/pdf")
                     .addText(prompt)
                     .build();
 

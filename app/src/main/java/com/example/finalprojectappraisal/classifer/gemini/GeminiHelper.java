@@ -6,11 +6,10 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.util.Log;
 
-import com.example.finalprojectappraisal.BuildConfig;
-import com.google.ai.client.generativeai.GenerativeModel;
-import com.google.ai.client.generativeai.java.GenerativeModelFutures;
-import com.google.ai.client.generativeai.type.Content;
-import com.google.ai.client.generativeai.type.GenerateContentResponse;
+import com.google.firebase.vertexai.FirebaseVertexAI;
+import com.google.firebase.vertexai.java.GenerativeModelFutures;
+import com.google.firebase.vertexai.type.Content;
+import com.google.firebase.vertexai.type.GenerateContentResponse;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -32,9 +31,6 @@ import java.util.concurrent.TimeUnit;
 public class GeminiHelper {
     private static final String TAG = "GeminiHelper";
     private static final boolean DEBUG = true; // flip to false in production
-
-    private static final String API_KEY =
-            BuildConfig.GEMINI_API_KEY != null ? BuildConfig.GEMINI_API_KEY.trim() : "";
 
     // single worker for image loading + model call orchestration
     private static final Executor executor = Executors.newSingleThreadExecutor();
@@ -72,17 +68,7 @@ public class GeminiHelper {
         final String tid = (traceId == null || traceId.isEmpty()) ? makeTraceId(null, imageUri) : traceId;
 
         executor.execute(() -> {
-            // 0) API key sanity
-            if (API_KEY == null || API_KEY.trim().isEmpty()) {
-                logE(tid, "API key is missing. Did you set GEMINI_API_KEY in local.properties and sync?", null);
-                if (callback != null) {
-                    callback.onError("API key חסר. ודאי שהגדרת GEMINI_API_KEY ב-local.properties וסנכרנת Gradle.");
-                }
-                return;
-            }
-            final String key = API_KEY.trim();
-            final String masked = key.substring(0, Math.min(4, key.length())) + "****" + key.substring(Math.max(key.length() - 3, 4));
-            logD(tid, "START classifyImage | API key present? true, masked=" + masked);
+            logD(tid, "START classifyImage");
             logD(tid, "Prompt length=" + (prompt == null ? 0 : prompt.length()));
 
             // 1) Kick off attempt with fallback chain
@@ -229,7 +215,8 @@ public class GeminiHelper {
 
             // 2) Build model
             GenerativeModelFutures generativeModel =
-                    GenerativeModelFutures.from(new GenerativeModel(modelName, API_KEY));
+                    GenerativeModelFutures.from(
+                            FirebaseVertexAI.getInstance().generativeModel(modelName));
 
             // 3) Build content
             Content content = new Content.Builder()

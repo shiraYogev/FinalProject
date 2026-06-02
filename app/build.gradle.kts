@@ -6,20 +6,11 @@ plugins {
 
 }
 
-// Load GEMINI_API_KEY from local.properties (project root).
+// Load local.properties (used for GOOGLE_MAPS_API_KEY).
 val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) f.inputStream().use { load(it) }
 }
-
-// Fallbacks: gradle.properties or environment variable if needed
-val geminiKey: String = localProps.getProperty("GEMINI_API_KEY")
-    ?: (project.findProperty("GEMINI_API_KEY") as String?)
-    ?: System.getenv("GEMINI_API_KEY")
-    ?: ""
-
-// (אופציונלי לדיבוג: לא מדפיסים את המפתח עצמו)
-println("GEMINI_API_KEY present in build? ${geminiKey.isNotEmpty()} length=${geminiKey.length}")
 
 val googleMapsKey: String = localProps.getProperty("GOOGLE_MAPS_API_KEY")
     ?: (project.findProperty("GOOGLE_MAPS_API_KEY") as String?)
@@ -42,8 +33,6 @@ android {
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Expose key to BuildConfig
-        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
         buildConfigField("String", "GOOGLE_MAPS_API_KEY", googleMapsKey)
         manifestPlaceholders["googleMapsApiKey"] = googleMapsKey
 
@@ -101,9 +90,8 @@ dependencies {
     // UI Components
     implementation("androidx.cardview:cardview:1.0.0")
 
-    // AI & Cloud Services
-    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
-    //implementation("com.google.ai.client.generativeai:generativeai:0.2.1")
+    // AI & Cloud Services — Firebase AI Logic SDK (Vertex AI backend)
+    implementation("com.google.firebase:firebase-vertexai")
     implementation("com.google.cloud:google-cloud-storage:2.22.5") {
         exclude(group = "com.google.api.grpc", module = "proto-google-common-protos")
         exclude(group = "com.google.protobuf", module = "protobuf-java")

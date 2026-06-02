@@ -9,11 +9,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.example.finalprojectappraisal.BuildConfig;
-import com.google.ai.client.generativeai.GenerativeModel;
-import com.google.ai.client.generativeai.java.GenerativeModelFutures;
-import com.google.ai.client.generativeai.type.Content;
-import com.google.ai.client.generativeai.type.GenerateContentResponse;
+import com.google.firebase.vertexai.FirebaseVertexAI;
+import com.google.firebase.vertexai.java.GenerativeModelFutures;
+import com.google.firebase.vertexai.type.Content;
+import com.google.firebase.vertexai.type.GenerateContentResponse;
 
 import org.json.JSONObject;
 
@@ -34,9 +33,6 @@ public final class GeminiSummaryService {
 
     private static final String TAG = "GeminiSummaryService";
 
-    private static final String API_KEY =
-            BuildConfig.GEMINI_API_KEY != null ? BuildConfig.GEMINI_API_KEY.trim() : "";
-
     private static final Executor EXEC = Executors.newSingleThreadExecutor();
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
 
@@ -54,16 +50,9 @@ public final class GeminiSummaryService {
 
         EXEC.execute(() -> {
             try {
-                if (API_KEY == null || API_KEY.trim().isEmpty()) {
-                    Log.e(TAG, "API key missing: BuildConfig.GEMINI_API_KEY is null/empty");
-                    postError(callback, "Missing Gemini API key (BuildConfig.GEMINI_API_KEY).");
-                    return;
-                }
-                Log.d(TAG, "API key present: " + (API_KEY.length() > 6 ? "YES" : "SHORT"));
-
-                Log.d(TAG, "Creating GenerativeModel: gemini-1.5-pro");
+                Log.d(TAG, "Creating GenerativeModel: gemini-2.5-flash (Firebase Vertex AI)");
                 GenerativeModelFutures model = GenerativeModelFutures.from(
-                        new GenerativeModel("gemini-2.5-flash", API_KEY)
+                        FirebaseVertexAI.getInstance().generativeModel("gemini-2.5-flash")
                 );
 
                 Content.Builder contentBuilder = new Content.Builder();

@@ -90,6 +90,7 @@ public class ClientDetailsActivity extends AppCompatActivity {
 
         if (projectId != null && !projectId.trim().isEmpty()) {
             setTitle("עריכת פרטי לקוח");
+            caseNumberEditText.setEnabled(false);
             loadExistingClient(projectId);
         } else {
             setTitle("יצירת פרויקט חדש - פרטי לקוח");
@@ -170,30 +171,14 @@ public class ClientDetailsActivity extends AppCompatActivity {
      * הערה: נדרש להוספה כחלק מהתיקון.
      */
     private boolean validateInputs() {
-        String clientId = clientIdEditText.getText().toString().trim();
-        String firstName = firstNameEditText.getText().toString().trim();
-        String lastname = lastNameEditText.getText().toString().trim();
+        String caseNumber = caseNumberEditText.getText().toString().trim();
         String fullAddress = fullAddressEditText.getText().toString().trim();
 
-        String caseNumber = caseNumberEditText.getText().toString().trim();
-        if (caseNumber.isEmpty()) {
+        if (projectId == null && caseNumber.isEmpty()) {
             caseNumberEditText.setError("חובה למלא מספר תיק");
             return false;
         }
-        if (clientId.isEmpty()) {
-            clientIdEditText.setError("חובה למלא תעודת זהות");
-            return false;
-        }
-        if (firstNameEditText.getText().toString().trim().isEmpty()) {
-            firstNameEditText.setError("חובה למלא שם פרטי");
-            return false;
-        }
-        if (lastNameEditText.getText().toString().trim().isEmpty()) {
-            lastNameEditText.setError("חובה למלא שם משפחה");
-            return false;
-        }
-        // דורשים כתובת רק במצב יצירה (כי במצב עריכה הכתובת כבר קיימת)
-        if (projectId == null && fullAddress.isEmpty()) {
+        if (fullAddress.isEmpty()) {
             fullAddressEditText.setError("חובה למלא כתובת");
             return false;
         }
@@ -282,6 +267,7 @@ public class ClientDetailsActivity extends AppCompatActivity {
             if (p == null) return;
 
             // ממלאים שדות—אם חסר, משאירים ריק
+            caseNumberEditText.setText(projectId);
             Client c = p.getClient();
             if (c != null) {
                 if (c.getClientId() != null)        clientIdEditText.setText(c.getClientId());
