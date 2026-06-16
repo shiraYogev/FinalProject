@@ -122,6 +122,8 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
                 return;
             }
             DocumentSnapshot snap = task.getResult();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> pd = (Map<String, Object>) snap.get("property_details");
             Project p = snap.toObject(Project.class);
             if (p == null) {
                 Toast.makeText(this, "שגיאה בקריאת פרויקט", Toast.LENGTH_LONG).show();
@@ -131,6 +133,22 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
             // Build editable state from project:
             // includes fields from Gemini + flags like hasParking / hasStorageRoom
             state = ApartmentEditableState.fromProject(p);
+
+            if (state != null) {
+                boolean missingElevator = state.hasElevator == null
+                        || state.hasElevator.trim().isEmpty()
+                        || Formatters.EM_DASH.equals(state.hasElevator.trim());
+                if (missingElevator && pd != null) {
+                    Object elevatorObj = pd.get(GeminiJsonParser.FirestoreKeys.HAS_ELEVATOR);
+                    if (elevatorObj instanceof String) {
+                        String elevator = ((String) elevatorObj).trim();
+                        if (!elevator.isEmpty()) {
+                            state.hasElevator = elevator;
+                        }
+                    }
+                }
+            }
+
             bindList();
         });
     }

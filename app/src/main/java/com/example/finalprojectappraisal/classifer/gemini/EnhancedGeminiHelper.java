@@ -222,6 +222,9 @@ public class EnhancedGeminiHelper {
             case LIVING_ROOM:   return GeminiPrompts.LIVING_ROOM_PROMPT;
             case BEDROOM:       return GeminiPrompts.BEDROOM_PROMPT;
             case BATHROOM:      return GeminiPrompts.BATHROOM_PROMPT;
+            case ELEVATOR:      return GeminiPrompts.ELEVATOR_PROMPT;
+            case HALLWAY:       return GeminiPrompts.INTERIOR_DOORS_PROMPT;
+            case EXTERIOR:      return GeminiPrompts.EXTERIOR_CLADDING_PROMPT;
             default:            return GeminiPrompts.FLOORING_PROMPT;
         }
     }

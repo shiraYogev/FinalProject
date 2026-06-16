@@ -12,7 +12,9 @@ import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Image;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Summary:
@@ -56,11 +58,19 @@ public class UploadImagesViewModel extends ViewModel {
         loading.setValue(true);
         repo.getImagesForProject(projectId, task -> {
             loading.setValue(false);
-            if (task.isSuccessful() && task.getResult() != null) {
-                existing.setValue(task.getResult());
-            } else {
+
+            if (!task.isSuccessful()) {
                 error.setValue("Failed to load existing images");
+                return;
             }
+
+            List<Image> list = task.getResult();
+            if (list == null) {
+                list = new ArrayList<>();
+            }
+
+            existing.setValue(list);
+            syncFeatureFlagsWithImages(list);
         });
     }
 
@@ -196,30 +206,75 @@ public class UploadImagesViewModel extends ViewModel {
         }
     }
 
+    private void syncFeatureFlagsWithImages(@NonNull List<Image> images) {
+        if (projectId == null || images == null) return;
+
+        boolean hasParking = false;
+        boolean hasStorage = false;
+
+        for (Image image : images) {
+            if (image == null || image.getCategory() == null) continue;
+
+            switch (image.getCategory()) {
+                case PARKING:
+                    hasParking = true;
+                    break;
+                case STORAGE:
+                    hasStorage = true;
+                    break;
+                default:
+                    break;
+            }
+
+            if (hasParking && hasStorage) {
+                break;
+            }
+        }
+
+        Map<String, Boolean> updates = new HashMap<>();
+        updates.put(FirestoreConstants.FIELD_HAS_PARKING, hasParking);
+        updates.put(FirestoreConstants.FIELD_HAS_PARKING_SNAKE, hasParking);
+        updates.put(FirestoreConstants.FIELD_HAS_STORAGE_ROOM, hasStorage);
+        updates.put(FirestoreConstants.FIELD_HAS_STORAGE_ROOM_SNAKE, hasStorage);
+
+        pushFlagUpdates(updates, "Failed to sync parking/storage flags");
+    }
+
     private void updateFeatureFlagsForCategory(@Nullable Image.Category category) {
         if (projectId == null || category == null) return;
 
         switch (category) {
             case STORAGE:
-                repo.setBooleanFlagOnProject(
-                        projectId,
-                        FirestoreConstants.FIELD_HAS_STORAGE_ROOM,
-                        true,
-                        task -> { if (!task.isSuccessful()) error.setValue("Failed to update storage flag"); }
-                );
+                Map<String, Boolean> storageUpdate = new HashMap<>();
+                storageUpdate.put(FirestoreConstants.FIELD_HAS_STORAGE_ROOM, true);
+                storageUpdate.put(FirestoreConstants.FIELD_HAS_STORAGE_ROOM_SNAKE, true);
+                pushFlagUpdates(storageUpdate, "Failed to update storage flag");
                 break;
 
             case PARKING:
-                repo.setBooleanFlagOnProject(
-                        projectId,
-                        FirestoreConstants.FIELD_HAS_PARKING,
-                        true,
-                        task -> { if (!task.isSuccessful()) error.setValue("Failed to update parking flag"); }
-                );
+                Map<String, Boolean> parkingUpdate = new HashMap<>();
+                parkingUpdate.put(FirestoreConstants.FIELD_HAS_PARKING, true);
+                parkingUpdate.put(FirestoreConstants.FIELD_HAS_PARKING_SNAKE, true);
+                pushFlagUpdates(parkingUpdate, "Failed to update parking flag");
                 break;
 
             default:
                 break;
         }
+    }
+
+    private void pushFlagUpdates(@NonNull Map<String, Boolean> flags, @NonNull String errorMessage) {
+        if (projectId == null || flags == null || flags.isEmpty()) return;
+
+        Map<String, Object> payload = new HashMap<>();
+        for (Map.Entry<String, Boolean> entry : flags.entrySet()) {
+            payload.put(entry.getKey(), entry.getValue());
+        }
+
+        repo.updateMultipleFields(projectId, payload, task -> {
+            if (!task.isSuccessful()) {
+                error.setValue(errorMessage);
+            }
+        });
     }
 }

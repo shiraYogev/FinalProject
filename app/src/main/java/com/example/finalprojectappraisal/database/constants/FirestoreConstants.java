@@ -68,6 +68,8 @@ public final class FirestoreConstants {
     public static final String FIELD_HAS_AIR_CONDITIONING = "hasAirConditioning";
     public static final String FIELD_HAS_PARKING = "hasParking";
     public static final String FIELD_HAS_CENTRAL_HEATING = "hasCentralHeating";
+    public static final String FIELD_HAS_STORAGE_ROOM_SNAKE = "has_storage";
+    public static final String FIELD_HAS_PARKING_SNAKE = "has_parking";
 
     // =========================
     // Field Names - Image Paths

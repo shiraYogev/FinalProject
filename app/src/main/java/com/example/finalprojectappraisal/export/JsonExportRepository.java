@@ -30,6 +30,10 @@ public class JsonExportRepository {
         this.db = FirebaseFirestore.getInstance();
     }
 
+    public JsonExportRepository(FirebaseFirestore db) {
+        this.db = db;
+    }
+
     /**
      * שומר את ה-JSON כתת-אוסף תחת הפרויקט.
      * המבנה: projects/{projectId}/json_exports/{exportId}

@@ -44,6 +44,7 @@ public final class ProjectImageAggregator {
         aggregateBars(images, updates);
         aggregateKitchen(images, updates);
         aggregateInteriorDoors(images, updates);
+        aggregateExteriorCladding(images, updates);
         aggregateFlooring(images, updates);   // 🆕 flooring aggregation (last meaningful value wins)
 
         // אפשר להרחיב פה בעתיד לעוד שדות
@@ -309,6 +310,80 @@ public final class ProjectImageAggregator {
         if (finalVal != null) {
             out.put(GeminiJsonParser.FirestoreKeys.INTERIOR_DOOR_CONDITION, finalVal);
         }
+    }
+
+    private static void aggregateExteriorCladding(@NonNull List<Image> images,
+                                                  @NonNull Map<String, Object> out) {
+        String bestCladding = null;
+        String bestBuildingType = null;
+
+        for (Image img : images) {
+            if (img == null || img.getCategory() != Image.Category.EXTERIOR) continue;
+
+            String value = null;
+            String buildingType = null;
+
+            Map<Image.Subcategory, String> ai = img.getAiClassifications();
+            if (ai != null && !ai.isEmpty()) {
+                String v = ai.get(Image.Subcategory.WALLS);
+                if (v != null && !v.trim().isEmpty()) {
+                    value = v.trim();
+                }
+
+                String bt = ai.get(Image.Subcategory.OTHER);
+                if (bt != null && !bt.trim().isEmpty()) {
+                    buildingType = bt.trim();
+                }
+            }
+
+            if (value == null || value.isEmpty()) {
+                String fromDesc = extractValueFromDescription(img.getDescription(), "חיפוי חיצוני");
+                if (fromDesc != null && !fromDesc.trim().isEmpty()) {
+                    value = fromDesc.trim();
+                }
+            }
+
+            if (buildingType == null || buildingType.isEmpty()) {
+                String fromDesc = extractValueFromDescription(img.getDescription(), "סוג בניין");
+                if (fromDesc != null && !fromDesc.trim().isEmpty()) {
+                    buildingType = fromDesc.trim();
+                }
+            }
+
+            if (value == null || value.isEmpty()) continue;
+
+            if (bestCladding == null || shouldReplaceCladding(bestCladding, value)) {
+                bestCladding = value;
+            }
+
+            if (buildingType != null && !buildingType.isEmpty()) {
+                if (bestBuildingType == null || shouldReplaceBuildingType(bestBuildingType, buildingType)) {
+                    bestBuildingType = buildingType;
+                }
+            }
+        }
+
+        if (bestCladding != null) {
+            out.put("property_details." + GeminiJsonParser.FirestoreKeys.EXTERNAL_CLADDING, bestCladding);
+        }
+
+        if (bestBuildingType != null) {
+            out.put("property_details." + GeminiJsonParser.FirestoreKeys.BUILDING_TYPE, bestBuildingType);
+        }
+    }
+
+    private static boolean shouldReplaceCladding(@NonNull String current, @NonNull String candidate) {
+        if ("אחר".equals(current) && !"אחר".equals(candidate)) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean shouldReplaceBuildingType(@NonNull String current, @NonNull String candidate) {
+        if ("אחר".equals(current) && !"אחר".equals(candidate)) {
+            return true;
+        }
+        return false;
     }
 
     // =========================================================

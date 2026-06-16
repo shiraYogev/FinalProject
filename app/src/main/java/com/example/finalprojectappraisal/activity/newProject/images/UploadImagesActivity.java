@@ -147,6 +147,7 @@ public class UploadImagesActivity extends AppCompatActivity {
         ));
 
         // שאר החדרים עם סיווג אוטומטי
+        categories.add(new ImageCategorySection("דלת כניסה", Image.Category.ENTRANCE_DOOR, GeminiPrompts.ENTRANCE_DOOR_PROMPT));
         categories.add(new ImageCategorySection("מטבח", Image.Category.KITCHEN, GeminiPrompts.KITCHEN_PROMPT));
         categories.add(new ImageCategorySection("סלון", Image.Category.LIVING_ROOM, GeminiPrompts.LIVING_ROOM_PROMPT));
 
@@ -160,12 +161,12 @@ public class UploadImagesActivity extends AppCompatActivity {
         ));
 
         // חזית / נוף
-        categories.add(new ImageCategorySection("חזית", Image.Category.EXTERIOR, "זהה מצב חזית הבית..."));
+        categories.add(new ImageCategorySection("חזית", Image.Category.EXTERIOR, GeminiPrompts.EXTERIOR_CLADDING_PROMPT));
         categories.add(new ImageCategorySection("נוף", Image.Category.VIEW, "זהה את הנוף מהדירה..."));
 
         // קטגוריות ללא סיווג
-        categories.add(new ImageCategorySection("מעלית", Image.Category.ELEVATOR, null));
-        categories.add(new ImageCategorySection("פרוזדור", Image.Category.HALLWAY, null));
+        categories.add(new ImageCategorySection("מעלית", Image.Category.ELEVATOR, GeminiPrompts.ELEVATOR_PROMPT));
+        categories.add(new ImageCategorySection("פרוזדור", Image.Category.HALLWAY, GeminiPrompts.INTERIOR_DOORS_PROMPT));
         categories.add(new ImageCategorySection("מזווה", Image.Category.PANTRY, null));
         categories.add(new ImageCategorySection("חצר", Image.Category.YARD, null));
         categories.add(new ImageCategorySection("מחסן", Image.Category.STORAGE, null));
@@ -303,16 +304,6 @@ public class UploadImagesActivity extends AppCompatActivity {
         }
 
         binding.btnSaveAndContinue.setOnClickListener(v -> {
-            boolean hasImages = false;
-            for (ImageCategorySection s : categories) {
-                if (!s.images.isEmpty()) { hasImages = true; break; }
-            }
-
-            if (!hasImages) {
-                toast("יש להעלות לפחות תמונה אחת");
-                return;
-            }
-
             progressHelper.moveToNextStep();
             finish();
         });
@@ -469,6 +460,13 @@ public class UploadImagesActivity extends AppCompatActivity {
             case ENTRANCE_DOOR:
                 appendIf(message, "מספר דירה", parsedDisplayKv.get("מספר דירה"));
                 appendIf(message, "דלת", parsedDisplayKv.get("סוג דלת"));
+                break;
+            case ELEVATOR:
+                appendIf(message, "מעליות", parsedDisplayKv.get("מספר מעליות"));
+                appendIf(message, "קומות", parsedDisplayKv.get("מספר קומות בבניין"));
+                break;
+            case HALLWAY:
+                appendIf(message, "דלתות פנים", parsedDisplayKv.get("דלתות פנים"));
                 break;
             case LIVING_ROOM:
             case BEDROOM:

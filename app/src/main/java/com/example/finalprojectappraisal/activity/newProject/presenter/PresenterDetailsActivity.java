@@ -205,36 +205,21 @@ public class PresenterDetailsActivity extends AppCompatActivity {
         f.roleOfPresenter = str(etRoleOfPresenter);
         f.holderStatus = str(etHolderStatus);
 
-        // ולידציה
-        if (isEmpty(f.appraiserName)) {
-            toast("יש למלא שם שמאי");
-            etAppraiserName.requestFocus();
-            return;
-        }
-
-        if (isEmpty(f.appraiserRole)) {
-            toast("יש לבחור תפקיד");
-            etAppraiserRole.requestFocus();
-            return;
-        }
-
-        if (!FieldValidators.isValidDate(f.appraisalDate)) {
+        // הולכים רק על ולידציה רכה: אם המשתמש הזין ערך – נוודא שהוא תקין.
+        if (!isEmpty(f.appraisalDate) && !FieldValidators.isValidDate(f.appraisalDate)) {
             toast("תאריך שומה לא תקין (DD/MM/YYYY)");
             etAppraisalDate.requestFocus();
             return;
         }
 
-        if (isEmpty(f.nameOfPresenter)) {
-            toast("יש למלא שם מוסר");
-            etNameOfPresenter.requestFocus();
-            return;
-        }
-
-        if (!FieldValidators.isNineDigits(f.idOfPresenter) ||
-                !FieldValidators.isValidIsraeliID(f.idOfPresenter)) {
-            toast("ת.ז. מוסר חייבת להיות 9 ספרות תקינות");
-            etIdOfPresenter.requestFocus();
-            return;
+        if (!isEmpty(f.idOfPresenter)) {
+            boolean isNineDigits = FieldValidators.isNineDigits(f.idOfPresenter);
+            boolean isValidId    = FieldValidators.isValidIsraeliID(f.idOfPresenter);
+            if (!isNineDigits || !isValidId) {
+                toast("ת.ז. מוסר חייבת להיות 9 ספרות תקינות");
+                etIdOfPresenter.requestFocus();
+                return;
+            }
         }
 
         // שמירה ל-Firebase דרך ViewModel
