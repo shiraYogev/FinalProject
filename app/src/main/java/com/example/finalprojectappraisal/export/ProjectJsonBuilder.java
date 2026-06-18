@@ -1,6 +1,5 @@
 package com.example.finalprojectappraisal.export;
 
-import com.example.finalprojectappraisal.model.BankDetails;
 import com.example.finalprojectappraisal.model.Client;
 import com.example.finalprojectappraisal.model.Image;
 
@@ -22,9 +21,6 @@ public class ProjectJsonBuilder {
      */
     public static JSONObject buildExportJson(ProjectJsonExportData data) throws JSONException {
         JSONObject root = new JSONObject();
-
-        // ===== Bank Details =====
-        addBankDetails(root, data.getBankDetails());
 
         // ===== Presenter Details (Appraiser info) =====
         addPresenterDetails(root, data);
@@ -48,52 +44,6 @@ public class ProjectJsonBuilder {
         addAreas(root, data);
 
         return root;
-    }
-
-    private static void addBankDetails(JSONObject root, BankDetails bank) throws JSONException {
-        if (bank == null) {
-            // אם אין נתוני בנק, נוסיף שדות ריקים
-            root.put("bank_name", "");
-            root.put("branch_name", "");
-            root.put("branch_email", "");
-            root.put("banker_name", "");
-            root.put("document_date_gre", "");
-            root.put("document_date_he", "");
-            root.put("valuation_number", "");
-            root.put("loan_number", "");
-            root.put("type_of_loan", "");
-            root.put("page1_header", "");
-            root.put("lot_number", "");
-            root.put("main_parcel", "");
-            root.put("sub_parcel", "");
-            root.put("short_address", "");
-            root.put("loaner_name", "");
-            root.put("loaner_id", "");
-            root.put("purpose_of_loan", "");
-            root.put("identity_of_customer", "");
-            root.put("appraisal_final_date", "");
-            return;
-        }
-
-        root.put("bank_name", safeString(bank.getBankName()));
-        root.put("branch_name", safeString(bank.getBranchName()));
-        root.put("branch_email", safeString(bank.getBranchEmail()));
-        root.put("banker_name", safeString(bank.getBankerName()));
-        root.put("document_date_gre", safeString(bank.getDocumentDateGre()));
-        root.put("document_date_he", safeString(bank.getDocumentDateHe()));
-        root.put("valuation_number", safeString(bank.getValuationNumber()));
-        root.put("loan_number", safeString(bank.getLoanNumber()));
-        root.put("type_of_loan", safeString(bank.getTypeOfLoan()));
-        root.put("page1_header", safeString(bank.getPage1Header()));
-        root.put("lot_number", safeString(bank.getLotNumber()));
-        root.put("main_parcel", safeString(bank.getMainParcel()));
-        root.put("sub_parcel", safeString(bank.getSubParcel()));
-        root.put("short_address", safeString(bank.getShortAddress()));
-        root.put("loaner_name", safeString(bank.getLoanerName()));
-        root.put("loaner_id", safeString(bank.getLoanerId()));
-        root.put("purpose_of_loan", safeString(bank.getPurposeOfLoan()));
-        root.put("identity_of_customer", safeString(bank.getIdentityOfCustomer()));
-        root.put("appraisal_final_date", safeString(bank.getAppraisalFinalDate()));
     }
 
     private static void addPresenterDetails(JSONObject root, ProjectJsonExportData data) throws JSONException {
@@ -140,9 +90,6 @@ public class ProjectJsonBuilder {
     }
 
     private static void addImages(JSONObject root, ProjectJsonExportData data) throws JSONException {
-        // Tabu image
-        root.put("tabu_crop_image", safeString(data.getTabuCropImage()));
-
         // חיפוש תמונות חזית ופנים מתוך הרשימה
         String frontImage = data.getFrontImageUrl();
         String interiorImage = data.getInteriorImageUrl();

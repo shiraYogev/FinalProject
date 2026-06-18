@@ -2,7 +2,6 @@ package com.example.finalprojectappraisal.export;
 
 import android.util.Log;
 
-import com.example.finalprojectappraisal.model.BankDetails;
 import com.example.finalprojectappraisal.model.Client;
 import com.example.finalprojectappraisal.model.Image;
 import com.example.finalprojectappraisal.model.Project;
@@ -176,10 +175,6 @@ public class ProjectJsonExporter {
         Map<String, Object> pd = getNestedMap(root, "property_details");
         Log.d(TAG, "property_details keys: " + (pd != null ? pd.keySet().toString() : "NULL - not found!"));
 
-        // שליפת bankDetails map
-        Map<String, Object> bankMapRaw = getNestedMap(root, "bankDetails");
-        Log.d(TAG, "bankDetails keys: " + (bankMapRaw != null ? bankMapRaw.keySet().toString() : "NULL - not found!"));
-
         // שליפת client map
         Map<String, Object> clientMapRaw = getNestedMap(root, "client");
 
@@ -208,36 +203,6 @@ public class ProjectJsonExporter {
         // פרטי מוסר
         if (presenterMapRaw != null) {
             exportData.setPresenterDetails(presenterMapRaw);
-        }
-
-        // פרטי בנק
-        try {
-            Map<String, Object> bankMap = bankMapRaw;
-            if (bankMap != null) {
-                BankDetails bankDetails = new BankDetails();
-                bankDetails.setBankName(safeMapValue(bankMap, "bank_name"));
-                bankDetails.setBranchName(safeMapValue(bankMap, "branch_name"));
-                bankDetails.setBranchEmail(safeMapValue(bankMap, "branch_email"));
-                bankDetails.setBankerName(safeMapValue(bankMap, "banker_name"));
-                bankDetails.setDocumentDateGre(safeMapValue(bankMap, "document_date_gre"));
-                bankDetails.setDocumentDateHe(safeMapValue(bankMap, "document_date_he"));
-                bankDetails.setValuationNumber(safeMapValue(bankMap, "valuation_number"));
-                bankDetails.setLoanNumber(safeMapValue(bankMap, "loan_number"));
-                bankDetails.setTypeOfLoan(safeMapValue(bankMap, "type_of_loan"));
-                bankDetails.setPage1Header(safeMapValue(bankMap, "page1_header"));
-                bankDetails.setLotNumber(safeMapValue(bankMap, "lot_number"));
-                bankDetails.setMainParcel(safeMapValue(bankMap, "main_parcel"));
-                bankDetails.setSubParcel(safeMapValue(bankMap, "sub_parcel"));
-                bankDetails.setShortAddress(safeMapValue(bankMap, "short_address"));
-                bankDetails.setLoanerName(safeMapValue(bankMap, "loaner_name"));
-                bankDetails.setLoanerId(safeMapValue(bankMap, "loaner_id"));
-                bankDetails.setPurposeOfLoan(safeMapValue(bankMap, "purpose_of_loan"));
-                bankDetails.setIdentityOfCustomer(safeMapValue(bankMap, "identity_of_customer"));
-                bankDetails.setAppraisalFinalDate(safeMapValue(bankMap, "appraisal_final_date"));
-                exportData.setBankDetails(bankDetails);
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "Failed to parse bank details", e);
         }
 
         // שדות מ-property_details עם fallback לשורש
@@ -309,9 +274,6 @@ public class ProjectJsonExporter {
 
         Boolean hasStorage = doc.getBoolean("has_storage");
         exportData.setHasStorage(hasStorage != null ? hasStorage : false);
-
-        // תמונת טאבו (שורש)
-        exportData.setTabuCropImage(safeGetString(doc, "tabu_crop_image"));
     }
 
     /** שולף nested Map מתוך root map ללא שגיאת generic type */

@@ -1,6 +1,5 @@
 package com.example.finalprojectappraisal.export;
 
-import com.example.finalprojectappraisal.model.BankDetails;
 import com.example.finalprojectappraisal.model.Client;
 import com.example.finalprojectappraisal.model.Image;
 
@@ -14,9 +13,6 @@ import java.util.Map;
 public class ProjectJsonExportData {
 
     private String projectId;
-
-    // Bank Details (מהקולקציה bank_details בפרויקט)
-    private BankDetails bankDetails;
 
     // Presenter Details (מתת-האוסף presenter_details)
     private Map<String, Object> presenterDetails;
@@ -65,9 +61,6 @@ public class ProjectJsonExportData {
     private String registeredApartmentArea;
     private String grossApartmentArea;
 
-    // Tabu image URL
-    private String tabuCropImage;
-
     // Images categorized
     private List<Image> allImages;
     private String frontImageUrl;
@@ -90,14 +83,6 @@ public class ProjectJsonExportData {
 
     public void setProjectId(String projectId) {
         this.projectId = projectId;
-    }
-
-    public BankDetails getBankDetails() {
-        return bankDetails;
-    }
-
-    public void setBankDetails(BankDetails bankDetails) {
-        this.bankDetails = bankDetails;
     }
 
     public Map<String, Object> getPresenterDetails() {
@@ -410,14 +395,6 @@ public class ProjectJsonExportData {
 
     public void setGrossApartmentArea(String grossApartmentArea) {
         this.grossApartmentArea = grossApartmentArea;
-    }
-
-    public String getTabuCropImage() {
-        return tabuCropImage;
-    }
-
-    public void setTabuCropImage(String tabuCropImage) {
-        this.tabuCropImage = tabuCropImage;
     }
 
     public List<Image> getAllImages() {

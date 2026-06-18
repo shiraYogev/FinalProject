@@ -1,5 +1,6 @@
 package com.example.finalprojectappraisal.activity.newProject.presenter;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -14,6 +15,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper;
 import com.example.finalprojectappraisal.activity.newProject.presenter.veiwmodel.PresenterDetailsViewModel;
+import com.example.finalprojectappraisal.export.ProjectCompletionActivity;
 import com.example.finalprojectappraisal.database.auth.AuthRepository;
 import com.example.finalprojectappraisal.utils.FieldValidators;
 import com.google.android.material.button.MaterialButton;
@@ -26,7 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * שלב 8: פרטי שמאי ומוסר
+ * שלב 6 (האחרון): פרטי שמאי ומוסר
  */
 public class PresenterDetailsActivity extends AppCompatActivity {
 
@@ -232,7 +234,11 @@ public class PresenterDetailsActivity extends AppCompatActivity {
                 toast("הנתונים נשמרו בהצלחה!");
 
                 if (moveToNextStep) {
-                    progressHelper.moveToNextStep();
+                    // שלב אחרון – מעבר למסך סיום וייצוא ה-JSON
+                    Intent intent = new Intent(this, ProjectCompletionActivity.class);
+                    intent.putExtra(ProjectCompletionActivity.EXTRA_PROJECT_ID, projectId);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
                     finish();
                 }
             } else {

@@ -12,7 +12,6 @@ import com.example.finalprojectappraisal.database.constants.FirestoreConstants;
 import com.example.finalprojectappraisal.database.updater.ProjectUpdateManager;
 import com.example.finalprojectappraisal.database.validator.ProjectDataValidator;
 import com.example.finalprojectappraisal.model.Appraiser;
-import com.example.finalprojectappraisal.model.BankDetails;
 import com.example.finalprojectappraisal.model.Image;
 import com.example.finalprojectappraisal.model.Project;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -167,15 +166,6 @@ public class ProjectRepository {
                 .document(projectId)
                 .update(merged) // update = לא מוחק שדות שלא שלחת
                 .addOnCompleteListener(l);
-    }
-
-    public void saveBankDetailsToProject(@NonNull String projectId,
-                                         @NonNull BankDetails bankDetails,
-                                         @Nullable OnCompleteListener<Void> listener) {
-        Map<String, Object> fields = Collections.singletonMap(
-                FirestoreConstants.FIELD_BANK_DETAILS, bankDetails
-        );
-        updateManager.updateMultipleFields(projectId, fields, listener);
     }
 
     // ===== Deletion =====

@@ -7,8 +7,6 @@ import android.widget.TextView;
 import androidx.core.content.ContextCompat;
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.activity.newProject.*;
-import com.example.finalprojectappraisal.activity.newProject.bank.BankDetailsActivity;
-import com.example.finalprojectappraisal.activity.newProject.bank.EditBankDetailsActivity;
 import com.example.finalprojectappraisal.activity.newProject.client.ClientDetailsActivity;
 import com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity;
 import com.example.finalprojectappraisal.activity.newProject.presenter.PresenterDetailsActivity;
@@ -23,20 +21,17 @@ import android.widget.Toast;
 
 /**
  * Helper class לניהול Progress Stepper
- * מנהל את הניווט, העיצוב והמעברים בין 9 שלבי יצירת הפרויקט
+ * מנהל את הניווט, העיצוב והמעברים בין 6 שלבי יצירת הפרויקט
  */
 public class ProgressStepperHelper {
 
-    // הגדרת כל 9 השלבים - לפי הסדר הנכון!
+    // הגדרת כל 6 השלבים - לפי הסדר הנכון!
     public static final int STEP_CLIENT_DETAILS = 1;        // פרטי לקוח
     public static final int STEP_IMAGE_UPLOAD = 2;          // העלאת תמונות נכס
     public static final int STEP_APARTMENT_DETAILS = 3;     // פרטי הדירה
     public static final int STEP_PROPERTY_DETAILS = 4;      // פרטי הנכס
     public static final int STEP_PROPERTY_SUMMARY = 5;      // תיאור הנכס
-    public static final int STEP_BANK_DETAILS = 6;          // פרטי בנק
-    public static final int STEP_BANK_EDIT = 7;             // עריכת פרטי הבנק
-    public static final int STEP_APPRAISER_DETAILS = 8;     // פרטי שמאי ומוסר
-    public static final int STEP_TABU_UPLOAD = 9;           // תמונת טאבו
+    public static final int STEP_APPRAISER_DETAILS = 6;     // פרטי שמאי ומוסר
 
     private final Context context;
     private final int currentStep;
@@ -64,10 +59,7 @@ public class ProgressStepperHelper {
         STEP_NAMES.put(STEP_APARTMENT_DETAILS, "פרטי הדירה");
         STEP_NAMES.put(STEP_PROPERTY_DETAILS, "פרטי הנכס");
         STEP_NAMES.put(STEP_PROPERTY_SUMMARY, "תיאור הנכס");
-        STEP_NAMES.put(STEP_BANK_DETAILS, "פרטי בנק");
-        STEP_NAMES.put(STEP_BANK_EDIT, "עריכת בנק");
         STEP_NAMES.put(STEP_APPRAISER_DETAILS, "שמאי ומוסר");
-        STEP_NAMES.put(STEP_TABU_UPLOAD, "תמונת טאבו");
 
         // מפה של Activity classes - **עדכני את השמות בהתאם לפרויקט שלך!**
         STEP_ACTIVITIES.put(STEP_CLIENT_DETAILS, ClientDetailsActivity.class);
@@ -75,10 +67,7 @@ public class ProgressStepperHelper {
         STEP_ACTIVITIES.put(STEP_APARTMENT_DETAILS, ApartmentDetailsActivity.class);
         STEP_ACTIVITIES.put(STEP_PROPERTY_DETAILS, PropertyDetailsActivity.class);
         STEP_ACTIVITIES.put(STEP_PROPERTY_SUMMARY, PropertyDescriptionActivity.class);
-        STEP_ACTIVITIES.put(STEP_BANK_DETAILS, BankDetailsActivity.class);
-        STEP_ACTIVITIES.put(STEP_BANK_EDIT, EditBankDetailsActivity.class);
         STEP_ACTIVITIES.put(STEP_APPRAISER_DETAILS, PresenterDetailsActivity.class);
-        STEP_ACTIVITIES.put(STEP_TABU_UPLOAD, UploadTabuActivity.class);
     }
 
     /**
@@ -111,10 +100,10 @@ public class ProgressStepperHelper {
      * מעדכן את הUI של כל השלבים
      */
     private void updateStepperUI() {
-        for (int step = 1; step <= 9; step++) {
+        for (int step = 1; step <= 6; step++) {
             MaterialCardView stepCard = rootView.findViewById(getStepCardId(step));
             TextView stepNumber = rootView.findViewById(getStepNumberId(step));
-            View lineView = (step < 9) ? rootView.findViewById(getLineId(step, step + 1)) : null;
+            View lineView = (step < 6) ? rootView.findViewById(getLineId(step, step + 1)) : null;
 
             if (stepCard == null || stepNumber == null) continue;
 
@@ -173,7 +162,7 @@ public class ProgressStepperHelper {
      * מגדיר listeners לכל השלבים
      */
     private void setupClickListeners() {
-        for (int step = 1; step <= 9; step++) {
+        for (int step = 1; step <= 6; step++) {
             final int targetStep = step;
             MaterialCardView stepCard = rootView.findViewById(getStepCardId(step));
             if (stepCard == null) continue;
@@ -248,7 +237,7 @@ public class ProgressStepperHelper {
      * מעבר לשלב הבא
      */
     public void moveToNextStep() {
-        if (currentStep < 9) {
+        if (currentStep < 6) {
             navigateToStep(currentStep + 1);
         }
     }
@@ -266,7 +255,7 @@ public class ProgressStepperHelper {
      * קבלת אחוז ההתקדמות (0-100)
      */
     public int getProgressPercentage() {
-        return ((currentStep - 1) * 100) / 8;  // 9 שלבים = 8 מעברים
+        return ((currentStep - 1) * 100) / 5;  // 6 שלבים = 5 מעברים
     }
 
     /**
@@ -281,7 +270,7 @@ public class ProgressStepperHelper {
      * בדיקה האם זה השלב האחרון
      */
     public boolean isLastStep() {
-        return currentStep == 9;
+        return currentStep == 6;
     }
 
     /**

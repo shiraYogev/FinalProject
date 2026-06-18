@@ -251,50 +251,28 @@ public class ProjectPreviewViewModel extends ViewModel {
         logD("loadImages: projectId=" + projectId);
         long t0 = System.nanoTime();
 
-        // קודם נטען את הפרויקט רק כדי להביא את tabu_crop_image (אם קיים)
-        repo.getProject(projectId, taskProj -> {
-            String tabuUrl = null;
+        repo.loadAllImagesForProject(projectId, taskImg -> {
+            long dtMs = (System.nanoTime() - t0) / 1_000_000;
+            loadingImages.setValue(false);
 
-            if (taskProj.isSuccessful() && taskProj.getResult() != null && taskProj.getResult().exists()) {
-                Object tabuField = taskProj.getResult().get("tabu_crop_image");
-                if (tabuField != null) {
-                    tabuUrl = String.valueOf(tabuField).trim();
-                    if (tabuUrl.isEmpty()) {
-                        tabuUrl = null;
-                    }
-                } else {
-                    logD("loadImages: no tabu_crop_image field on project");
-                }
-            } else {
-                logW("loadImages: failed to load project for tabu_crop_image");
-            }
+            List<Image> list = (taskImg.isSuccessful() && taskImg.getResult() != null)
+                    ? taskImg.getResult() : new ArrayList<>();
+            if (list == null) list = new ArrayList<>();
 
-            final String finalTabuUrl = tabuUrl; // לשימוש ב־lambda הפנימי
+            logD("loadImages: got " + list.size() + " images in " + dtMs + "ms");
 
-            // עכשיו נטען את רשימת התמונות הרגילות כמו קודם
-            repo.loadAllImagesForProject(projectId, taskImg -> {
-                long dtMs = (System.nanoTime() - t0) / 1_000_000;
-                loadingImages.setValue(false);
-
-                List<Image> list = (taskImg.isSuccessful() && taskImg.getResult() != null)
-                        ? taskImg.getResult() : new ArrayList<>();
-                if (list == null) list = new ArrayList<>();
-
-                logD("loadImages: got " + list.size() + " images in " + dtMs + "ms; tabuUrl=" + finalTabuUrl);
-
-                images.setValue(list); // נשמור את הרשימה הפשוטה
-                List<UiImageItem> sectioned = buildSectionedImages(list, finalTabuUrl); // נבנה כותרות + תמונות
-                sectionedImages.setValue(sectioned);
-                logD("buildSectionedImages: flatItems=" + sectioned.size());
-            });
+            images.setValue(list); // נשמור את הרשימה הפשוטה
+            List<UiImageItem> sectioned = buildSectionedImages(list); // נבנה כותרות + תמונות
+            sectionedImages.setValue(sectioned);
+            logD("buildSectionedImages: flatItems=" + sectioned.size());
         });
     }
 
 
-    /** Build a flat list: [Header, Photo, Photo, Header, Photo, ...] by category + optional Tabu image. */
-    private List<UiImageItem> buildSectionedImages(@NonNull List<Image> all, @Nullable String tabuUrl) {
+    /** Build a flat list: [Header, Photo, Photo, Header, Photo, ...] by category. */
+    private List<UiImageItem> buildSectionedImages(@NonNull List<Image> all) {
         List<UiImageItem> out = new ArrayList<>();
-        if (all.isEmpty() && (tabuUrl == null || tabuUrl.trim().isEmpty())) {
+        if (all.isEmpty()) {
             return out;
         }
 
@@ -343,23 +321,6 @@ public class ProjectPreviewViewModel extends ViewModel {
                 out.add(UiImageItem.photo(im));
                 photos++;
             }
-        }
-
-        // --- הוספת תמונת הטאבו (אם יש URL) ---
-        if (tabuUrl != null && !tabuUrl.trim().isEmpty()) {
-            logD("buildSectionedImages: adding TABU image section with url=" + tabuUrl);
-
-            out.add(UiImageItem.header("טאבו"));
-
-            // ניצור אובייקט Image "וירטואלי" רק לצורך התצוגה
-            Image tabuImage = new Image();
-            // בהנחה שיש setter לכתובת; אם השם אצלך שונה – פשוט לשנות כאן.
-            tabuImage.setUrl(tabuUrl.trim());
-
-            out.add(UiImageItem.photo(tabuImage));
-            headers++;
-            photos++;
-            buckets++; // אפשרי לספירה סטטיסטית
         }
 
         logD("sectioned: buckets=" + buckets + " | headers=" + headers + " | photos=" + photos);
@@ -756,27 +717,6 @@ public class ProjectPreviewViewModel extends ViewModel {
 
     // ===== Sections =====
     private static final List<SectionSpec> SECTIONS = Arrays.asList(
-            new SectionSpec("פרטי בנק", Arrays.asList(
-                    new FieldSpec("שם בנק",                  "bankDetails.bankName"),
-                    new FieldSpec("שם סניף",                 "bankDetails.branchName"),
-                    new FieldSpec("אימייל סניף",             "bankDetails.branchEmail"),
-                    new FieldSpec("שם בנקאי",                "bankDetails.bankerName"),
-                    new FieldSpec("תאריך מסמך (לועזי)",      "bankDetails.documentDateGre"),
-                    new FieldSpec("תאריך מסמך (עברי)",       "bankDetails.documentDateHe"),
-                    new FieldSpec("מס׳ שומה",                "bankDetails.valuationNumber"),
-                    new FieldSpec("מס׳ הלוואה",              "bankDetails.loanNumber"),
-                    new FieldSpec("סוג הלוואה",              "bankDetails.typeOfLoan"),
-                    new FieldSpec("כותרת עמוד 1",            "bankDetails.page1Header"),
-                    new FieldSpec("מס׳ חלקה",                "bankDetails.lotNumber"),
-                    new FieldSpec("גוש עיקרי",               "bankDetails.mainParcel"),
-                    new FieldSpec("תת־חלקה",                 "bankDetails.subParcel"),
-                    new FieldSpec("כתובת מקוצרת",            "bankDetails.shortAddress"),
-                    new FieldSpec("שם הלווה",                 "bankDetails.loanerName"),
-                    new FieldSpec("תעודת זהות הלווה",         "bankDetails.loanerId"),
-                    new FieldSpec("מטרת ההלוואה",            "bankDetails.purposeOfLoan"),
-                    new FieldSpec("זהות הלקוח",               "bankDetails.identityOfCustomer"),
-                    new FieldSpec("תאריך סופי לשומה",         "bankDetails.appraisalFinalDate")
-            )),
             new SectionSpec("פרטי לקוח", Arrays.asList(
                     new FieldSpec("שם הלקוח",    "client.fullName"),
                     new FieldSpec("ת״ז לקוח",    "client.clientId"),

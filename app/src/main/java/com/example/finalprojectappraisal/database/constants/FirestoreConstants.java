@@ -14,8 +14,6 @@ public final class FirestoreConstants {
     public static final String COLLECTION_PROJECTS = "projects";
     public static final String COLLECTION_CLIENTS = "clients";
     public static final String COLLECTION_APPRAISERS = "appraisers";
-    public static final String FIELD_BANK_DETAILS = "bankDetails";
-
     // =========================
     // Subcollection Names
     // =========================
@@ -79,7 +77,6 @@ public final class FirestoreConstants {
     public static final String KEY_PROPIMG_PATH = "path";
     public static final String FIELD_FRONT_IMAGE = "front_image";
     public static final String FIELD_INTERIOR_IMAGE = "interior_image";
-    public static final String FIELD_TABU_CROP_IMAGE = "tabu_crop_image";
 
     // =========================
     // Error Messages (Hebrew)

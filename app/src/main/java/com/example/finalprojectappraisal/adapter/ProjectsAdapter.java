@@ -329,10 +329,6 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
                 intent = new Intent(context,
                         com.example.finalprojectappraisal.activity.newProject.property.activity.PropertyDescriptionActivity.class);
 
-            } else if (id == R.id.action_edit_bank) {
-                intent = new Intent(context,
-                        com.example.finalprojectappraisal.activity.newProject.bank.BankDetailsActivity.class);
-
             } else if (id == R.id.action_edit_images) {
                 intent = new Intent(context,
                         com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity.class);

@@ -66,7 +66,6 @@ public class ProjectFilterEngine {
                 String src = normalize(firstNonEmpty(
                         read(p, "getCity"),
                         read(p, "getAddressCity"),
-                        read(p, "getBankDetails", "getShortAddress"),
                         p.getFullAddress()
                 ));
                 if (src == null || !src.contains(cityQ)) continue;
@@ -78,7 +77,6 @@ public class ProjectFilterEngine {
                         read(p, "getAddressStreet"),
                         read(p, "getStreetName"),
                         read(p, "getBuildingEntry"),
-                        read(p, "getBankDetails", "getShortAddress"),
                         p.getFullAddress()
                 ));
                 if (src == null || !src.contains(streetQ)) continue;
@@ -96,7 +94,6 @@ public class ProjectFilterEngine {
             // 6) Cadastral: gush / parcel
             if (gushQ != null) {
                 String src = normalize(firstNonEmpty(
-                        read(p, "getBankDetails", "getMainParcel"),
                         read(p, "getMainParcel"),
                         read(p, "getGush")
                 ));
@@ -105,9 +102,7 @@ public class ProjectFilterEngine {
 
             if (parcelQ != null) {
                 String src = normalize(firstNonEmpty(
-                        read(p, "getBankDetails", "getLotNumber"),   // חלקה
                         read(p, "getLotNumber"),
-                        read(p, "getBankDetails", "getSubParcel"),   // תת חלקה
                         read(p, "getSubParcel"),
                         read(p, "getParcel")
                 ));

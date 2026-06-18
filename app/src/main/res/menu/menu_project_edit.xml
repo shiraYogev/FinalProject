@@ -3,6 +3,5 @@
     <item android:id="@+id/action_edit_client"     android:title="עריכת פרטי לקוח" />
     <item android:id="@+id/action_edit_apartment"  android:title="עריכת פרטי דירה" />
     <item android:id="@+id/action_edit_property"   android:title="עריכת פרטי נכס" />
-    <item android:id="@+id/action_edit_bank"       android:title="עריכת פרטי בנק" />
     <item android:id="@+id/action_edit_images"     android:title="עריכת תמונות" />
 </menu>
