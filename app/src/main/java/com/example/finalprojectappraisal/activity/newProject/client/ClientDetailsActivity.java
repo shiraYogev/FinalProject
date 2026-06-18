@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.activity.HomePageActivity;
+import com.example.finalprojectappraisal.utils.HomeButtonHelper;
 import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper;
 import com.example.finalprojectappraisal.activity.newProject.images.UploadImagesActivity;
 import com.example.finalprojectappraisal.export.ProjectCompletionActivity;
@@ -66,6 +67,8 @@ public class ClientDetailsActivity extends AppCompatActivity {
         // --- תיקון 1: שימוש נכון ב-Binding להגדרת Layout ורכיבים ---
         binding = ActivityClientDetailsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        HomeButtonHelper.setup(this);
 
         caseNumberEditText  = binding.caseNumberEditText;
         clientIdEditText    = binding.clientIdEditText;

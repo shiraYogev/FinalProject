@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.finalprojectappraisal.BuildConfig;
 import com.example.finalprojectappraisal.activity.HomePageActivity;
+import com.example.finalprojectappraisal.utils.HomeButtonHelper;
 import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper;
 import com.example.finalprojectappraisal.export.ProjectCompletionActivity;
 import com.example.finalprojectappraisal.activity.newProject.images.viewmodel.UploadImagesViewModel;
@@ -74,6 +75,8 @@ public class UploadImagesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityUploadImagesBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        HomeButtonHelper.setup(this);
 
         projectId = resolveProjectId();
         if (projectId == null) return;

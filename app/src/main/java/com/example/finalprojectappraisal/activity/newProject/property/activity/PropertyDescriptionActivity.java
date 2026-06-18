@@ -13,6 +13,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.utils.HomeButtonHelper;
 import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper; // ⬅️ ייבוא נדרש
 import com.example.finalprojectappraisal.databinding.ActivityPropertyDescriptionBinding; // ⬅️ ייבוא ה-Binding המתאים לשם ה-Activity (הנחתי שהשם הוא: ActivityPropertyDescriptionBinding)
 import com.example.finalprojectappraisal.utils.RepresentativePicker;
@@ -65,6 +66,8 @@ public class PropertyDescriptionActivity extends AppCompatActivity {
         // ⬅️ שימוש ב-Binding
         binding = ActivityPropertyDescriptionBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        HomeButtonHelper.setup(this);
 
         projectId = getIntent() != null ? getIntent().getStringExtra("projectId") : null;
 

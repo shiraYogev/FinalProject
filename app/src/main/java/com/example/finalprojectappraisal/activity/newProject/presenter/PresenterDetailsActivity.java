@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.utils.HomeButtonHelper;
 import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper;
 import com.example.finalprojectappraisal.activity.newProject.presenter.veiwmodel.PresenterDetailsViewModel;
 import com.example.finalprojectappraisal.export.ProjectCompletionActivity;
@@ -61,6 +62,8 @@ public class PresenterDetailsActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_presenter_details);
+
+        HomeButtonHelper.setup(this);
 
         db = FirebaseFirestore.getInstance();
 

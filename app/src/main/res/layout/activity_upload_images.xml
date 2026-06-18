@@ -121,6 +121,16 @@
                     app:tint="@android:color/white" />
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- 🏠 כפתור בית - חזרה לדף הבית -->
+            <include
+                android:id="@+id/btn_home_header"
+                layout="@layout/home_button_header"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
 

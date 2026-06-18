@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.utils.HomeButtonHelper;
 import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper; // ⬅️ ייבוא נדרש
 import com.example.finalprojectappraisal.adapter.PropertyDetailsAdapter;
 import com.example.finalprojectappraisal.activity.newProject.property.activity.PropertyDetailsActivity.FieldItem;
@@ -80,6 +81,8 @@ public class PropertyDetailsActivity extends AppCompatActivity implements Proper
         // ⬅️ שימוש ב-Binding במקום findViewById
         binding = ActivityPropertyDetailsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        HomeButtonHelper.setup(this);
         Log.d(TAG, "onCreate: started");
 
         // ⬅️ גישה ל-RecyclerView דרך Binding

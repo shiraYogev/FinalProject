@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.finalprojectappraisal.R;
+import com.example.finalprojectappraisal.utils.HomeButtonHelper;
 import com.example.finalprojectappraisal.activity.newProject.ProgressStepperHelper;
 import com.example.finalprojectappraisal.adapter.ApartmentDetailsAdapter;
 import com.example.finalprojectappraisal.classifer.gemini.GeminiJsonParser;
@@ -71,6 +72,8 @@ public class ApartmentDetailsActivity extends AppCompatActivity implements Apart
         super.onCreate(savedInstanceState);
         binding = ActivityApartmentDetailsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        HomeButtonHelper.setup(this);
 
         projectId = getIntent().getStringExtra(EXTRA_PROJECT_ID);
         if (projectId == null || projectId.trim().isEmpty()) {

@@ -23,7 +23,7 @@
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:layout_gravity="center"
-        app:srcCompat="@drawable/ic_home"
+        app:srcCompat="@drawable/ic_home_solid"
         app:tint="@android:color/white" />
 
 </com.google.android.material.card.MaterialCardView>
