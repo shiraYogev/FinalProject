@@ -287,7 +287,22 @@
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@color/primary_blue"
-                    android:layout_marginBottom="16dp" />
+                    android:layout_marginBottom="12dp" />
+
+                <!-- כפתור סריקת ת.ז. -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_scan_id"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginBottom="16dp"
+                    android:text="צלם תעודת זהות מציג"
+                    android:textColor="@color/primary_blue"
+                    app:icon="@drawable/ic_camera"
+                    app:iconTint="@color/primary_blue"
+                    app:iconPadding="8dp"
+                    app:cornerRadius="12dp"
+                    app:strokeColor="@color/primary_blue" />
 
                 <!-- שדות מוסר -->
                 <com.google.android.material.textfield.TextInputLayout

@@ -175,10 +175,22 @@ public class ClientDetailsActivity extends AppCompatActivity {
      */
     private boolean validateInputs() {
         String caseNumber = caseNumberEditText.getText().toString().trim();
+        String firstName  = firstNameEditText.getText().toString().trim();
+        String lastName   = lastNameEditText.getText().toString().trim();
         String fullAddress = fullAddressEditText.getText().toString().trim();
 
         if (projectId == null && caseNumber.isEmpty()) {
             caseNumberEditText.setError("חובה למלא מספר תיק");
+            return false;
+        }
+        if (firstName.isEmpty()) {
+            firstNameEditText.setError("חובה למלא שם פרטי");
+            firstNameEditText.requestFocus();
+            return false;
+        }
+        if (lastName.isEmpty()) {
+            lastNameEditText.setError("חובה למלא שם משפחה");
+            lastNameEditText.requestFocus();
             return false;
         }
         if (fullAddress.isEmpty()) {

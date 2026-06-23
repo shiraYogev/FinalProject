@@ -1,16 +1,40 @@
 package com.example.finalprojectappraisal.activity.newProject.presenter;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModelProvider;
+
+import com.google.firebase.vertexai.FirebaseVertexAI;
+import com.google.firebase.vertexai.java.GenerativeModelFutures;
+import com.google.firebase.vertexai.type.Content;
+import com.google.firebase.vertexai.type.GenerateContentResponse;
+
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.InputStream;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import com.example.finalprojectappraisal.R;
 import com.example.finalprojectappraisal.utils.HomeButtonHelper;
@@ -42,8 +66,15 @@ public class PresenterDetailsActivity extends AppCompatActivity {
     private AutoCompleteTextView etAppraiserRole;
 
     // כפתורים
-    private MaterialButton btnSave, btnFinish;
+    private MaterialButton btnSave, btnFinish, btnScanId;
     private MaterialCardView backButtonCard;
+
+    // סריקת ת.ז.
+    private ActivityResultLauncher<Uri> takePictureLauncher;
+    private ActivityResultLauncher<String> cameraPermissionLauncher;
+    private Uri photoUri;
+    private static final Executor SCAN_EXEC = Executors.newSingleThreadExecutor();
+    private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
 
     // ViewModel ו-ProgressStepper
     private PresenterDetailsViewModel vm;
@@ -76,6 +107,7 @@ public class PresenterDetailsActivity extends AppCompatActivity {
 
         vm = new ViewModelProvider(this).get(PresenterDetailsViewModel.class);
 
+        registerCameraLauncher();
         bindViews();
         setupDropdown();      // ✅ הגדרת הרשימה
         setupNameListener();  // ✅ הגדרת מאזין לשם המבקר
@@ -103,6 +135,7 @@ public class PresenterDetailsActivity extends AppCompatActivity {
 
         btnSave = findViewById(R.id.btn_save);
         btnFinish = findViewById(R.id.btn_finish);
+        btnScanId = findViewById(R.id.btn_scan_id);
         backButtonCard = findViewById(R.id.back_button_card);
     }
 
@@ -166,6 +199,123 @@ public class PresenterDetailsActivity extends AppCompatActivity {
         if (btnFinish != null) {
             btnFinish.setOnClickListener(v -> save(true));
         }
+
+        if (btnScanId != null) {
+            btnScanId.setOnClickListener(v -> requestCameraThenLaunch());
+        }
+    }
+
+    private void registerCameraLauncher() {
+        cameraPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                granted -> {
+                    if (Boolean.TRUE.equals(granted)) {
+                        launchCamera();
+                    } else {
+                        toast("אי אפשר לפתוח מצלמה ללא הרשאה");
+                    }
+                }
+        );
+
+        takePictureLauncher = registerForActivityResult(
+                new ActivityResultContracts.TakePicture(),
+                success -> {
+                    if (Boolean.TRUE.equals(success) && photoUri != null) {
+                        try (InputStream in = getContentResolver().openInputStream(photoUri)) {
+                            Bitmap bmp = in != null ? BitmapFactory.decodeStream(in) : null;
+                            if (bmp != null) {
+                                scanIdCard(bmp);
+                            } else {
+                                toast("שגיאה בטעינת התמונה");
+                            }
+                        } catch (Exception e) {
+                            toast("שגיאה בטעינת התמונה");
+                        }
+                    }
+                }
+        );
+    }
+
+    private void requestCameraThenLaunch() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
+            launchCamera();
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
+        }
+    }
+
+    private void launchCamera() {
+        try {
+            File dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+            File img = File.createTempFile("id_scan_", ".jpg", dir);
+            photoUri = FileProvider.getUriForFile(
+                    this,
+                    getApplicationContext().getPackageName() + ".fileprovider",
+                    img
+            );
+            takePictureLauncher.launch(photoUri);
+        } catch (Exception e) {
+            toast("לא ניתן לפתוח מצלמה");
+        }
+    }
+
+    private void scanIdCard(Bitmap bitmap) {
+        if (btnScanId != null) {
+            btnScanId.setEnabled(false);
+            btnScanId.setText("סורק...");
+        }
+
+        SCAN_EXEC.execute(() -> {
+            try {
+                GenerativeModelFutures model = GenerativeModelFutures.from(
+                        FirebaseVertexAI.getInstance().generativeModel("gemini-2.5-flash")
+                );
+                Content.Builder cb = new Content.Builder();
+                cb.addImage(bitmap);
+                cb.addText(com.example.finalprojectappraisal.classifer.gemini.GeminiPrompts.ID_CARD_SCAN_PROMPT);
+                GenerateContentResponse response = model.generateContent(cb.build()).get();
+                String raw = response.getText() != null ? response.getText().trim() : "";
+
+                // נקה Markdown אם קיים
+                raw = raw.replace("```json", "").replace("```", "").trim();
+
+                JSONObject json = new JSONObject(raw);
+                String fullName = json.isNull("fullName")  ? "" : json.optString("fullName",  "");
+                String idNumber = json.isNull("idNumber")  ? "" : json.optString("idNumber",  "");
+                String idType   = json.isNull("idType")    ? "" : json.optString("idType",    "");
+
+                MAIN_HANDLER.post(() -> populateIdFields(fullName, idNumber, idType));
+
+            } catch (Exception e) {
+                Log.e("PresenterScan", "ID scan failed", e);
+                MAIN_HANDLER.post(() -> toast("סריקת ת.ז. נכשלה: " + e.getMessage()));
+            } finally {
+                MAIN_HANDLER.post(() -> {
+                    if (btnScanId != null) {
+                        btnScanId.setEnabled(true);
+                        btnScanId.setText("צלם תעודת זהות מציג");
+                    }
+                });
+            }
+        });
+    }
+
+    private void populateIdFields(String fullName, String idNumber, String idType) {
+        if (!fullName.isEmpty() && etNameOfPresenter != null) {
+            etNameOfPresenter.setText(fullName);
+        }
+        if (!idNumber.isEmpty() && etIdOfPresenter != null) {
+            etIdOfPresenter.setText(idNumber);
+        }
+        if (!idType.isEmpty() && etTypeOfPresenterId != null) {
+            etTypeOfPresenterId.setText(idType);
+        }
+        if (!fullName.isEmpty() || !idNumber.isEmpty()) {
+            toast("פרטי המציג מולאו אוטומטית מהת.ז.");
+        } else {
+            toast("לא זוהו פרטים בתמונה – נסה שוב");
+        }
     }
 
     private void setupObservers() {
@@ -210,7 +360,7 @@ public class PresenterDetailsActivity extends AppCompatActivity {
         f.roleOfPresenter = str(etRoleOfPresenter);
         f.holderStatus = str(etHolderStatus);
 
-        // הולכים רק על ולידציה רכה: אם המשתמש הזין ערך – נוודא שהוא תקין.
+        // ולידציה רכה: אם המשתמש הזין ערך – נוודא שהוא תקין.
         if (!isEmpty(f.appraisalDate) && !FieldValidators.isValidDate(f.appraisalDate)) {
             toast("תאריך שומה לא תקין (DD/MM/YYYY)");
             etAppraisalDate.requestFocus();
