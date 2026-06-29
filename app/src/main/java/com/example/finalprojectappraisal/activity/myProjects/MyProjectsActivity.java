@@ -1,8 +1,15 @@
 package com.example.finalprojectappraisal.activity.myProjects;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Looper;
+import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -10,10 +17,11 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ImageView; // <<< NEW
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -31,7 +39,15 @@ import com.example.finalprojectappraisal.database.auth.AuthRepository;
 import com.example.finalprojectappraisal.database.repository.ProjectRepository;
 import com.example.finalprojectappraisal.model.Appraiser;
 import com.example.finalprojectappraisal.model.Project;
+import com.example.finalprojectappraisal.activity.CompassMapActivity;
 import com.example.finalprojectappraisal.utils.FilterPrefs;
+import com.example.finalprojectappraisal.utils.MapIntentUtils;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 import com.google.android.material.chip.ChipGroup;
 
 import java.util.ArrayList;
@@ -42,7 +58,8 @@ public class MyProjectsActivity extends AppCompatActivity
         implements FiltersBottomSheetDialogFragment.OnFiltersAppliedListener,
         AddNoteBottomSheetDialogFragment.OnNoteSavedListener {
 
-    private static final String TAG_PREF = "MyProjectsPrefilter";
+    private static final String TAG_PREF   = "MyProjectsPrefilter";
+    private static final int    REQ_MAP_LOC = 1002;
     private static final String TAG_REPORT = "MyProjectsReport";
     private static final String TAG_ACT = "MyProjectsActivity";
 
@@ -59,6 +76,7 @@ public class MyProjectsActivity extends AppCompatActivity
     private ChipGroup chipGroupViewMode;
 
     private String currentUserId = null;
+    private FusedLocationProviderClient fusedLocationClient;
 
     // EXTRAs that מסכים אחרים יכולים לשלוח
     public static final String EXTRA_PREFILTER_STATUS = "prefilter_status";
@@ -99,6 +117,7 @@ public class MyProjectsActivity extends AppCompatActivity
         }
 
         // UID from AuthRepository
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         currentUserId = AuthRepository.getInstance().getCurrentUserId();
         Log.d(TAG_ACT, "onCreate: currentUserId=" + currentUserId);
         if (currentUserId == null || currentUserId.trim().isEmpty()) {
@@ -111,7 +130,12 @@ public class MyProjectsActivity extends AppCompatActivity
 
             @Override public void onCompass(Project project) {
                 Log.d(TAG_ACT, "onCompass invoked from Adapter for pid=" + project.getProjectId());
-                openCompassAppOrStore();
+                startActivity(new Intent(MyProjectsActivity.this, CompassMapActivity.class));
+            }
+
+            @Override public void onMap(Project project) {
+                Log.d(TAG_ACT, "onMap invoked from Adapter for pid=" + project.getProjectId());
+                openGovmapAtCurrentLocation();
             }
 
             @Override public void onEdit(Project project) {
@@ -401,29 +425,92 @@ public class MyProjectsActivity extends AppCompatActivity
                 .create().show();
     }
 
-    // מצפן
-    private void openCompassAppOrStore() {
-        String specificCompassPackage = "app.melon.icompass";
+    // מפה — GOVMAP במיקום הנוכחי
+    private void openGovmapAtCurrentLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQ_MAP_LOC);
+            return;
+        }
+        doOpenGovmapWithLocation();
+    }
 
-        Intent intent = getPackageManager().getLaunchIntentForPackage(specificCompassPackage);
-
-        if (intent != null) {
-            intent.addCategory(Intent.CATEGORY_LAUNCHER);
-            startActivity(intent);
+    @SuppressLint("MissingPermission")
+    private void doOpenGovmapWithLocation() {
+        // 1) Make sure location services (GPS) are actually turned on
+        LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        boolean gpsOn = lm != null && (
+                lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                || lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER));
+        if (!gpsOn) {
+            new AlertDialog.Builder(this)
+                    .setTitle("שירותי מיקום כבויים")
+                    .setMessage("כדי לפתוח את המפה במיקום הנוכחי יש להפעיל את ה-GPS.")
+                    .setPositiveButton("פתח הגדרות", (d, w) ->
+                            startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)))
+                    .setNegativeButton("ביטול", null)
+                    .show();
             return;
         }
 
-        Toast.makeText(this, "האפליקציה הספציפית לא נמצאה, מפנה לחנות.", Toast.LENGTH_LONG).show();
+        // 2) Fast path — last known location
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, last -> {
+                    if (last != null) {
+                        MapIntentUtils.openCurrentLocationInGovmap(
+                                this, last.getLatitude(), last.getLongitude());
+                    } else {
+                        // 3) Active fix — request a single fresh update
+                        requestSingleLocationUpdate();
+                    }
+                })
+                .addOnFailureListener(e -> requestSingleLocationUpdate());
+    }
 
-        Intent playStoreIntent = new Intent(Intent.ACTION_VIEW,
-                android.net.Uri.parse("market://details?id=" + specificCompassPackage));
+    @SuppressLint("MissingPermission")
+    private void requestSingleLocationUpdate() {
+        Toast.makeText(this, "מאתר מיקום...", Toast.LENGTH_SHORT).show();
 
-        if (playStoreIntent.resolveActivity(getPackageManager()) != null) {
-            startActivity(playStoreIntent);
-        } else {
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW,
-                    android.net.Uri.parse("https://play.google.com/store/apps/details?id=" + specificCompassPackage));
-            startActivity(browserIntent);
+        LocationRequest request = new LocationRequest.Builder(
+                Priority.PRIORITY_HIGH_ACCURACY, 1000L)
+                .setMaxUpdates(1)
+                .setDurationMillis(15000L)
+                .build();
+
+        final boolean[] handled = {false};
+        LocationCallback callback = new LocationCallback() {
+            @Override
+            public void onLocationResult(@NonNull LocationResult result) {
+                if (handled[0]) return;
+                handled[0] = true;
+                fusedLocationClient.removeLocationUpdates(this);
+                if (result.getLastLocation() != null) {
+                    MapIntentUtils.openCurrentLocationInGovmap(
+                            MyProjectsActivity.this,
+                            result.getLastLocation().getLatitude(),
+                            result.getLastLocation().getLongitude());
+                } else {
+                    Toast.makeText(MyProjectsActivity.this,
+                            "לא ניתן לקבל מיקום — ודאי שה-GPS פעיל ונסי שוב", Toast.LENGTH_LONG).show();
+                }
+            }
+        };
+
+        fusedLocationClient.requestLocationUpdates(request, callback, Looper.getMainLooper());
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_MAP_LOC
+                && grantResults.length > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            doOpenGovmapWithLocation();
+        } else if (requestCode == REQ_MAP_LOC) {
+            Toast.makeText(this, "נדרשת הרשאת מיקום לפתיחת המפה", Toast.LENGTH_SHORT).show();
         }
     }
 }

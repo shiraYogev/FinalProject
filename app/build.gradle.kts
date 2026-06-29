@@ -17,8 +17,14 @@ val googleMapsKey: String = localProps.getProperty("GOOGLE_MAPS_API_KEY")
     ?: System.getenv("GOOGLE_MAPS_API_KEY")
     ?: ""
 
+val govmapKey: String = localProps.getProperty("GOVMAP_API_KEY")
+    ?: (project.findProperty("GOVMAP_API_KEY") as String?)
+    ?: System.getenv("GOVMAP_API_KEY")
+    ?: ""
+
 // (אופציונלי לדיבוג)
 println("GOOGLE_MAPS_API_KEY present in build? ${googleMapsKey.isNotEmpty()} length=${googleMapsKey.length}")
+println("GOVMAP_API_KEY present in build? ${govmapKey.isNotEmpty()} length=${govmapKey.length}")
 
 android {
     namespace = "com.example.finalprojectappraisal"
@@ -35,6 +41,8 @@ android {
 
         buildConfigField("String", "GOOGLE_MAPS_API_KEY", googleMapsKey)
         manifestPlaceholders["googleMapsApiKey"] = googleMapsKey
+
+        buildConfigField("String", "GOVMAP_API_KEY", "\"$govmapKey\"")
 
         // ✅ Enable VectorDrawableCompat for all API levels
         vectorDrawables {
@@ -126,6 +134,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata:2.9.4")
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.9.4") // :contentReference[oaicite:4]{index=4}
 
+
+    // Location
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
     // Google Places API
     //implementation ("com.google.android.libraries.places:places:3.3.0")

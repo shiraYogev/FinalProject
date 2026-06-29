@@ -78,19 +78,43 @@ public class UploadImagesViewModel extends ViewModel {
     public void uploadAndSave(@NonNull android.net.Uri localUri,
                               @NonNull Image.Category category,
                               @Nullable String promptForInfo) {
-        uploadAndSave(localUri, category, promptForInfo, Image.Subcategory.NONE, 0);
+        uploadAndSave(localUri, category, promptForInfo, Image.Subcategory.NONE, 0,
+                com.example.finalprojectappraisal.model.Floor.DEFAULT_KEY);
     }
 
-    /**
-     * ✅ NEW:
-     * Uploads local image → gets https URL → saves image doc → updates property image array.
-     * Also persists subCategory + bedroomIndex to Firestore.
-     */
+    // ✅ Backward compatible overload (without floor → main floor)
     public void uploadAndSave(@NonNull android.net.Uri localUri,
                               @NonNull Image.Category category,
                               @Nullable String promptForInfo,
                               @NonNull Image.Subcategory subCategory,
                               int bedroomIndex) {
+        uploadAndSave(localUri, category, promptForInfo, subCategory, bedroomIndex,
+                com.example.finalprojectappraisal.model.Floor.DEFAULT_KEY);
+    }
+
+    // ✅ Backward compatible overload (without unit → main unit)
+    public void uploadAndSave(@NonNull android.net.Uri localUri,
+                              @NonNull Image.Category category,
+                              @Nullable String promptForInfo,
+                              @NonNull Image.Subcategory subCategory,
+                              int bedroomIndex,
+                              @Nullable String floorKey) {
+        uploadAndSave(localUri, category, promptForInfo, subCategory, bedroomIndex, floorKey,
+                com.example.finalprojectappraisal.model.Unit.DEFAULT_KEY);
+    }
+
+    /**
+     * ✅ NEW:
+     * Uploads local image → gets https URL → saves image doc → updates property image array.
+     * Also persists subCategory + bedroomIndex + floor + unit to Firestore.
+     */
+    public void uploadAndSave(@NonNull android.net.Uri localUri,
+                              @NonNull Image.Category category,
+                              @Nullable String promptForInfo,
+                              @NonNull Image.Subcategory subCategory,
+                              int bedroomIndex,
+                              @Nullable String floorKey,
+                              @Nullable String unitId) {
         if (projectId == null) {
             error.setValue("Missing projectId");
             return;
@@ -103,6 +127,8 @@ public class UploadImagesViewModel extends ViewModel {
         // ✅ persist "which room" identity
         image.setSubCategory(subCategory != null ? subCategory : Image.Subcategory.NONE);
         image.setBedroomIndex(bedroomIndex);
+        image.setFloor(floorKey);
+        image.setUnitId(unitId);
 
         image.setLocalUri(localUri.toString());
         image.setUrl(localUri.toString());

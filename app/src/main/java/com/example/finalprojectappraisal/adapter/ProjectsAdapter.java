@@ -53,6 +53,7 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
         void onDelete(Project project);
         void onAssignAppraiser(Project project);
         void onCompass(Project project);
+        void onMap(Project project);
     }
 
     private final Context context;
@@ -116,12 +117,11 @@ public class ProjectsAdapter extends RecyclerView.Adapter<ProjectsAdapter.Projec
             holder.txtNote.setText(note);
         }
 
-        // כפתור מפה
-        String address = (project != null) ? project.getFullAddress() : null;
-        holder.btnMap.setEnabled(!TextUtils.isEmpty(address));
+        // כפתור מפה — פותח GOVMAP במיקום הנוכחי של השמאי
+        holder.btnMap.setEnabled(true);
         holder.btnMap.setOnClickListener(v -> {
-            Log.d(TAG_AD, "click: btnMap pid=" + pid + " addr=" + address);
-            showMapOptionsDialog(address);
+            Log.d(TAG_AD, "click: btnMap pid=" + pid);
+            if (listener != null && project != null) listener.onMap(project);
         });
 
         // <--- הוסף את הטיפול בכפתור המצפן כאן:

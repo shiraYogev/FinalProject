@@ -67,7 +67,7 @@ public class MapIntentUtils {
     }
 
     // ===========================================
-    // 3. Govmap (מתודה חדשה)
+    // 3. Govmap — search by address (מתודה קיימת)
     // ===========================================
     public static void openAddressInGovmap(Context context, String address) {
         if (address == null || address.trim().isEmpty()) {
@@ -76,9 +76,25 @@ public class MapIntentUtils {
         }
 
         try {
-            // פתיחת מפת הממשלה (Govmap) בדפדפן
             String govmapUrl = "https://www.govmap.gov.il/?q=" + URLEncoder.encode(address, StandardCharsets.UTF_8.name());
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(govmapUrl));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(context, "שגיאה בפתיחת Govmap.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    // ===========================================
+    // 4. Govmap — center on current GPS location
+    // ===========================================
+    public static void openCurrentLocationInGovmap(Context context, double lat, double lon) {
+        try {
+            double[] itm = ItmConverter.wgs84ToItm(lat, lon);
+            long itmX = Math.round(itm[0]);
+            long itmY = Math.round(itm[1]);
+            String url = "https://www.govmap.gov.il/?c=" + itmX + "," + itmY + "&z=8&lang=he";
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         } catch (Exception e) {

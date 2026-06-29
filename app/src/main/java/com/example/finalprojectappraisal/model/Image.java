@@ -14,7 +14,14 @@ public class Image {
     public enum Category {
         EXTERIOR, LIVING_ROOM, KITCHEN, BATHROOM, BEDROOM, VIEW, DINING_ROOM, ENTRANCE_DOOR,
         BALCONY, STORAGE, HALLWAY, ENTRANCE, GARDEN, ELEVATOR, PARKING, INTERIOR_DOORS, OTHER,
-        PANTRY, YARD, DINING_AREA
+        PANTRY, YARD, DINING_AREA,
+
+        // ===== קטגוריות חוץ חדשות (מפרט) =====
+        ROOF, SHARED_ROOF, STAIRWELL, LOBBY, ACCESS_PATH, EXTERNAL_FACILITIES,
+
+        // ===== קטגוריות פנים חדשות (מפרט) =====
+        FLOORING, CEILING, AIR_CONDITIONING, INTERIOR_CLADDING, CABINETS, INTERIOR_FINISH,
+        TOILET, SAFE_ROOM, DEFECTS
 
     }
 
@@ -43,6 +50,10 @@ public class Image {
     private boolean isVerified;
     private int bedroomIndex = 0; // 0 = לא חדר שינה מספרי, 1 = חדר שינה 1, 2 = חדר שינה 2...
     private Subcategory subCategory = Subcategory.NONE;
+    /** מזהה הקומה אליה שייכת התמונה (למשל "GROUND", "FLOOR_1"). null/ריק = קומה ראשית. */
+    private String floor = Floor.DEFAULT_KEY;
+    /** מזהה היחידה אליה שייכת התמונה (לדירה מחולקת). null/ריק = היחידה הראשית. */
+    private String unitId = Unit.DEFAULT_KEY;
 
     private Map<Subcategory, String> finalClassification; // manually edited final result
 
@@ -157,6 +168,17 @@ public class Image {
         }
         if (this.subCategory == null) this.subCategory = Subcategory.NONE;
 
+        Object floorObj = map.get("floor");
+        if (floorObj instanceof String && !((String) floorObj).trim().isEmpty()) {
+            this.floor = (String) floorObj;
+        }
+        if (this.floor == null || this.floor.trim().isEmpty()) this.floor = Floor.DEFAULT_KEY;
+
+        Object unitObj = map.get("unitId");
+        if (unitObj instanceof String && !((String) unitObj).trim().isEmpty()) {
+            this.unitId = (String) unitObj;
+        }
+        if (this.unitId == null || this.unitId.trim().isEmpty()) this.unitId = Unit.DEFAULT_KEY;
     }
 
     public Map<String, Object> toMap() {
@@ -189,6 +211,8 @@ public class Image {
 
         map.put("bedroomIndex", bedroomIndex);
         map.put("subCategory", (subCategory != null ? subCategory.name() : Subcategory.NONE.name()));
+        map.put("floor", (floor != null && !floor.trim().isEmpty()) ? floor : Floor.DEFAULT_KEY);
+        map.put("unitId", (unitId != null && !unitId.trim().isEmpty()) ? unitId : Unit.DEFAULT_KEY);
 
         return map;
     }
@@ -227,5 +251,11 @@ public class Image {
 
     public Subcategory getSubCategory() { return subCategory; }
     public void setSubCategory(Subcategory sc) { this.subCategory = sc; }
+
+    public String getFloor() { return (floor != null && !floor.trim().isEmpty()) ? floor : Floor.DEFAULT_KEY; }
+    public void setFloor(String floor) { this.floor = (floor != null && !floor.trim().isEmpty()) ? floor : Floor.DEFAULT_KEY; }
+
+    public String getUnitId() { return (unitId != null && !unitId.trim().isEmpty()) ? unitId : Unit.DEFAULT_KEY; }
+    public void setUnitId(String unitId) { this.unitId = (unitId != null && !unitId.trim().isEmpty()) ? unitId : Unit.DEFAULT_KEY; }
 
 }
